@@ -1,0 +1,92 @@
+service: nodejs-book-api
+
+# Serverless Framework v3
+# Cài: npm install -g serverless
+# Deploy: serverless deploy
+# Invoke local: serverless invoke local --function users --data '{"path":"/users","requestContext":{"http":{"method":"GET","path":"/users"}}}'
+# Remove: serverless remove
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-southeast-1         # Singapore — gần Việt Nam nhất
+  stage: ${opt:stage, 'dev'}     # mặc định deploy stage "dev"
+  memorySize: 256                # MB — đủ dùng cho API đơn giản
+  timeout: 10                    # giây — API Gateway max 29s
+
+  # Environment variables — dùng SSM Parameter Store cho secrets
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    APP_NAME: nodejs-book-api
+    # MONGODB_URI: ${ssm:/nodejs-book/mongodb-uri}  # lấy từ SSM (uncomment khi dùng)
+
+  # IAM permissions cho Lambda
+  iam:
+    role:
+      statements:
+        # Cho phép ghi log lên CloudWatch
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: arn:aws:logs:*:*:*
+
+        # Cho phép đọc SSM Parameter Store (để lấy secrets)
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+            - ssm:GetParameters
+          Resource: arn:aws:ssm:${self:provider.region}:*:parameter/nodejs-book/*
+
+  # Bật HTTP API (API Gateway v2) — rẻ hơn và nhanh hơn REST API
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+
+functions:
+  # Handler chính xử lý tất cả routes /users*
+  users:
+    handler: handler.handler
+    description: 'API quản lý users'
+    events:
+      - httpApi:
+          path: /users
+          method: GET
+      - httpApi:
+          path: /users
+          method: POST
+      - httpApi:
+          path: /users/{id}
+          method: GET
+      - httpApi:
+          path: /health
+          method: GET
+
+  # Có thể tách thành nhiều function riêng cho mỗi route
+  # createUser:
+  #   handler: handlers/createUser.handler
+  #   events:
+  #     - httpApi:
+  #         path: /users
+  #         method: POST
+
+plugins:
+  - serverless-offline   # chạy local: serverless offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+    host: localhost

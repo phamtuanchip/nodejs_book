@@ -1,0 +1,10 @@
+<%# Partial: Navigation bar — include bằng <%- include('partials/header') %> %>
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand"><%= siteName %></a>
+    <nav>
+      <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">Trang chủ</a>
+      <a href="/posts/new" class="<%= currentPath === '/posts/new' ? 'active' : '' %>">Viết bài</a>
+    </nav>
+  </div>
+</header>

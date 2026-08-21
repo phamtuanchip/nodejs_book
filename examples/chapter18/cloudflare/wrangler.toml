@@ -1,0 +1,45 @@
+# Wrangler config — Cloudflare Workers
+# Cài Wrangler: npm install -g wrangler
+# Đăng nhập: wrangler login
+# Dev local:  wrangler dev
+# Deploy:     wrangler deploy
+
+name = "nodejs-book-worker"    # tên Worker trên Cloudflare
+main = "src/worker.js"         # file entry point
+compatibility_date = "2024-01-01"   # ngày compat — ảnh hưởng API mặc định
+
+# Giới hạn theo plan miễn phí: 100,000 req/ngày, CPU 10ms/req
+# Plan paid: không giới hạn req, CPU 30s/req
+
+# ── KV Namespace ─────────────────────────────────────────────
+# Tạo KV namespace: wrangler kv:namespace create MY_KV
+# Sau đó điền id vào đây
+
+[[kv_namespaces]]
+binding = "MY_KV"                      # tên biến trong code (env.MY_KV)
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # thay bằng ID thật từ Cloudflare dashboard
+preview_id = "yyyyyyyyyyyyyyyyyyyyyyyy" # ID cho môi trường preview/dev
+
+# ── Routes ───────────────────────────────────────────────────
+# Nếu muốn bind worker vào domain riêng:
+# [[routes]]
+# pattern = "api.yourdomain.com/*"
+# zone_name = "yourdomain.com"
+
+# ── Environment variables ─────────────────────────────────────
+[vars]
+ENVIRONMENT = "production"
+APP_VERSION = "1.0.0"
+
+# Secrets (dùng wrangler secret put SECRET_NAME):
+# wrangler secret put API_KEY
+# Secrets không nằm trong file này — chúng được mã hoá trên Cloudflare
+
+# ── Build settings ────────────────────────────────────────────
+[build]
+command = ""   # không cần build step nếu dùng plain JS
+
+# ── Development settings ──────────────────────────────────────
+[dev]
+port = 8787        # cổng khi chạy wrangler dev
+local_protocol = "http"

@@ -1,0 +1,24 @@
+{
+  "name": "chapter13-postgresql-prisma",
+  "version": "1.0.0",
+  "description": "PostgreSQL với pg và Prisma ORM",
+  "main": "01-connect.js",
+  "scripts": {
+    "start": "node 01-connect.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.7.0",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "prisma": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

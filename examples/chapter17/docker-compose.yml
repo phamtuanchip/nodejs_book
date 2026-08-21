@@ -1,0 +1,104 @@
+version: '3.9'
+
+# Docker Compose cho môi trường development / staging
+# Chạy: docker compose up -d
+# Dừng:  docker compose down
+# Log:   docker compose logs -f app
+
+services:
+
+  # ── Node.js App ──────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production          # dùng stage production trong multi-stage build
+    container_name: myapp
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"               # host:container
+
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://mongodb:27017/myapp   # dùng tên service làm hostname
+      REDIS_URL: redis://redis:6379
+
+    # Đọc secrets từ file .env (không commit file này lên git)
+    env_file:
+      - .env
+
+    depends_on:
+      mongodb:
+        condition: service_healthy  # chờ MongoDB healthy rồi mới start app
+      redis:
+        condition: service_healthy
+
+    networks:
+      - backend
+
+    # Giới hạn tài nguyên
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # ── MongoDB ──────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: myapp-mongo
+    restart: unless-stopped
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: secret123   # đổi trong production, đặt qua .env
+      MONGO_INITDB_DATABASE: myapp
+
+    volumes:
+      - mongo-data:/data/db       # persist data qua restart
+
+    networks:
+      - backend
+
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    # Không expose port ra ngoài — chỉ service app mới kết nối được
+    # Uncomment dòng dưới nếu cần kết nối từ máy host (debug)
+    # ports:
+    #   - "27017:27017"
+
+  # ── Redis ────────────────────────────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: myapp-redis
+    restart: unless-stopped
+
+    # Bật password và lưu data xuống disk mỗi 60 giây
+    command: redis-server --requirepass redis123 --appendonly yes
+
+    volumes:
+      - redis-data:/data
+
+    networks:
+      - backend
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis123", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mongo-data:   # volume persist data MongoDB
+  redis-data:   # volume persist data Redis
+
+networks:
+  backend:
+    driver: bridge  # tất cả service trong cùng network riêng, không ra internet

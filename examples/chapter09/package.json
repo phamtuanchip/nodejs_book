@@ -1,0 +1,13 @@
+{
+  "name": "chapter09-middleware",
+  "version": "1.0.0",
+  "description": "Chương 09 — Middleware & Error Handling trong Express",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

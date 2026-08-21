@@ -1,0 +1,44 @@
+{
+  "name": "chapter07-npm-ecosystem",
+  "version": "1.0.0",
+  "description": "Ví dụ về npm ecosystem: lodash, dayjs, dotenv",
+  "main": "01-use-lodash.js",
+  "scripts": {
+    "start": "node 01-use-lodash.js",
+    "dev": "cross-env NODE_ENV=development nodemon 01-use-lodash.js",
+    "demo:lodash": "node 01-use-lodash.js",
+    "demo:dayjs": "node 02-use-dayjs.js",
+    "demo:dotenv": "node 03-use-dotenv.js",
+    "demo:scripts": "node 04-npm-scripts.js",
+    "demo:all": "npm run demo:lodash && npm run demo:dayjs && npm run demo:dotenv",
+    "test": "echo \"Chưa có test\" && exit 0",
+    "lint": "eslint *.js --ext .js",
+    "lint:fix": "eslint *.js --fix",
+    "format": "prettier --write \"*.js\" \"*.json\"",
+    "check": "npm run lint && npm test"
+  },
+  "keywords": ["nodejs", "tutorial", "vietnamese", "lodash", "dayjs", "dotenv"],
+  "author": "Node.js Book VN",
+  "license": "MIT",
+  "dependencies": {
+    "dayjs": "^1.11.10",
+    "dotenv": "^16.3.1",
+    "joi": "^17.11.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "eslint": "^8.56.0",
+    "nodemon": "^3.0.2",
+    "prettier": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "nodemonConfig": {
+    "watch": ["."],
+    "ext": "js,json",
+    "ignore": ["node_modules/", "*.test.js"]
+  }
+}

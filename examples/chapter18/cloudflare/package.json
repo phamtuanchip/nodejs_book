@@ -1,0 +1,15 @@
+{
+  "name": "cloudflare-worker-example",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker example cho sách NodeJS tiếng Việt",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "secret": "wrangler secret put"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

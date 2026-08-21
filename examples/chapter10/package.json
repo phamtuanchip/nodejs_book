@@ -1,0 +1,16 @@
+{
+  "name": "chapter10-auth",
+  "version": "1.0.0",
+  "description": "Chương 10 — Authentication & Session với JWT và bcrypt",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

@@ -1,0 +1,87 @@
+// Prisma Schema cho ứng dụng blog đơn giản
+// Datasource: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model User: người dùng hệ thống
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  name      String
+  role      Role      @default(USER)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  // Quan hệ 1-nhiều: 1 user có nhiều post
+  posts     Post[]
+  // Quan hệ 1-nhiều: 1 user có nhiều comment
+  comments  Comment[]
+
+  @@map("users")
+}
+
+// Model Post: bài viết
+model Post {
+  id          Int       @id @default(autoincrement())
+  title       String
+  content     String?
+  published   Boolean   @default(false)
+  viewCount   Int       @default(0) @map("view_count")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Khóa ngoại: post thuộc về user nào
+  authorId    Int       @map("author_id")
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Quan hệ 1-nhiều: 1 post có nhiều comment
+  comments    Comment[]
+
+  // Quan hệ nhiều-nhiều: post có nhiều tag
+  tags        Tag[]     @relation("PostTags")
+
+  @@map("posts")
+}
+
+// Model Comment: bình luận
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Khóa ngoại: comment thuộc post nào
+  postId    Int      @map("post_id")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Khóa ngoại: comment do user nào viết
+  authorId  Int      @map("author_id")
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+// Model Tag: nhãn bài viết (nhiều-nhiều với Post)
+model Tag {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  slug  String @unique
+
+  // Quan hệ nhiều-nhiều: tag có nhiều post
+  posts Post[] @relation("PostTags")
+
+  @@map("tags")
+}
+
+// Enum Role: phân quyền người dùng
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
