@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 2: Stateful vs Stateless — Cookie, Session, Browser Storage | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet & Web</a>
+        <a href="chapter02.html" class="nav-link active"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS & Môi trường</a>
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+        <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth & Session</a>
+        <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating & SSR</a>
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB & Mongoose</a>
+        <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL & Prisma</a>
+        <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching & Redis</a>
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy & DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless & Cloud</a>
+      </div>
+    </nav>
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span><span>Phần 1</span><span>›</span><span>Chương 2</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 1 — Nền tảng</div>
+        <h1>Chương 2: Stateful vs Stateless — Cookie, Session &amp; Browser Storage</h1>
+        <p class="lead">
+          HTTP vốn là giao thức "hay quên" — mỗi request là một cuộc trò chuyện mới hoàn toàn.
+          Chương này giải thích tại sao cần lưu "trạng thái" và các cách khác nhau để làm điều đó,
+          từ cookie đến localStorage đến session server.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ hiểu được</div>
+        <ul>
+          <li>HTTP là stateless nghĩa là gì và tại sao đây là vấn đề</li>
+          <li>Cookie là gì, hoạt động thế nào, và các tùy chọn bảo mật</li>
+          <li>Sự khác biệt giữa localStorage, sessionStorage và IndexedDB</li>
+          <li>Server Session và JWT Token khác nhau ở đâu</li>
+          <li>Khi nào dùng cái nào trong thực tế</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>2.1 HTTP là Stateless — Vấn đề gì?</h2>
+
+      <p>
+        Ở chương trước, bạn đã biết HTTP là giao thức giao tiếp giữa client và server.
+        Điều quan trọng cần biết: <strong>HTTP là stateless</strong> — không có trạng thái.
+      </p>
+
+      <p>Điều này có nghĩa là: mỗi HTTP request là <strong>độc lập hoàn toàn</strong>.
+        Server không nhớ bạn từ request trước. Hãy xem ví dụ:</p>
+
+      <!-- Diagram 1: HTTP Stateless problem -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 620 160" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr-5" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-5r" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-5err" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#ef4444"/>
+            </marker>
+          </defs>
+          <rect width="620" height="160" fill="#0d1117" rx="10"/>
+          <!-- CLIENT box -->
+          <rect x="20" y="40" width="140" height="80" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="90" y="65" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter,sans-serif">Client</text>
+          <text x="90" y="83" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Alice's Browser</text>
+          <!-- SERVER box -->
+          <rect x="460" y="40" width="140" height="80" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="530" y="65" text-anchor="middle" fill="#86efac" font-size="13" font-weight="600" font-family="Inter,sans-serif">Server</text>
+          <text x="530" y="83" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">Stateless HTTP</text>
+          <!-- Request 1: POST /login -->
+          <line x1="160" y1="62" x2="458" y2="62" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-5)"/>
+          <text x="309" y="55" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">POST /login → "Chào Alice!"</text>
+          <!-- Request 2: GET /cart (error) -->
+          <line x1="460" y1="98" x2="162" y2="98" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-5err)"/>
+          <text x="309" y="113" text-anchor="middle" fill="#ef4444" font-size="11" font-family="Inter,sans-serif">GET /cart → "Bạn là ai? 🤷"</text>
+          <!-- Label request 1 left -->
+          <text x="90" y="130" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">Request 1</text>
+          <!-- Label request 2 left -->
+          <text x="530" y="130" text-anchor="middle" fill="#ef4444" font-size="10" font-family="Inter,sans-serif">Server quên!</text>
+        </svg>
+      </div>
+
+      <p>
+        Đây là bản chất của HTTP — mỗi request là một tờ giấy trắng. Server không có "ký ức".
+        Vậy làm sao các website biết bạn đã đăng nhập? Đó là lúc chúng ta cần cơ chế lưu <strong>state</strong>.
+      </p>
+
+      <h3>State là gì?</h3>
+      <p>
+        <strong>State</strong> là thông tin cần được ghi nhớ giữa các request. Ví dụ:
+      </p>
+      <ul>
+        <li>Bạn đã đăng nhập chưa? (authentication state)</li>
+        <li>Giỏ hàng của bạn có gì? (shopping cart state)</li>
+        <li>Ngôn ngữ bạn đang dùng là tiếng Việt hay tiếng Anh? (preference state)</li>
+        <li>Bạn đang ở trang nào trong wizard nhiều bước? (form state)</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <h2>2.2 Cookie — Cách Web "Nhớ" Bạn</h2>
+
+      <h3>Cookie là gì?</h3>
+      <p>
+        Cookie là một mẩu dữ liệu nhỏ mà server gửi cho browser, và browser sẽ
+        <strong>tự động gửi lại</strong> trong mọi request tiếp theo đến cùng domain đó.
+      </p>
+
+      <!-- Diagram 2: Cookie flow (5 steps) -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 680 280" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr-6" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-6r" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="680" height="280" fill="#0d1117" rx="10"/>
+
+          <!-- CLIENT column header -->
+          <rect x="15" y="10" width="160" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="95" y="29" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Client (Browser)</text>
+          <!-- SERVER column header -->
+          <rect x="505" y="10" width="160" height="28" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="585" y="29" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Server</text>
+
+          <!-- Step 1: POST /login -->
+          <rect x="15" y="50" width="200" height="34" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="25" y="65" fill="#93c5fd" font-size="11" font-weight="600" font-family="Inter,sans-serif">1</text>
+          <text x="42" y="65" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Client gửi đăng nhập</text>
+          <text x="42" y="78" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">POST /login {username:"alice"}</text>
+          <line x1="215" y1="67" x2="503" y2="67" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-6)"/>
+
+          <!-- Step 2: Set-Cookie -->
+          <rect x="465" y="96" width="200" height="34" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="475" y="111" fill="#86efac" font-size="11" font-weight="600" font-family="Inter,sans-serif">2</text>
+          <text x="492" y="111" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">Server xác thực, gửi về</text>
+          <text x="492" y="124" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">Set-Cookie: session_id=abc123</text>
+          <line x1="465" y1="113" x2="217" y2="113" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-6r)"/>
+
+          <!-- Step 3: Browser lưu cookie -->
+          <rect x="15" y="142" width="200" height="34" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="25" y="157" fill="#93c5fd" font-size="11" font-weight="600" font-family="Inter,sans-serif">3</text>
+          <text x="42" y="157" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Browser lưu cookie</text>
+          <text x="42" y="170" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">session_id=abc123</text>
+
+          <!-- Step 4: GET /profile + Cookie -->
+          <rect x="15" y="188" width="200" height="34" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="25" y="203" fill="#93c5fd" font-size="11" font-weight="600" font-family="Inter,sans-serif">4</text>
+          <text x="42" y="203" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Request tiếp theo tự đính kèm</text>
+          <text x="42" y="216" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">GET /profile + Cookie: session_id=abc123</text>
+          <line x1="215" y1="205" x2="503" y2="205" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-6)"/>
+
+          <!-- Step 5: Server biết là Alice -->
+          <rect x="465" y="234" width="200" height="34" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="475" y="249" fill="#86efac" font-size="11" font-weight="600" font-family="Inter,sans-serif">5</text>
+          <text x="492" y="249" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">Server đọc cookie</text>
+          <text x="492" y="262" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">Biết đây là Alice ✅</text>
+        </svg>
+      </div>
+
+      <h3>Tạo cookie với JavaScript (phía client)</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">cookie-basic.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// Đặt cookie (có hiệu lực 7 ngày)
+document.cookie = "username=alice; max-age=604800; path=/";
+
+// Đặt nhiều cookie (mỗi lần chỉ set được 1)
+document.cookie = "theme=dark; max-age=2592000; path=/";
+document.cookie = "lang=vi; max-age=2592000; path=/";
+
+// Đọc tất cả cookie (trả về chuỗi, không tiện lắm)
+console.log(document.cookie);
+// "username=alice; theme=dark; lang=vi"
+
+// Hàm tiện ích để đọc 1 cookie theo tên
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+}
+
+console.log(getCookie('username')); // "alice"
+console.log(getCookie('theme'));    // "dark"
+
+// Xóa cookie bằng cách đặt max-age = 0
+document.cookie = "username=; max-age=0; path=/";</code>
+      </pre>
+
+      <h3>Các thuộc tính quan trọng của Cookie</h3>
+
+      <table>
+        <tr>
+          <th>Thuộc tính</th>
+          <th>Ý nghĩa</th>
+          <th>Khi nào dùng</th>
+        </tr>
+        <tr>
+          <td><code>max-age</code></td>
+          <td>Thời gian sống (giây). <code>max-age=0</code> xóa cookie</td>
+          <td>Mọi cookie cần hết hạn</td>
+        </tr>
+        <tr>
+          <td><code>expires</code></td>
+          <td>Ngày hết hạn cụ thể</td>
+          <td>Thay thế cho max-age</td>
+        </tr>
+        <tr>
+          <td><code>path</code></td>
+          <td>Cookie chỉ gửi khi URL bắt đầu bằng path này</td>
+          <td><code>path=/</code> = toàn site</td>
+        </tr>
+        <tr>
+          <td><code>domain</code></td>
+          <td>Domain nào nhận cookie</td>
+          <td>Subdomain sharing</td>
+        </tr>
+        <tr>
+          <td><code>HttpOnly</code></td>
+          <td>JS không đọc được — chỉ browser gửi tự động</td>
+          <td>Session token — bảo vệ XSS</td>
+        </tr>
+        <tr>
+          <td><code>Secure</code></td>
+          <td>Chỉ gửi qua HTTPS</td>
+          <td>Mọi cookie nhạy cảm</td>
+        </tr>
+        <tr>
+          <td><code>SameSite</code></td>
+          <td>Kiểm soát khi nào cookie được gửi cross-site</td>
+          <td>Chống CSRF attack</td>
+        </tr>
+      </table>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Bảo mật Cookie</div>
+        Cookie session token phải luôn có <code>HttpOnly</code> và <code>Secure</code>.
+        <code>HttpOnly</code> ngăn JavaScript đọc cookie (bảo vệ khỏi XSS attack).
+        <code>Secure</code> đảm bảo cookie chỉ truyền qua HTTPS (tránh bị nghe lén).
+      </div>
+
+      <h3>Giới hạn của Cookie</h3>
+      <ul>
+        <li>Tối đa ~4KB mỗi cookie</li>
+        <li>Tối đa ~50 cookie mỗi domain</li>
+        <li>Tự động gửi trong <strong>mọi</strong> request — tăng bandwidth</li>
+        <li>Người dùng có thể tắt cookie</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <h2>2.3 localStorage và sessionStorage</h2>
+
+      <p>
+        Không phải lúc nào cũng cần gửi dữ liệu lên server. Đôi khi chỉ cần lưu trong browser.
+        JavaScript có hai cơ chế lưu trữ phía client:
+      </p>
+
+      <h3>localStorage</h3>
+      <p>Lưu vĩnh viễn trong browser — không mất khi đóng tab, thậm chí đóng browser.</p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">localstorage-demo.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// Lưu dữ liệu đơn giản
+localStorage.setItem('theme', 'dark');
+localStorage.setItem('lang', 'vi');
+
+// Lưu object (phải JSON.stringify)
+const user = { name: 'Alice', age: 25, role: 'admin' };
+localStorage.setItem('user', JSON.stringify(user));
+
+// Đọc dữ liệu
+const theme = localStorage.getItem('theme');    // "dark"
+const lang = localStorage.getItem('lang');      // "vi"
+const userStr = localStorage.getItem('user');   // chuỗi JSON
+const userObj = JSON.parse(userStr);            // { name: "Alice", ... }
+
+// Xóa
+localStorage.removeItem('lang');
+
+// Xóa hết
+localStorage.clear();
+
+// Kiểm tra số lượng
+console.log(localStorage.length); // số keys
+
+// Duyệt qua tất cả
+for (let i = 0; i < localStorage.length; i++) {
+  const key = localStorage.key(i);
+  const value = localStorage.getItem(key);
+  console.log(`${key}: ${value}`);
+}</code>
+      </pre>
+
+      <h3>sessionStorage</h3>
+      <p>Tương tự localStorage nhưng <strong>xóa ngay khi đóng tab</strong>.</p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">sessionstorage-demo.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// API y hệt localStorage, chỉ khác vòng đời
+sessionStorage.setItem('checkout_step', '2');
+sessionStorage.setItem('cart_total', '1500000');
+
+// Dùng cho dữ liệu tạm thời trong 1 phiên làm việc
+// Ví dụ: lưu bước hiện tại trong form đặt hàng nhiều bước
+const currentStep = sessionStorage.getItem('checkout_step');
+console.log('Đang ở bước:', currentStep); // "2"
+
+// Khi user đóng tab → sessionStorage tự xóa
+// Tab mới mở lại → trống rỗng</code>
+      </pre>
+
+      <h3>So sánh Cookie vs localStorage vs sessionStorage</h3>
+
+      <table>
+        <tr>
+          <th></th>
+          <th>Cookie</th>
+          <th>localStorage</th>
+          <th>sessionStorage</th>
+        </tr>
+        <tr>
+          <td>Dung lượng</td>
+          <td>~4KB</td>
+          <td>~5-10MB</td>
+          <td>~5-10MB</td>
+        </tr>
+        <tr>
+          <td>Thời gian sống</td>
+          <td>Theo max-age/expires</td>
+          <td>Vĩnh viễn</td>
+          <td>Đến khi đóng tab</td>
+        </tr>
+        <tr>
+          <td>Tự gửi lên server</td>
+          <td>✅ Có</td>
+          <td>❌ Không</td>
+          <td>❌ Không</td>
+        </tr>
+        <tr>
+          <td>JS có đọc được</td>
+          <td>Chỉ khi không có HttpOnly</td>
+          <td>✅ Luôn có</td>
+          <td>✅ Luôn có</td>
+        </tr>
+        <tr>
+          <td>Chia sẻ giữa tab</td>
+          <td>✅ Có</td>
+          <td>✅ Có</td>
+          <td>❌ Mỗi tab riêng</td>
+        </tr>
+        <tr>
+          <td>Dùng cho</td>
+          <td>Auth token, session</td>
+          <td>Preferences, cache</td>
+          <td>Form state, wizard</td>
+        </tr>
+      </table>
+
+      <!-- ============================================================ -->
+      <h2>2.4 Server Session — "Nhớ" Phía Server</h2>
+
+      <p>
+        Cookie chỉ lưu dữ liệu ở client. Nhưng để bảo mật, dữ liệu nhạy cảm (như thông tin user đang đăng nhập)
+        nên lưu ở <strong>server</strong>. Đây là cơ chế Server Session:
+      </p>
+
+      <!-- Diagram 3: Server Session flow -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 700 260" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr-7" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-7r" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="700" height="260" fill="#0d1117" rx="10"/>
+
+          <!-- CLIENT header -->
+          <rect x="15" y="10" width="150" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="90" y="29" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Client</text>
+          <!-- SERVER header -->
+          <rect x="265" y="10" width="150" height="28" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="340" y="29" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Server</text>
+          <!-- SESSION STORE header -->
+          <rect x="520" y="10" width="165" height="28" rx="6" fill="#3a2a14" stroke="#f59e0b" stroke-width="1"/>
+          <text x="602" y="29" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="600" font-family="Inter,sans-serif">Session Store</text>
+
+          <!-- Step 1: Login -->
+          <rect x="15" y="50" width="190" height="32" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="25" y="65" fill="#93c5fd" font-size="11" font-weight="600" font-family="Inter,sans-serif">1</text>
+          <text x="42" y="65" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">User đăng nhập thành công</text>
+          <text x="42" y="78" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">POST /login {user,pass}</text>
+          <line x1="205" y1="66" x2="263" y2="66" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-7)"/>
+
+          <!-- Step 2: Create session in store -->
+          <rect x="265" y="50" width="200" height="32" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="275" y="65" fill="#86efac" font-size="11" font-weight="600" font-family="Inter,sans-serif">2</text>
+          <text x="292" y="65" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">Server tạo session</text>
+          <text x="292" y="78" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">sessions["abc123"]={userId:42}</text>
+          <line x1="465" y1="66" x2="518" y2="66" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-7)"/>
+
+          <!-- Session store box -->
+          <rect x="520" y="50" width="165" height="32" rx="6" fill="#3a2a14" stroke="#f59e0b" stroke-width="1"/>
+          <text x="530" y="65" fill="#fcd34d" font-size="10" font-family="Inter,sans-serif">abc123 → {userId:42,</text>
+          <text x="530" y="78" fill="#fcd34d" font-size="10" font-family="Inter,sans-serif">role:"admin"}</text>
+
+          <!-- Step 3: Send session_id to client -->
+          <rect x="265" y="100" width="200" height="32" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="275" y="115" fill="#86efac" font-size="11" font-weight="600" font-family="Inter,sans-serif">3</text>
+          <text x="292" y="115" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">Gửi session ID về client</text>
+          <text x="292" y="128" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">Set-Cookie: session_id=abc123</text>
+          <line x1="265" y1="116" x2="207" y2="116" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-7r)"/>
+
+          <!-- Client stores session_id -->
+          <rect x="15" y="100" width="190" height="32" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="25" y="115" fill="#93c5fd" font-size="11" font-weight="600" font-family="Inter,sans-serif">3b</text>
+          <text x="46" y="115" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Browser lưu cookie</text>
+          <text x="46" y="128" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">session_id=abc123</text>
+
+          <!-- Step 4: Next request with cookie -->
+          <rect x="15" y="150" width="190" height="32" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="25" y="165" fill="#93c5fd" font-size="11" font-weight="600" font-family="Inter,sans-serif">4</text>
+          <text x="42" y="165" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Request kèm cookie</text>
+          <text x="42" y="178" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">GET /profile + Cookie: abc123</text>
+          <line x1="205" y1="166" x2="263" y2="166" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-7)"/>
+
+          <!-- Step 5: Server lookups session store -->
+          <rect x="265" y="150" width="200" height="32" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="275" y="165" fill="#86efac" font-size="11" font-weight="600" font-family="Inter,sans-serif">5</text>
+          <text x="292" y="165" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">Server tra cứu session</text>
+          <text x="292" y="178" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">sessions["abc123"] → userId:42</text>
+          <line x1="465" y1="166" x2="518" y2="166" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-7)"/>
+          <line x1="520" y1="175" x2="467" y2="175" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-7r)"/>
+
+          <!-- Result -->
+          <rect x="15" y="210" width="670" height="34" rx="6" fill="#1a2a14" stroke="#22c55e" stroke-width="1"/>
+          <text x="350" y="231" text-anchor="middle" fill="#4ade80" font-size="12" font-family="Inter,sans-serif">Server biết đây là user 42, role admin ✅ — xử lý request an toàn</text>
+        </svg>
+      </div>
+
+      <div class="callout callout-note">
+        <div class="callout-title">📌 Tại sao không lưu luôn data trong cookie?</div>
+        Kỹ thuật này gọi là <strong>session reference</strong> — cookie chỉ chứa một ID ngẫu nhiên,
+        dữ liệu thực sự ở server. Điều này:
+        <ul style="margin-top:8px">
+          <li>Bảo mật hơn — user không thể giả mạo dữ liệu</li>
+          <li>Có thể lưu lượng lớn dữ liệu (không bị giới hạn 4KB)</li>
+          <li>Có thể vô hiệu hóa session từ server (đăng xuất bắt buộc)</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>2.5 JWT Token — Session Không Cần Server Lưu</h2>
+
+      <p>
+        Server Session có một nhược điểm: cần lưu trữ session ở đâu đó (RAM hoặc database).
+        Với hàng triệu user, điều này tốn tài nguyên và phức tạp khi scale.
+      </p>
+
+      <p>
+        <strong>JWT (JSON Web Token)</strong> giải quyết bằng cách mã hóa dữ liệu ngay trong token:
+      </p>
+
+      <!-- Diagram 4: JWT structure -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 660 180" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="660" height="180" fill="#0d1117" rx="10"/>
+
+          <!-- Title -->
+          <text x="330" y="28" text-anchor="middle" fill="#94a3b8" font-size="12" font-family="Inter,sans-serif">JWT Token = 3 phần ngăn cách bởi dấu chấm "."</text>
+
+          <!-- Box 1: Header (GENERIC) -->
+          <rect x="20" y="42" width="185" height="80" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="112" y="65" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">Header</text>
+          <text x="112" y="83" text-anchor="middle" fill="#a5b4fc" font-size="11" font-family="Inter,sans-serif">alg: "HS256"</text>
+          <text x="112" y="100" text-anchor="middle" fill="#a5b4fc" font-size="11" font-family="Inter,sans-serif">typ: "JWT"</text>
+          <text x="112" y="135" text-anchor="middle" fill="#64748b" font-size="10" font-family="JetBrains Mono,monospace">eyJhbGci...</text>
+
+          <!-- Dot separator 1 -->
+          <text x="214" y="90" text-anchor="middle" fill="#f59e0b" font-size="24" font-weight="700" font-family="Inter,sans-serif">.</text>
+
+          <!-- Box 2: Payload (CLIENT) -->
+          <rect x="230" y="42" width="200" height="80" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="330" y="65" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter,sans-serif">Payload</text>
+          <text x="330" y="83" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">userId: 42</text>
+          <text x="330" y="100" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">role: "admin", exp: ...</text>
+          <text x="330" y="135" text-anchor="middle" fill="#64748b" font-size="10" font-family="JetBrains Mono,monospace">eyJ1c2VySWQ...</text>
+
+          <!-- Dot separator 2 -->
+          <text x="439" y="90" text-anchor="middle" fill="#f59e0b" font-size="24" font-weight="700" font-family="Inter,sans-serif">.</text>
+
+          <!-- Box 3: Signature (SERVER) -->
+          <rect x="455" y="42" width="185" height="80" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="547" y="65" text-anchor="middle" fill="#86efac" font-size="13" font-weight="600" font-family="Inter,sans-serif">Signature</text>
+          <text x="547" y="83" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">HMAC-SHA256</text>
+          <text x="547" y="100" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">Header+Payload+Secret</text>
+          <text x="547" y="135" text-anchor="middle" fill="#64748b" font-size="10" font-family="JetBrains Mono,monospace">SflKxwRJSMe...</text>
+
+          <!-- Bottom note -->
+          <text x="330" y="165" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">Chỉ server biết SECRET KEY — đảm bảo không thể giả mạo Signature</text>
+        </svg>
+      </div>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">jwt-concept.js (chạy trong NodeJS)</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// Cài đặt: npm install jsonwebtoken
+const jwt = require('jsonwebtoken');
+
+const SECRET_KEY = 'khoa-bi-mat-cua-ban-phai-dai-va-kho-doan';
+
+// Tạo token khi đăng nhập thành công
+function createToken(userId, role) {
+  return jwt.sign(
+    { userId, role },           // payload (dữ liệu muốn lưu)
+    SECRET_KEY,                  // khóa bí mật để ký
+    { expiresIn: '7d' }         // hết hạn sau 7 ngày
+  );
+}
+
+// Xác thực token từ request
+function verifyToken(token) {
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    return { ok: true, data: decoded };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// Sử dụng
+const token = createToken(42, 'admin');
+console.log('Token:', token);
+
+const result = verifyToken(token);
+console.log('Verified:', result);
+// { ok: true, data: { userId: 42, role: 'admin', iat: ..., exp: ... } }
+
+// Giả mạo token sẽ fail
+const fakeToken = token.slice(0, -5) + 'XXXXX';
+console.log('Fake token:', verifyToken(fakeToken));
+// { ok: false, error: 'invalid signature' }</code>
+      </pre>
+
+      <h3>So sánh Server Session vs JWT</h3>
+
+      <table>
+        <tr>
+          <th></th>
+          <th>Server Session</th>
+          <th>JWT Token</th>
+        </tr>
+        <tr>
+          <td>Lưu dữ liệu ở đâu</td>
+          <td>Server (RAM/DB)</td>
+          <td>Client (cookie/localStorage)</td>
+        </tr>
+        <tr>
+          <td>Vô hiệu hóa tức thì</td>
+          <td>✅ Dễ (xóa khỏi store)</td>
+          <td>❌ Khó (phải dùng blacklist)</td>
+        </tr>
+        <tr>
+          <td>Scale (nhiều server)</td>
+          <td>Cần shared store (Redis)</td>
+          <td>✅ Dễ (verify bằng key)</td>
+        </tr>
+        <tr>
+          <td>Lưu được dữ liệu lớn</td>
+          <td>✅ Có</td>
+          <td>❌ Token sẽ rất to</td>
+        </tr>
+        <tr>
+          <td>Phù hợp cho</td>
+          <td>Web app truyền thống</td>
+          <td>API, microservices, mobile app</td>
+        </tr>
+      </table>
+
+      <!-- ============================================================ -->
+      <h2>2.6 Code mẫu — Shopping Cart với localStorage</h2>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">shopping-cart.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// ============ Shopping Cart với localStorage ============
+
+const CART_KEY = 'my_cart';
+
+// Đọc giỏ hàng từ localStorage
+function getCart() {
+  const data = localStorage.getItem(CART_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+// Lưu giỏ hàng vào localStorage
+function saveCart(cart) {
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+}
+
+// Thêm sản phẩm vào giỏ
+function addToCart(product) {
+  const cart = getCart();
+  const existing = cart.find(item => item.id === product.id);
+
+  if (existing) {
+    existing.quantity += 1;   // Tăng số lượng nếu đã có
+  } else {
+    cart.push({ ...product, quantity: 1 });  // Thêm mới
+  }
+
+  saveCart(cart);
+  return cart;
+}
+
+// Xóa sản phẩm
+function removeFromCart(productId) {
+  const cart = getCart().filter(item => item.id !== productId);
+  saveCart(cart);
+  return cart;
+}
+
+// Tính tổng tiền
+function getTotal() {
+  return getCart().reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+// Xóa toàn bộ giỏ hàng
+function clearCart() {
+  localStorage.removeItem(CART_KEY);
+}
+
+// ============ Sử dụng ============
+
+addToCart({ id: 1, name: 'iPhone 15', price: 25000000 });
+addToCart({ id: 2, name: 'AirPods', price: 5000000 });
+addToCart({ id: 1, name: 'iPhone 15', price: 25000000 }); // +1 qty
+
+console.log('Giỏ hàng:', getCart());
+// [{ id: 1, name: 'iPhone 15', price: 25000000, quantity: 2 },
+//  { id: 2, name: 'AirPods', price: 5000000, quantity: 1 }]
+
+console.log('Tổng tiền:', getTotal().toLocaleString('vi-VN'), 'VND');
+// 55.000.000 VND
+
+removeFromCart(2);
+console.log('Sau khi xóa AirPods:', getCart().length, 'sản phẩm');</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>2.7 Stateful vs Stateless Application</h2>
+
+      <p>Nhìn lại toàn cảnh, có hai kiểu thiết kế ứng dụng web:</p>
+
+      <table>
+        <tr>
+          <th></th>
+          <th>Stateful</th>
+          <th>Stateless</th>
+        </tr>
+        <tr>
+          <td>Server nhớ gì?</td>
+          <td>Nhớ thông tin user giữa requests (session)</td>
+          <td>Không nhớ gì — mỗi request tự đầy đủ</td>
+        </tr>
+        <tr>
+          <td>Ví dụ</td>
+          <td>Web app dùng Server Session</td>
+          <td>REST API dùng JWT</td>
+        </tr>
+        <tr>
+          <td>Scale</td>
+          <td>Phức tạp hơn (sticky sessions)</td>
+          <td>Dễ dàng (bất kỳ server nào cũng xử lý được)</td>
+        </tr>
+        <tr>
+          <td>Phù hợp</td>
+          <td>App nội bộ, ít traffic</td>
+          <td>Public API, microservices, high traffic</td>
+        </tr>
+      </table>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Xu hướng hiện đại</div>
+        Hầu hết API hiện đại (đặc biệt khi kết hợp với mobile app hoặc SPA)
+        đều chọn <strong>stateless với JWT</strong> vì dễ scale và không cần shared session store.
+        Tuy nhiên Server Session vẫn là lựa chọn tốt cho web app truyền thống.
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="summary">
+        <div class="summary-title">📚 Tóm tắt chương 2</div>
+        <ul>
+          <li><strong>HTTP stateless</strong>: mỗi request độc lập, server không tự nhớ bạn</li>
+          <li><strong>Cookie</strong>: browser tự gửi trong mọi request, giới hạn 4KB, dùng HttpOnly+Secure cho token</li>
+          <li><strong>localStorage</strong>: lưu vĩnh viễn, ~5-10MB, chỉ JS đọc được, không tự gửi lên server</li>
+          <li><strong>sessionStorage</strong>: như localStorage nhưng xóa khi đóng tab</li>
+          <li><strong>Server Session</strong>: cookie chứa ID, server lưu dữ liệu thực — bảo mật, dễ vô hiệu hóa</li>
+          <li><strong>JWT</strong>: dữ liệu mã hóa trong token, server không cần lưu — dễ scale</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">🏋️ Bài tập thực hành</div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>2.1 Khám phá Storage trong DevTools</h4>
+            <p>
+              Mở Chrome DevTools (F12) → tab <strong>Application</strong> → Storage.
+              Vào một website bạn hay dùng (vd: tiki.vn, shopee.vn).
+              Xem nội dung của Cookies, localStorage, sessionStorage.
+              Ghi chép: website lưu gì ở đây? Bạn thấy token hay session ID không?
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>2.2 Lưu và đọc user preferences</h4>
+            <p>
+              Viết code JavaScript (chạy trong Console) để lưu các preferences vào localStorage:
+              theme (dark/light), fontSize (small/medium/large), language (vi/en).
+              Sau đó viết hàm <code>loadPreferences()</code> đọc về và log ra.
+              Thử đóng tab và mở lại — data có còn không?
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-medium">Trung bình</span>
+          <div class="exercise-content">
+            <h4>2.3 Hoàn thiện Shopping Cart</h4>
+            <p>
+              Dựa vào code mẫu ở mục 2.6, thêm các tính năng:
+              (1) Hàm <code>updateQuantity(productId, newQuantity)</code> để thay đổi số lượng
+              (2) Hàm <code>getItemCount()</code> trả về tổng số lượng sản phẩm (không phải số loại)
+              (3) Khi quantity = 0, tự động xóa khỏi giỏ.
+              Viết test case để kiểm tra các trường hợp edge case.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-hard">Khó</span>
+          <div class="exercise-content">
+            <h4>2.4 Dark Mode Persistent</h4>
+            <p>
+              Tạo một trang HTML với button toggle Dark/Light mode.
+              Khi click, trang đổi theme và lưu vào localStorage.
+              Khi mở lại trang (reload), trang phải tự apply đúng theme đã lưu
+              <strong>mà không bị flash trắng</strong> trước khi JS chạy.
+              Hint: Script đọc localStorage phải chạy ngay trong <code>&lt;head&gt;</code>,
+              trước khi HTML render.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chapter-nav">
+        <a href="chapter01.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Chương trước</span>
+          <span class="chapter-nav-title">Internet và Web Hoạt Động Như Thế Nào?</span>
+        </a>
+        <a href="chapter03.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp theo →</span>
+          <span class="chapter-nav-title">NodeJS là gì? Cài đặt môi trường lập trình</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

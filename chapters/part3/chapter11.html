@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 11: Templating Engine và Server-Side Rendering | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet &amp; Web</a>
+        <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS &amp; Môi trường</a>
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+        <a href="chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth &amp; Session</a>
+        <a href="chapter11.html" class="nav-link active"><span class="chapter-num">11</span> Templating &amp; SSR</a>
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB &amp; Mongoose</a>
+        <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL &amp; Prisma</a>
+        <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching &amp; Redis</a>
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy &amp; DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless &amp; Cloud</a>
+      </div>
+    </nav>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span>
+        <span>Phần 3</span>
+        <span>›</span>
+        <span>Chương 11</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 3 — Web Application với Express</div>
+        <h1>Chương 11: Templating Engine và Server-Side Rendering</h1>
+        <p class="lead">
+          Không phải mọi app đều cần React hay Vue. Server-side rendering đơn giản,
+          SEO-friendly, và phù hợp cho nhiều loại web. Chương này xây dựng website blog
+          thực sự với EJS — từ template đầu tiên đến hệ thống layout, form handling, và
+          flash messages.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ hiểu được</div>
+        <ul>
+          <li>SSR vs CSR vs SSG — khi nào dùng cái nào</li>
+          <li>Cài đặt và dùng EJS templating engine với Express</li>
+          <li>Tạo layout chung và partial templates (header, footer)</li>
+          <li>Handle form submission và POST-Redirect-GET pattern</li>
+          <li>Flash messages để thông báo kết quả cho user sau redirect</li>
+          <li>Xây dựng blog website đầy đủ với CRUD operations</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>11.1 SSR vs CSR vs SSG</h2>
+
+      <p>
+        Có ba cách chính để đưa nội dung từ server đến trình duyệt của người dùng. Hiểu
+        sự khác biệt giúp bạn chọn đúng công cụ cho từng loại dự án.
+      </p>
+
+      <!-- Diagram 11.1: Three rendering approaches -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-ssr1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="760" height="280" fill="#0d1117" rx="10"/>
+
+          <!-- === SSR Column === -->
+          <rect x="16" y="12" width="222" height="256" rx="8" fill="#0a1628" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="127" y="36" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="700" font-family="Inter,sans-serif">SSR</text>
+          <text x="127" y="52" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">Server-Side Rendering</text>
+          <!-- SSR steps -->
+          <rect x="28" y="62" width="198" height="26" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="127" y="79" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">1. Browser gửi request</text>
+          <line x1="127" y1="88" x2="127" y2="98" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-ssr1)"/>
+          <rect x="28" y="100" width="198" height="26" rx="5" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="127" y="117" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">2. Server render HTML đầy đủ</text>
+          <line x1="127" y1="126" x2="127" y2="136" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-ssr1)"/>
+          <rect x="28" y="138" width="198" height="26" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="127" y="155" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">3. Gửi complete HTML</text>
+          <line x1="127" y1="164" x2="127" y2="174" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-ssr1)"/>
+          <rect x="28" y="176" width="198" height="26" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="127" y="193" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">4. Browser hiển thị ngay</text>
+          <!-- SSR pros/cons -->
+          <text x="127" y="226" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">+ SEO tốt, nội dung ngay lập tức</text>
+          <text x="127" y="242" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">+ Phù hợp thiết bị yếu</text>
+          <text x="127" y="258" text-anchor="middle" fill="#f87171" font-size="10" font-family="Inter,sans-serif">- Mỗi request → reload toàn trang</text>
+
+          <!-- === CSR Column === -->
+          <rect x="269" y="12" width="222" height="256" rx="8" fill="#0a1a10" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="380" y="36" text-anchor="middle" fill="#86efac" font-size="13" font-weight="700" font-family="Inter,sans-serif">CSR</text>
+          <text x="380" y="52" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">Client-Side Rendering</text>
+          <!-- CSR steps -->
+          <rect x="281" y="62" width="198" height="26" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="380" y="79" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">1. Browser gửi request</text>
+          <line x1="380" y1="88" x2="380" y2="98" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-ssr1)"/>
+          <rect x="281" y="100" width="198" height="26" rx="5" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="380" y="117" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">2. Server gửi JS bundle rỗng</text>
+          <line x1="380" y1="126" x2="380" y2="136" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-ssr1)"/>
+          <rect x="281" y="138" width="198" height="26" rx="5" fill="#1e1e3a" stroke="#818cf8" stroke-width="1"/>
+          <text x="380" y="155" text-anchor="middle" fill="#c7d2fe" font-size="10" font-family="Inter,sans-serif">3. Browser thực thi JS</text>
+          <line x1="380" y1="164" x2="380" y2="174" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-ssr1)"/>
+          <rect x="281" y="176" width="198" height="26" rx="5" fill="#1e1e3a" stroke="#818cf8" stroke-width="1"/>
+          <text x="380" y="193" text-anchor="middle" fill="#c7d2fe" font-size="10" font-family="Inter,sans-serif">4. Fetch API + render DOM</text>
+          <!-- CSR pros/cons -->
+          <text x="380" y="226" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">+ UX mượt, không reload</text>
+          <text x="380" y="242" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">+ Tốt cho app phức tạp (SPA)</text>
+          <text x="380" y="258" text-anchor="middle" fill="#f87171" font-size="10" font-family="Inter,sans-serif">- SEO khó, load ban đầu chậm</text>
+
+          <!-- === SSG Column === -->
+          <rect x="522" y="12" width="222" height="256" rx="8" fill="#1c1208" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="633" y="36" text-anchor="middle" fill="#fcd34d" font-size="13" font-weight="700" font-family="Inter,sans-serif">SSG</text>
+          <text x="633" y="52" text-anchor="middle" fill="#fbbf24" font-size="10" font-family="Inter,sans-serif">Static Site Generation</text>
+          <!-- SSG steps -->
+          <rect x="534" y="62" width="198" height="26" rx="5" fill="#3a2a14" stroke="#f59e0b" stroke-width="1"/>
+          <text x="633" y="79" text-anchor="middle" fill="#fcd34d" font-size="10" font-family="Inter,sans-serif">1. Build time → render HTML</text>
+          <line x1="633" y1="88" x2="633" y2="98" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-ssr1)"/>
+          <rect x="534" y="100" width="198" height="26" rx="5" fill="#3a2a14" stroke="#f59e0b" stroke-width="1"/>
+          <text x="633" y="117" text-anchor="middle" fill="#fcd34d" font-size="10" font-family="Inter,sans-serif">2. Upload static files lên CDN</text>
+          <line x1="633" y1="126" x2="633" y2="136" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-ssr1)"/>
+          <rect x="534" y="138" width="198" height="26" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="633" y="155" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">3. Browser nhận từ CDN gần nhất</text>
+          <line x1="633" y1="164" x2="633" y2="174" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-ssr1)"/>
+          <rect x="534" y="176" width="198" height="26" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="633" y="193" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">4. Hiển thị cực nhanh</text>
+          <!-- SSG pros/cons -->
+          <text x="633" y="226" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">+ Nhanh nhất, hosting rẻ</text>
+          <text x="633" y="242" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">+ SEO tốt, bảo mật cao</text>
+          <text x="633" y="258" text-anchor="middle" fill="#f87171" font-size="10" font-family="Inter,sans-serif">- Nội dung động cần rebuild</text>
+        </svg>
+      </div>
+
+      <h3>Khi nào dùng cái nào?</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Loại dự án</th>
+            <th>Phương pháp phù hợp</th>
+            <th>Lý do</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Blog cá nhân, trang marketing</td>
+            <td><strong>SSG</strong> (Next.js, Hugo, Astro)</td>
+            <td>Nội dung ít thay đổi, cần SEO, tốc độ tối đa</td>
+          </tr>
+          <tr>
+            <td>Website tin tức, thương mại điện tử</td>
+            <td><strong>SSR</strong> (Next.js, Express + EJS)</td>
+            <td>Nội dung thay đổi theo giờ, cần SEO, dữ liệu động</td>
+          </tr>
+          <tr>
+            <td>Dashboard, ứng dụng quản lý</td>
+            <td><strong>CSR</strong> (React, Vue, Angular)</td>
+            <td>UX phức tạp, dữ liệu real-time, không cần SEO</td>
+          </tr>
+          <tr>
+            <td>Trang docs, portfolio</td>
+            <td><strong>SSG</strong></td>
+            <td>Không cần server, deploy lên GitHub Pages miễn phí</td>
+          </tr>
+          <tr>
+            <td>Web app hybrid</td>
+            <td><strong>SSR + CSR</strong> (Next.js full)</td>
+            <td>Trang marketing → SSR/SSG; trang app → CSR</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ============================================================ -->
+      <h2>11.2 EJS — Embedded JavaScript Templates</h2>
+
+      <p>
+        EJS (Embedded JavaScript) là templating engine phổ biến nhất cho Express. Nó cho phép
+        nhúng code JavaScript trực tiếp vào HTML — học trong 30 phút, mạnh đủ dùng cho hầu hết
+        dự án SSR thực tế.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Terminal</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>npm install ejs express</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">app.js — Thiết lập EJS với Express</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const express = require('express');
+const path    = require('path');
+const app     = express();
+
+// Nói với Express dùng EJS làm view engine
+app.set('view engine', 'ejs');
+
+// Thư mục chứa các file template (mặc định là ./views)
+app.set('views', path.join(__dirname, 'views'));
+
+// Serve static files (CSS, JS, images)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Route đầu tiên
+app.get('/', (req, res) => {
+  // res.render('template-name', { biến truyền vào template })
+  res.render('index', {
+    title:   'Trang chủ',
+    message: 'Chào mừng đến với EJS!',
+    users: [
+      { name: 'Alice', age: 28 },
+      { name: 'Bob',   age: 32 },
+      { name: 'Carol', age: 25 },
+    ],
+  });
+});
+
+app.listen(3000, () => console.log('Server tại http://localhost:3000'));</code>
+      </pre>
+
+      <h3>Các EJS tags cần biết</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <span class="code-filename">views/index.ejs — Ví dụ đầy đủ các tags</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>&lt;!DOCTYPE html&gt;
+&lt;html lang="vi"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;!-- &lt;%= %&gt; output có escape HTML (an toàn, dùng với user input) --&gt;
+  &lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+  &lt;h1&gt;&lt;%= message %&gt;&lt;/h1&gt;
+
+  &lt;!-- &lt;% %&gt; thực thi code JS — if/else --&gt;
+  &lt;% if (users.length === 0) { %&gt;
+    &lt;p&gt;Không có người dùng nào.&lt;/p&gt;
+  &lt;% } else { %&gt;
+    &lt;p&gt;Có &lt;%= users.length %&gt; người dùng:&lt;/p&gt;
+
+    &lt;!-- &lt;% %&gt; thực thi code JS — for loop --&gt;
+    &lt;ul&gt;
+      &lt;% users.forEach((user, index) =&gt; { %&gt;
+        &lt;li&gt;
+          &lt;!-- #{index+1} để đánh số 1-based --&gt;
+          &lt;%= index + 1 %&gt;. &lt;strong&gt;&lt;%= user.name %&gt;&lt;/strong&gt; — &lt;%= user.age %&gt; tuổi
+        &lt;/li&gt;
+      &lt;% }) %&gt;
+    &lt;/ul&gt;
+  &lt;% } %&gt;
+
+  &lt;!-- &lt;%- %&gt; output KHÔNG escape — dùng khi bạn tin tưởng nội dung --&gt;
+  &lt;!-- NGUY HIỂM nếu dùng với user input chưa sanitize --&gt;
+  &lt;%- '&lt;em&gt;HTML thô này được render bình thường&lt;/em&gt;' %&gt;
+
+  &lt;!-- &lt;%# %&gt; comment — không xuất ra HTML --&gt;
+  &lt;%# Dòng này sẽ không xuất hiện trong source HTML %&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</code>
+      </pre>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tag</th>
+            <th>Tên gọi</th>
+            <th>Dùng khi nào</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>&lt;%= value %&gt;</code></td>
+            <td>Output (escaped)</td>
+            <td>Xuất giá trị biến — tự động escape HTML (&lt;, &gt;, &amp;) — an toàn với user input</td>
+          </tr>
+          <tr>
+            <td><code>&lt;%- html %&gt;</code></td>
+            <td>Output (raw)</td>
+            <td>Xuất HTML thô — chỉ dùng khi nội dung do bạn kiểm soát (không phải user input)</td>
+          </tr>
+          <tr>
+            <td><code>&lt;% code %&gt;</code></td>
+            <td>Scriptlet</td>
+            <td>Chạy code JS: if, for, khai báo biến, gọi function</td>
+          </tr>
+          <tr>
+            <td><code>&lt;%# comment %&gt;</code></td>
+            <td>Comment</td>
+            <td>Ghi chú trong template — không xuất ra HTML</td>
+          </tr>
+          <tr>
+            <td><code>&lt;%- include(path) %&gt;</code></td>
+            <td>Include</td>
+            <td>Nhúng file template khác vào — dùng cho partials</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">XSS và EJS escaping</div>
+        Luôn dùng <code>&lt;%= %&gt;</code> (escaped) khi hiển thị dữ liệu từ user. Nếu dùng
+        <code>&lt;%- %&gt;</code> với input từ người dùng, attacker có thể nhúng script độc hại
+        vào trang — đây là lỗ hổng XSS (Cross-Site Scripting). Chỉ dùng <code>&lt;%- %&gt;</code>
+        khi bạn tự tạo HTML (ví dụ: include partial template).
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>11.3 Layout và Partials</h2>
+
+      <p>
+        Vấn đề lớn nhất khi có nhiều trang: lặp code header và footer. Giải pháp là dùng
+        partials — các template nhỏ có thể include vào nhiều trang.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Text</span>
+          <span class="code-filename">Cấu trúc thư mục views/</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>views/
+├── partials/
+│   ├── header.ejs    ← DOCTYPE, head, mở thẻ body, nav
+│   ├── footer.ejs    ← đóng body, scripts
+│   └── navbar.ejs    ← navigation bar (optional)
+├── index.ejs         ← trang chủ
+├── posts/
+│   ├── index.ejs     ← list bài viết
+│   ├── show.ejs      ← chi tiết bài viết
+│   ├── new.ejs       ← form tạo bài
+│   └── edit.ejs      ← form sửa bài
+└── 404.ejs           ← trang lỗi</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <span class="code-filename">views/partials/header.ejs</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>&lt;!DOCTYPE html&gt;
+&lt;html lang="vi"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+  &lt;title&gt;&lt;%= typeof title !== 'undefined' ? title : 'Blog NodeJS' %&gt;&lt;/title&gt;
+  &lt;link rel="stylesheet" href="/css/style.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;nav style="background:#1e293b;padding:12px 24px;display:flex;align-items:center;gap:24px;"&gt;
+  &lt;a href="/" style="color:#fff;font-weight:700;text-decoration:none;font-size:1.1rem;"&gt;
+    📝 Blog NodeJS
+  &lt;/a&gt;
+  &lt;a href="/posts" style="color:#94a3b8;text-decoration:none;"&gt;Tất cả bài&lt;/a&gt;
+  &lt;a href="/posts/new" style="color:#94a3b8;text-decoration:none;"&gt;Viết bài mới&lt;/a&gt;
+  &lt;span style="flex:1"&gt;&lt;/span&gt;
+  &lt;% if (typeof currentUser !== 'undefined' &amp;&amp; currentUser) { %&gt;
+    &lt;span style="color:#94a3b8;font-size:0.85rem;"&gt;Xin chào, &lt;%= currentUser.name %&gt;&lt;/span&gt;
+    &lt;a href="/auth/logout" style="color:#ef4444;text-decoration:none;font-size:0.85rem;"&gt;Đăng xuất&lt;/a&gt;
+  &lt;% } else { %&gt;
+    &lt;a href="/login" style="color:#0ea5e9;text-decoration:none;font-size:0.85rem;"&gt;Đăng nhập&lt;/a&gt;
+  &lt;% } %&gt;
+&lt;/nav&gt;
+
+&lt;main style="max-width:800px;margin:32px auto;padding:0 16px;"&gt;</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <span class="code-filename">views/partials/footer.ejs</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>&lt;/main&gt;
+
+&lt;footer style="text-align:center;padding:32px;color:#64748b;font-size:0.85rem;border-top:1px solid #e2e8f0;margin-top:48px;"&gt;
+  &lt;p&gt;&amp;copy; &lt;%= new Date().getFullYear() %&gt; Blog NodeJS — Học EJS với Express&lt;/p&gt;
+&lt;/footer&gt;
+
+&lt;script src="/js/main.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <span class="code-filename">views/index.ejs — Trang chủ dùng partials</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>&lt;!-- Include header — truyền biến title --&gt;
+&lt;%- include('./partials/header', { title: 'Trang chủ - Blog NodeJS' }) %&gt;
+
+&lt;h1 style="font-size:2rem;font-weight:800;margin-bottom:8px;"&gt;Bài viết mới nhất&lt;/h1&gt;
+&lt;p style="color:#64748b;margin-bottom:32px;"&gt;Có &lt;%= posts.length %&gt; bài viết&lt;/p&gt;
+
+&lt;% if (posts.length === 0) { %&gt;
+  &lt;div style="text-align:center;padding:48px;background:#f8fafc;border-radius:12px;"&gt;
+    &lt;p style="color:#64748b;"&gt;Chưa có bài viết nào.&lt;/p&gt;
+    &lt;a href="/posts/new" style="color:#0ea5e9;"&gt;Viết bài đầu tiên →&lt;/a&gt;
+  &lt;/div&gt;
+&lt;% } %&gt;
+
+&lt;div style="display:grid;gap:20px;"&gt;
+  &lt;% posts.forEach(post =&gt; { %&gt;
+    &lt;article style="border:1px solid #e2e8f0;border-radius:10px;padding:20px;transition:box-shadow 0.15s;"&gt;
+      &lt;h2 style="font-size:1.2rem;margin-bottom:8px;"&gt;
+        &lt;a href="/posts/&lt;%= post.id %&gt;" style="color:#1e293b;text-decoration:none;"&gt;
+          &lt;%= post.title %&gt;
+        &lt;/a&gt;
+      &lt;/h2&gt;
+      &lt;p style="color:#64748b;font-size:0.9rem;margin-bottom:12px;"&gt;
+        &lt;%= post.excerpt %&gt;
+      &lt;/p&gt;
+      &lt;div style="display:flex;gap:16px;align-items:center;font-size:0.8rem;color:#94a3b8;"&gt;
+        &lt;span&gt;✍️ &lt;%= post.author %&gt;&lt;/span&gt;
+        &lt;span&gt;📅 &lt;%= new Date(post.createdAt).toLocaleDateString('vi-VN') %&gt;&lt;/span&gt;
+        &lt;a href="/posts/&lt;%= post.id %&gt;" style="color:#0ea5e9;margin-left:auto;"&gt;Đọc tiếp →&lt;/a&gt;
+      &lt;/div&gt;
+    &lt;/article&gt;
+  &lt;% }) %&gt;
+&lt;/div&gt;
+
+&lt;!-- Include footer --&gt;
+&lt;%- include('./partials/footer') %&gt;</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>11.4 Form Handling và POST-Redirect-GET</h2>
+
+      <p>
+        HTML forms gửi dữ liệu đến server qua HTTP POST. Vấn đề kinh điển: nếu user nhấn F5
+        sau khi submit form, trình duyệt sẽ gửi lại request POST — tạo duplicate entry trong
+        database. Pattern <strong>POST-Redirect-GET</strong> giải quyết điều này.
+      </p>
+
+      <!-- Diagram 11.4: POST-Redirect-GET -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-prg" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-prgr" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="760" height="200" fill="#0d1117" rx="10"/>
+
+          <!-- Browser -->
+          <rect x="16" y="14" width="130" height="170" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="81" y="36" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Browser</text>
+          <text x="81" y="56" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">Form /posts/new</text>
+          <text x="81" y="104" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">GET /posts/42</text>
+          <text x="81" y="150" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">Nhấn F5 →</text>
+          <text x="81" y="163" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">GET /posts/42 lại</text>
+          <text x="81" y="176" text-anchor="middle" fill="#86efac" font-size="9" font-family="Inter,sans-serif">(an toàn!)</text>
+
+          <!-- Server -->
+          <rect x="614" y="14" width="130" height="170" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="679" y="36" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Server</text>
+          <text x="679" y="60" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">POST /posts</text>
+          <text x="679" y="76" text-anchor="middle" fill="#4ade80" font-size="9" font-family="Inter,sans-serif">validate + lưu DB</text>
+          <text x="679" y="104" text-anchor="middle" fill="#fcd34d" font-size="10" font-family="Inter,sans-serif">302 Redirect</text>
+          <text x="679" y="120" text-anchor="middle" fill="#fcd34d" font-size="9" font-family="Inter,sans-serif">Location: /posts/42</text>
+          <text x="679" y="148" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">GET /posts/42</text>
+          <text x="679" y="164" text-anchor="middle" fill="#4ade80" font-size="9" font-family="Inter,sans-serif">→ render bài viết</text>
+
+          <!-- Step 1: POST -->
+          <line x1="146" y1="58" x2="612" y2="58" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-prg)"/>
+          <text x="379" y="52" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">1. POST /posts {title, content, author}</text>
+
+          <!-- Step 2: Redirect -->
+          <line x1="614" y1="78" x2="148" y2="78" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arr-prgr)"/>
+          <text x="379" y="95" text-anchor="middle" fill="#fcd34d" font-size="10" font-family="Inter,sans-serif">2. 302 Redirect → /posts/42</text>
+
+          <!-- Step 3: GET -->
+          <line x1="146" y1="112" x2="612" y2="112" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-prg)"/>
+          <text x="379" y="106" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">3. GET /posts/42 (browser tự redirect)</text>
+
+          <!-- Step 4: HTML response -->
+          <line x1="614" y1="132" x2="148" y2="132" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-prgr)"/>
+          <text x="379" y="148" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">4. 200 OK + HTML trang bài viết</text>
+        </svg>
+      </div>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">routes/posts.js — Form handling với PRG pattern</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const express = require('express');
+const router  = express.Router();
+
+// Parse form data (application/x-www-form-urlencoded)
+router.use(express.urlencoded({ extended: false }));
+
+// In-memory post store
+const posts = [];
+let nextId = 1;
+
+// ─── GET /posts — Danh sách bài viết ───
+router.get('/', (req, res) => {
+  // Sắp xếp mới nhất trước
+  const sorted = [...posts].sort((a, b) => b.createdAt - a.createdAt);
+  res.render('posts/index', { posts: sorted, title: 'Tất cả bài viết' });
+});
+
+// ─── GET /posts/new — Form tạo bài mới ───
+// PHẢI đặt trước /posts/:id để tránh "new" bị parse thành id
+router.get('/new', (req, res) => {
+  res.render('posts/new', { title: 'Viết bài mới', errors: [], old: {} });
+});
+
+// ─── POST /posts — Xử lý submit form ───
+router.post('/', (req, res) => {
+  const { title, content, author } = req.body;
+  const errors = [];
+
+  // Server-side validation
+  if (!title?.trim())   errors.push('Tiêu đề không được để trống');
+  if (!content?.trim()) errors.push('Nội dung không được để trống');
+  if (!author?.trim())  errors.push('Tên tác giả không được để trống');
+  if (title?.length > 200) errors.push('Tiêu đề tối đa 200 ký tự');
+
+  if (errors.length > 0) {
+    // Render lại form với lỗi và dữ liệu cũ (không redirect)
+    return res.status(422).render('posts/new', {
+      title: 'Viết bài mới',
+      errors,
+      old: { title, content, author }, // giữ lại input của user
+    });
+  }
+
+  const post = {
+    id:        nextId++,
+    title:     title.trim(),
+    content:   content.trim(),
+    author:    author.trim(),
+    excerpt:   content.trim().slice(0, 150) + (content.length > 150 ? '...' : ''),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  posts.push(post);
+
+  // POST-Redirect-GET: redirect sau khi lưu thành công
+  res.redirect(`/posts/${post.id}`);
+});
+
+// ─── GET /posts/:id — Chi tiết bài viết ───
+router.get('/:id', (req, res) => {
+  const post = posts.find(p => p.id === parseInt(req.params.id));
+  if (!post) return res.status(404).render('404', { title: 'Không tìm thấy' });
+
+  res.render('posts/show', { post, title: post.title });
+});
+
+// ─── GET /posts/:id/edit — Form sửa bài ───
+router.get('/:id/edit', (req, res) => {
+  const post = posts.find(p => p.id === parseInt(req.params.id));
+  if (!post) return res.status(404).render('404', { title: 'Không tìm thấy' });
+
+  res.render('posts/edit', { post, title: `Sửa: ${post.title}`, errors: [] });
+});
+
+// ─── POST /posts/:id/update — Cập nhật bài (dùng POST thay PUT vì HTML form) ───
+router.post('/:id/update', (req, res) => {
+  const post = posts.find(p => p.id === parseInt(req.params.id));
+  if (!post) return res.status(404).render('404', { title: 'Không tìm thấy' });
+
+  const { title, content, author } = req.body;
+  const errors = [];
+
+  if (!title?.trim())   errors.push('Tiêu đề không được để trống');
+  if (!content?.trim()) errors.push('Nội dung không được để trống');
+
+  if (errors.length > 0) {
+    return res.status(422).render('posts/edit', { post: { ...post, ...req.body }, title: `Sửa: ${post.title}`, errors });
+  }
+
+  post.title     = title.trim();
+  post.content   = content.trim();
+  post.author    = author?.trim() || post.author;
+  post.excerpt   = content.trim().slice(0, 150) + '...';
+  post.updatedAt = Date.now();
+
+  res.redirect(`/posts/${post.id}`);
+});
+
+// ─── POST /posts/:id/delete — Xóa bài ───
+router.post('/:id/delete', (req, res) => {
+  const index = posts.findIndex(p => p.id === parseInt(req.params.id));
+  if (index === -1) return res.status(404).render('404', { title: 'Không tìm thấy' });
+
+  posts.splice(index, 1);
+  res.redirect('/posts');
+});
+
+module.exports = { router, posts };</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>11.5 Flash Messages với connect-flash</h2>
+
+      <p>
+        Flash message là thông báo chỉ hiển thị <em>một lần</em> — sau khi đọc, nó biến mất.
+        Hoàn hảo cho phản hồi sau form submission: "Đã lưu thành công!" hay "Đã xóa bài viết".
+        Package <code>connect-flash</code> lưu flash message vào session, cho phép hiện sau redirect.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Terminal</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>npm install connect-flash express-session</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">app.js — Cấu hình connect-flash</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const session = require('express-session');
+const flash   = require('connect-flash');
+
+// Flash cần session để hoạt động
+app.use(session({
+  secret: 'blog-secret',
+  resave: false,
+  saveUninitialized: false,
+}));
+
+app.use(flash());
+
+// Middleware để truyền flash messages vào TẤT CẢ templates
+// (không cần truyền thủ công từng route)
+app.use((req, res, next) => {
+  res.locals.success = req.flash('success');
+  res.locals.error   = req.flash('error');
+  res.locals.warning = req.flash('warning');
+  next();
+});
+
+// Sử dụng trong route:
+router.post('/', (req, res) => {
+  // ... tạo bài viết ...
+  req.flash('success', 'Bài viết đã được đăng thành công!');
+  res.redirect(`/posts/${post.id}`);
+});
+
+router.post('/:id/delete', (req, res) => {
+  // ... xóa bài viết ...
+  req.flash('success', 'Đã xóa bài viết');
+  req.flash('warning', 'Hành động này không thể hoàn tác');
+  res.redirect('/posts');
+});</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <span class="code-filename">views/partials/flash.ejs — Component flash messages</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>&lt;!-- Hiển thị flash messages — include trong header.ejs --&gt;
+
+&lt;% if (typeof success !== 'undefined' &amp;&amp; success.length &gt; 0) { %&gt;
+  &lt;% success.forEach(msg =&gt; { %&gt;
+    &lt;div style="background:#d1fae5;border:1px solid #6ee7b7;border-left:4px solid #10b981;
+                border-radius:8px;padding:12px 16px;margin:12px 0;display:flex;
+                align-items:center;gap:10px;" role="alert"&gt;
+      &lt;span style="font-size:1.1rem;"&gt;✅&lt;/span&gt;
+      &lt;span style="color:#065f46;font-weight:500;"&gt;&lt;%= msg %&gt;&lt;/span&gt;
+      &lt;button onclick="this.parentElement.remove()"
+              style="margin-left:auto;background:none;border:none;cursor:pointer;
+                     color:#6ee7b7;font-size:1.2rem;"&gt;&times;&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;% }) %&gt;
+&lt;% } %&gt;
+
+&lt;% if (typeof error !== 'undefined' &amp;&amp; error.length &gt; 0) { %&gt;
+  &lt;% error.forEach(msg =&gt; { %&gt;
+    &lt;div style="background:#fee2e2;border:1px solid #fca5a5;border-left:4px solid #ef4444;
+                border-radius:8px;padding:12px 16px;margin:12px 0;display:flex;
+                align-items:center;gap:10px;" role="alert"&gt;
+      &lt;span style="font-size:1.1rem;"&gt;❌&lt;/span&gt;
+      &lt;span style="color:#991b1b;font-weight:500;"&gt;&lt;%= msg %&gt;&lt;/span&gt;
+      &lt;button onclick="this.parentElement.remove()"
+              style="margin-left:auto;background:none;border:none;cursor:pointer;
+                     color:#fca5a5;font-size:1.2rem;"&gt;&times;&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;% }) %&gt;
+&lt;% } %&gt;
+
+&lt;% if (typeof warning !== 'undefined' &amp;&amp; warning.length &gt; 0) { %&gt;
+  &lt;% warning.forEach(msg =&gt; { %&gt;
+    &lt;div style="background:#fef3c7;border:1px solid #fcd34d;border-left:4px solid #f59e0b;
+                border-radius:8px;padding:12px 16px;margin:12px 0;display:flex;
+                align-items:center;gap:10px;" role="alert"&gt;
+      &lt;span style="font-size:1.1rem;"&gt;⚠️&lt;/span&gt;
+      &lt;span style="color:#92400e;font-weight:500;"&gt;&lt;%= msg %&gt;&lt;/span&gt;
+    &lt;/div&gt;
+  &lt;% }) %&gt;
+&lt;% } %&gt;</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>11.6 Dự án: Blog Website với EJS</h2>
+
+      <p>
+        Tổng hợp tất cả: xây dựng một blog website hoàn chỉnh với CRUD, flash messages,
+        layout chung, và validation. Dùng in-memory store — có thể dễ dàng thay bằng
+        MongoDB ở chương 12.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Text</span>
+          <span class="code-filename">Cấu trúc dự án blog hoàn chỉnh</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>blog-ejs/
+├── app.js
+├── package.json
+├── routes/
+│   └── posts.js
+├── views/
+│   ├── partials/
+│   │   ├── header.ejs
+│   │   ├── footer.ejs
+│   │   └── flash.ejs
+│   ├── index.ejs         ← trang chủ
+│   ├── 404.ejs
+│   └── posts/
+│       ├── index.ejs     ← danh sách bài
+│       ├── show.ejs      ← chi tiết bài
+│       ├── new.ejs       ← form tạo bài
+│       └── edit.ejs      ← form sửa bài
+└── public/
+    └── css/
+        └── style.css</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">app.js — Entry point blog hoàn chỉnh</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const express = require('express');
+const path    = require('path');
+const session = require('express-session');
+const flash   = require('connect-flash');
+const { router: postsRouter } = require('./routes/posts');
+
+const app = express();
+
+// View engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Body parsing
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+
+// Session + Flash
+app.use(session({ secret: 'blog-dev-secret', resave: false, saveUninitialized: false }));
+app.use(flash());
+
+// Đưa flash messages vào locals (dùng được trong mọi template)
+app.use((req, res, next) => {
+  res.locals.success = req.flash('success');
+  res.locals.error   = req.flash('error');
+  res.locals.warning = req.flash('warning');
+  next();
+});
+
+// Routes
+app.get('/', (req, res) => res.redirect('/posts'));
+app.use('/posts', postsRouter);
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).render('404', { title: 'Trang không tồn tại' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).render('404', { title: 'Lỗi server: ' + err.message });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Blog đang chạy tại http://localhost:${PORT}`);
+});</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <span class="code-filename">views/posts/show.ejs — Chi tiết bài viết</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>&lt;%- include('../partials/header', { title: post.title }) %&gt;
+&lt;%- include('../partials/flash') %&gt;
+
+&lt;article&gt;
+  &lt;header style="margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #e2e8f0;"&gt;
+    &lt;h1 style="font-size:1.8rem;font-weight:800;margin-bottom:8px;"&gt;&lt;%= post.title %&gt;&lt;/h1&gt;
+    &lt;div style="display:flex;gap:16px;color:#64748b;font-size:0.85rem;"&gt;
+      &lt;span&gt;✍️ &lt;%= post.author %&gt;&lt;/span&gt;
+      &lt;span&gt;📅 &lt;%= new Date(post.createdAt).toLocaleString('vi-VN') %&gt;&lt;/span&gt;
+      &lt;% if (post.updatedAt !== post.createdAt) { %&gt;
+        &lt;span&gt;(đã cập nhật &lt;%= new Date(post.updatedAt).toLocaleString('vi-VN') %&gt;)&lt;/span&gt;
+      &lt;% } %&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
+
+  &lt;div style="line-height:1.8;font-size:1rem;"&gt;
+    &lt;!-- Dùng &lt;%- %&gt; vì content là do admin nhập, và đã whitelist-sanitize --&gt;
+    &lt;%= post.content %&gt;
+  &lt;/div&gt;
+
+  &lt;div style="margin-top:32px;padding-top:20px;border-top:1px solid #e2e8f0;
+              display:flex;gap:12px;align-items:center;"&gt;
+    &lt;a href="/posts/&lt;%= post.id %&gt;/edit"
+       style="padding:8px 16px;background:#0ea5e9;color:#fff;border-radius:6px;
+              text-decoration:none;font-size:0.85rem;"&gt;
+      ✏️ Sửa bài
+    &lt;/a&gt;
+
+    &lt;!-- Form xóa bài — dùng POST vì HTML form không support DELETE --&gt;
+    &lt;form action="/posts/&lt;%= post.id %&gt;/delete" method="POST"
+          onsubmit="return confirm('Xác nhận xóa bài viết này?')"&gt;
+      &lt;button type="submit"
+              style="padding:8px 16px;background:#ef4444;color:#fff;border:none;
+                     border-radius:6px;cursor:pointer;font-size:0.85rem;"&gt;
+        🗑️ Xóa bài
+      &lt;/button&gt;
+    &lt;/form&gt;
+
+    &lt;a href="/posts" style="color:#64748b;font-size:0.85rem;margin-left:auto;"&gt;
+      ← Tất cả bài viết
+    &lt;/a&gt;
+  &lt;/div&gt;
+&lt;/article&gt;
+
+&lt;%- include('../partials/footer') %&gt;</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <span class="code-filename">views/posts/new.ejs — Form tạo bài mới</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>&lt;%- include('../partials/header', { title: 'Viết bài mới' }) %&gt;
+&lt;%- include('../partials/flash') %&gt;
+
+&lt;div style="max-width:680px;"&gt;
+  &lt;h1 style="font-size:1.6rem;font-weight:800;margin-bottom:24px;"&gt;✍️ Viết bài mới&lt;/h1&gt;
+
+  &lt;!-- Hiển thị lỗi validation --&gt;
+  &lt;% if (errors.length &gt; 0) { %&gt;
+    &lt;div style="background:#fee2e2;border-left:4px solid #ef4444;
+                border-radius:8px;padding:16px;margin-bottom:20px;"&gt;
+      &lt;p style="font-weight:700;color:#991b1b;margin-bottom:8px;"&gt;
+        Vui lòng sửa các lỗi sau:
+      &lt;/p&gt;
+      &lt;ul style="margin-left:20px;color:#991b1b;"&gt;
+        &lt;% errors.forEach(err =&gt; { %&gt;
+          &lt;li&gt;&lt;%= err %&gt;&lt;/li&gt;
+        &lt;% }) %&gt;
+      &lt;/ul&gt;
+    &lt;/div&gt;
+  &lt;% } %&gt;
+
+  &lt;form action="/posts" method="POST"&gt;
+    &lt;div style="margin-bottom:20px;"&gt;
+      &lt;label style="display:block;font-weight:600;margin-bottom:6px;"&gt;
+        Tiêu đề &lt;span style="color:#ef4444;"&gt;*&lt;/span&gt;
+      &lt;/label&gt;
+      &lt;input type="text" name="title"
+             value="&lt;%= typeof old !== 'undefined' ? old.title || '' : '' %&gt;"
+             placeholder="Nhập tiêu đề bài viết..."
+             style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;
+                    border-radius:8px;font-size:1rem;font-family:inherit;"
+             required&gt;
+    &lt;/div&gt;
+
+    &lt;div style="margin-bottom:20px;"&gt;
+      &lt;label style="display:block;font-weight:600;margin-bottom:6px;"&gt;
+        Tác giả &lt;span style="color:#ef4444;"&gt;*&lt;/span&gt;
+      &lt;/label&gt;
+      &lt;input type="text" name="author"
+             value="&lt;%= typeof old !== 'undefined' ? old.author || '' : '' %&gt;"
+             placeholder="Tên của bạn..."
+             style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;
+                    border-radius:8px;font-size:1rem;font-family:inherit;"
+             required&gt;
+    &lt;/div&gt;
+
+    &lt;div style="margin-bottom:24px;"&gt;
+      &lt;label style="display:block;font-weight:600;margin-bottom:6px;"&gt;
+        Nội dung &lt;span style="color:#ef4444;"&gt;*&lt;/span&gt;
+      &lt;/label&gt;
+      &lt;textarea name="content" rows="12"
+                placeholder="Viết nội dung bài viết..."
+                style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;
+                       border-radius:8px;font-size:1rem;font-family:inherit;
+                       resize:vertical;line-height:1.7;"
+                required&gt;&lt;%= typeof old !== 'undefined' ? old.content || '' : '' %&gt;&lt;/textarea&gt;
+    &lt;/div&gt;
+
+    &lt;div style="display:flex;gap:12px;"&gt;
+      &lt;button type="submit"
+              style="padding:10px 24px;background:#0ea5e9;color:#fff;border:none;
+                     border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;"&gt;
+        📝 Đăng bài
+      &lt;/button&gt;
+      &lt;a href="/posts"
+         style="padding:10px 20px;border:1px solid #e2e8f0;border-radius:8px;
+                color:#64748b;text-decoration:none;font-size:1rem;"&gt;
+        Hủy
+      &lt;/a&gt;
+    &lt;/div&gt;
+  &lt;/form&gt;
+&lt;/div&gt;
+
+&lt;%- include('../partials/footer') %&gt;</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">HTML</span>
+          <span class="code-filename">views/posts/edit.ejs — Form sửa bài viết</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>&lt;%- include('../partials/header', { title: 'Sửa bài: ' + post.title }) %&gt;
+&lt;%- include('../partials/flash') %&gt;
+
+&lt;div style="max-width:680px;"&gt;
+  &lt;h1 style="font-size:1.6rem;font-weight:800;margin-bottom:24px;"&gt;✏️ Sửa bài viết&lt;/h1&gt;
+
+  &lt;% if (errors.length &gt; 0) { %&gt;
+    &lt;div style="background:#fee2e2;border-left:4px solid #ef4444;
+                border-radius:8px;padding:16px;margin-bottom:20px;"&gt;
+      &lt;ul style="margin-left:20px;color:#991b1b;"&gt;
+        &lt;% errors.forEach(err =&gt; { %&gt;&lt;li&gt;&lt;%= err %&gt;&lt;/li&gt;&lt;% }) %&gt;
+      &lt;/ul&gt;
+    &lt;/div&gt;
+  &lt;% } %&gt;
+
+  &lt;form action="/posts/&lt;%= post.id %&gt;/update" method="POST"&gt;
+    &lt;div style="margin-bottom:20px;"&gt;
+      &lt;label style="display:block;font-weight:600;margin-bottom:6px;"&gt;Tiêu đề&lt;/label&gt;
+      &lt;input type="text" name="title" value="&lt;%= post.title %&gt;"
+             style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;
+                    border-radius:8px;font-size:1rem;font-family:inherit;" required&gt;
+    &lt;/div&gt;
+
+    &lt;div style="margin-bottom:20px;"&gt;
+      &lt;label style="display:block;font-weight:600;margin-bottom:6px;"&gt;Tác giả&lt;/label&gt;
+      &lt;input type="text" name="author" value="&lt;%= post.author %&gt;"
+             style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;
+                    border-radius:8px;font-size:1rem;font-family:inherit;" required&gt;
+    &lt;/div&gt;
+
+    &lt;div style="margin-bottom:24px;"&gt;
+      &lt;label style="display:block;font-weight:600;margin-bottom:6px;"&gt;Nội dung&lt;/label&gt;
+      &lt;textarea name="content" rows="12"
+                style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;
+                       border-radius:8px;font-size:1rem;font-family:inherit;
+                       resize:vertical;line-height:1.7;"
+                required&gt;&lt;%= post.content %&gt;&lt;/textarea&gt;
+    &lt;/div&gt;
+
+    &lt;div style="display:flex;gap:12px;"&gt;
+      &lt;button type="submit"
+              style="padding:10px 24px;background:#0ea5e9;color:#fff;border:none;
+                     border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;"&gt;
+        💾 Lưu thay đổi
+      &lt;/button&gt;
+      &lt;a href="/posts/&lt;%= post.id %&gt;"
+         style="padding:10px 20px;border:1px solid #e2e8f0;border-radius:8px;
+                color:#64748b;text-decoration:none;"&gt;Hủy&lt;/a&gt;
+
+      &lt;form action="/posts/&lt;%= post.id %&gt;/delete" method="POST"
+            style="margin-left:auto;"
+            onsubmit="return confirm('Xác nhận xóa?')"&gt;
+        &lt;button type="submit"
+                style="padding:10px 16px;background:none;color:#ef4444;
+                       border:1px solid #ef4444;border-radius:8px;cursor:pointer;"&gt;
+          🗑️ Xóa
+        &lt;/button&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  &lt;/form&gt;
+&lt;/div&gt;
+
+&lt;%- include('../partials/footer') %&gt;</code>
+      </pre>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">Chạy dự án blog</div>
+        <p>Sau khi tạo xong tất cả files:</p>
+        <pre style="margin:8px 0 0"><div class="code-header"><span class="code-lang">Shell</span><button class="copy-btn">Copy</button></div><code>cd blog-ejs
+npm install express ejs express-session connect-flash
+node app.js
+# Mở http://localhost:3000</code></pre>
+      </div>
+
+      <div class="callout callout-note">
+        <div class="callout-title">method-override cho PUT và DELETE</div>
+        HTML form chỉ hỗ trợ GET và POST. Để dùng PUT/PATCH/DELETE, cài
+        <code>npm install method-override</code> và thêm <code>?_method=DELETE</code> vào action URL.
+        Trong chương này chúng ta dùng route <code>/posts/:id/delete</code> (POST) để đơn giản hơn.
+        Cách dùng <code>method-override</code> sẽ được giới thiệu ở chương REST API.
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="summary">
+        <div class="summary-title">Tóm tắt chương 11</div>
+        <ul>
+          <li><strong>SSR</strong> phù hợp cho nội dung động cần SEO; <strong>CSR</strong> cho app phức tạp; <strong>SSG</strong> cho nội dung tĩnh</li>
+          <li><strong>EJS</strong> nhúng JS vào HTML: <code>&lt;%= %&gt;</code> (escaped), <code>&lt;%- %&gt;</code> (raw), <code>&lt;% %&gt;</code> (code), <code>&lt;%- include() %&gt;</code> (partial)</li>
+          <li><strong>Partials</strong> giải quyết code lặp: header/footer dùng chung, include với biến truyền vào</li>
+          <li><strong>POST-Redirect-GET</strong> tránh form resubmission khi refresh trang</li>
+          <li><strong>Flash messages</strong> thông báo kết quả sau redirect, tự xóa sau khi đọc một lần</li>
+          <li>Luôn dùng <code>&lt;%= %&gt;</code> (escaped) với user input để tránh XSS</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">Bài tập thực hành</div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>11.1 Trang About</h4>
+            <p>
+              Thêm trang <code>/about</code> vào blog: tạo <code>views/about.ejs</code>, thêm route
+              <code>GET /about</code> trong <code>app.js</code>, và thêm link "Về chúng tôi" vào
+              navigation bar trong <code>views/partials/header.ejs</code>. Trang about hiển thị
+              thông tin về blog và tác giả.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-medium">Trung bình</span>
+          <div class="exercise-content">
+            <h4>11.2 Phân trang (Pagination)</h4>
+            <p>
+              Implement phân trang trên trang chủ: 5 bài mỗi trang.
+              Route <code>GET /posts?page=2</code> hiển thị trang 2.
+              Hiển thị nút Prev/Next và số trang hiện tại (<code>Trang 2 / 4</code>).
+              Ẩn nút Prev ở trang 1, ẩn nút Next ở trang cuối.
+              Truyền <code>{ posts, currentPage, totalPages, hasPrev, hasNext }</code> vào template.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-hard">Khó</span>
+          <div class="exercise-content">
+            <h4>11.3 Tính năng tìm kiếm với keyword highlight</h4>
+            <p>
+              Implement <code>GET /posts?q=keyword</code>: lọc bài viết theo title và content.
+              Trong template kết quả, highlight từ khóa trong tiêu đề bằng thẻ <code>&lt;mark&gt;</code>
+              (dùng <code>&lt;%-&gt;</code> với string đã sanitize).
+              Nếu không có kết quả, hiện thông báo "Không tìm thấy bài nào cho '<em>keyword</em>'".
+              Thêm form search vào navigation bar. Kết hợp với phân trang từ bài 11.2.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER NAV -->
+      <div class="chapter-nav">
+        <a href="chapter10.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Chương trước</span>
+          <span class="chapter-nav-title">Cookie, Session và Authentication</span>
+        </a>
+        <a href="../part4/chapter12.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp theo →</span>
+          <span class="chapter-nav-title">MongoDB với Mongoose</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lập Trình NodeJS - Từ Cơ Bản Đến Nâng Cao</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    body { display: block; }
+    .index-wrap { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+    .index-topbar {
+      display: flex; justify-content: flex-end; padding: 16px 24px;
+      position: sticky; top: 0; background: var(--bg); border-bottom: 1px solid var(--border); z-index: 50;
+    }
+  </style>
+</head>
+<body>
+  <div class="index-topbar">
+    <button class="btn-icon theme-toggle">🌙 Tối</button>
+  </div>
+
+  <div class="index-wrap">
+    <div class="index-hero">
+      <div class="part-badge">Sách lập trình tiếng Việt</div>
+      <h1>Lập Trình NodeJS<br>Từ Cơ Bản Đến Nâng Cao</h1>
+      <p class="lead">
+        Dành cho người đã biết JavaScript cơ bản và muốn học lập trình server-side.
+        Từ HTTP, web application đến cloud serverless — tất cả bằng tiếng Việt.
+      </p>
+      <div>
+        <span class="tag">18 Chương</span>
+        <span class="tag">5 Phần</span>
+        <span class="tag">Code mẫu mỗi bài</span>
+        <span class="tag">Bài tập thực hành</span>
+        <span class="tag">Dự án thực tế</span>
+      </div>
+    </div>
+
+    <div class="parts-grid">
+
+      <!-- PHẦN 1 -->
+      <div class="part-card">
+        <div class="part-card-header">
+          <div class="part-num">1</div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px">Phần 1</div>
+            <h2>Nền Tảng — Hiểu Cách Internet Hoạt Động</h2>
+          </div>
+        </div>
+        <div class="chapter-list">
+          <a href="chapters/part1/chapter01.html" class="chapter-row">
+            <span class="chapter-row-num">01</span>
+            <span class="chapter-row-title">Internet và Web Hoạt Động Như Thế Nào?</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part1/chapter02.html" class="chapter-row">
+            <span class="chapter-row-num">02</span>
+            <span class="chapter-row-title">Stateful vs Stateless — Cookie, Session, Browser Storage</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part1/chapter03.html" class="chapter-row">
+            <span class="chapter-row-num">03</span>
+            <span class="chapter-row-title">NodeJS là gì? Cài đặt môi trường lập trình</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- PHẦN 2 -->
+      <div class="part-card">
+        <div class="part-card-header">
+          <div class="part-num">2</div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px">Phần 2</div>
+            <h2>NodeJS Cơ Bản</h2>
+          </div>
+        </div>
+        <div class="chapter-list">
+          <a href="chapters/part2/chapter04.html" class="chapter-row">
+            <span class="chapter-row-num">04</span>
+            <span class="chapter-row-title">NodeJS Core Modules — fs, path, events, crypto</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part2/chapter05.html" class="chapter-row">
+            <span class="chapter-row-num">05</span>
+            <span class="chapter-row-title">Async Programming — Callback, Promise, async/await</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part2/chapter06.html" class="chapter-row">
+            <span class="chapter-row-num">06</span>
+            <span class="chapter-row-title">Tự xây dựng HTTP Server với NodeJS thuần</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part2/chapter07.html" class="chapter-row">
+            <span class="chapter-row-num">07</span>
+            <span class="chapter-row-title">npm Ecosystem — Quản lý packages và dependencies</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- PHẦN 3 -->
+      <div class="part-card">
+        <div class="part-card-header">
+          <div class="part-num">3</div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px">Phần 3</div>
+            <h2>Web Application với Express</h2>
+          </div>
+        </div>
+        <div class="chapter-list">
+          <a href="chapters/part3/chapter08.html" class="chapter-row">
+            <span class="chapter-row-num">08</span>
+            <span class="chapter-row-title">Express.js — Framework web phổ biến nhất</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part3/chapter09.html" class="chapter-row">
+            <span class="chapter-row-num">09</span>
+            <span class="chapter-row-title">Middleware và Error Handling</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part3/chapter10.html" class="chapter-row">
+            <span class="chapter-row-num">10</span>
+            <span class="chapter-row-title">Cookie, Session và Authentication</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part3/chapter11.html" class="chapter-row">
+            <span class="chapter-row-num">11</span>
+            <span class="chapter-row-title">Templating Engine và Server-Side Rendering</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- PHẦN 4 -->
+      <div class="part-card">
+        <div class="part-card-header">
+          <div class="part-num">4</div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px">Phần 4</div>
+            <h2>Database và Lưu Trữ Dữ Liệu</h2>
+          </div>
+        </div>
+        <div class="chapter-list">
+          <a href="chapters/part4/chapter12.html" class="chapter-row">
+            <span class="chapter-row-num">12</span>
+            <span class="chapter-row-title">MongoDB với Mongoose — NoSQL Database</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part4/chapter13.html" class="chapter-row">
+            <span class="chapter-row-num">13</span>
+            <span class="chapter-row-title">SQL với PostgreSQL và Prisma ORM</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part4/chapter14.html" class="chapter-row">
+            <span class="chapter-row-num">14</span>
+            <span class="chapter-row-title">Caching với Redis — Tăng tốc ứng dụng</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- PHẦN 5 -->
+      <div class="part-card">
+        <div class="part-card-header">
+          <div class="part-num">5</div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px">Phần 5</div>
+            <h2>Nâng Cao và Cloud</h2>
+          </div>
+        </div>
+        <div class="chapter-list">
+          <a href="chapters/part5/chapter15.html" class="chapter-row">
+            <span class="chapter-row-num">15</span>
+            <span class="chapter-row-title">REST API Best Practices và API Design</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part5/chapter16.html" class="chapter-row">
+            <span class="chapter-row-num">16</span>
+            <span class="chapter-row-title">Testing và Code Quality</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part5/chapter17.html" class="chapter-row">
+            <span class="chapter-row-num">17</span>
+            <span class="chapter-row-title">Deploy và DevOps Cơ Bản — Docker, VPS, CI/CD</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+          <a href="chapters/part5/chapter18.html" class="chapter-row">
+            <span class="chapter-row-num">18</span>
+            <span class="chapter-row-title">Serverless và Cloud Functions</span>
+            <span class="chapter-row-arrow">→</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="text-align:center;margin-top:48px;padding-top:32px;border-top:1px solid var(--border);color:var(--text-muted);font-size:0.85rem">
+      Viết bằng ❤️ cho cộng đồng lập trình Việt Nam
+    </div>
+  </div>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

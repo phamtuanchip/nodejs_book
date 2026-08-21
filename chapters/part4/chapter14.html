@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 14: Caching với Redis | NodeJS Book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet &amp; Web</a>
+        <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS &amp; Môi trường</a>
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+        <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth &amp; Session</a>
+        <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating &amp; SSR</a>
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB &amp; Mongoose</a>
+        <a href="chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL &amp; Prisma</a>
+        <a href="chapter14.html" class="nav-link active"><span class="chapter-num">14</span> Caching &amp; Redis</a>
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy &amp; DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless &amp; Cloud</a>
+      </div>
+    </nav>
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span><span>Phần 4</span><span>›</span><span>Chương 14</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 4 — Database và Lưu Trữ</div>
+        <h1>Chương 14: Caching với Redis — Tăng Tốc Ứng Dụng</h1>
+        <p class="lead">
+          Redis là in-memory database nhanh nhất thế giới. Dùng làm cache giúp response time
+          giảm từ 200ms xuống 2ms — gấp 100 lần. Chương này học Redis từ cơ bản đến các
+          patterns thực tế: cache-aside, session store, rate limiting, và pub/sub.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ</div>
+        <ul>
+          <li>Hiểu Redis là gì và kiến trúc in-memory database</li>
+          <li>Làm chủ 5 data types: String, Hash, List, Set, Sorted Set</li>
+          <li>Implement Cache-Aside pattern — pattern phổ biến nhất</li>
+          <li>Viết Cache middleware tự động cho Express</li>
+          <li>Thay thế MemoryStore bằng Redis Session Store</li>
+          <li>Xây dựng Rate Limiter bằng Redis từ scratch</li>
+          <li>Pub/Sub cơ bản cho real-time notifications</li>
+          <li>Distributed lock để tránh race conditions</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>14.1 Redis là gì?</h2>
+
+      <p>
+        <strong>Redis</strong> (Remote Dictionary Server) là in-memory key-value store —
+        nghĩa là nó lưu toàn bộ data trong RAM thay vì ổ cứng.
+        Đây là lý do nó nhanh đến mức khó tin: RAM nhanh hơn SSD tới 1000 lần.
+      </p>
+
+      <table>
+        <tr>
+          <th>Storage</th>
+          <th>Tốc độ đọc</th>
+          <th>Latency điển hình</th>
+        </tr>
+        <tr>
+          <td>HDD (ổ cứng cũ)</td>
+          <td>~200 MB/s</td>
+          <td>5–10ms</td>
+        </tr>
+        <tr>
+          <td>SSD NVMe</td>
+          <td>~3500 MB/s</td>
+          <td>0.05–0.1ms</td>
+        </tr>
+        <tr>
+          <td>RAM (Redis)</td>
+          <td>~50,000 MB/s</td>
+          <td>&lt;0.1ms</td>
+        </tr>
+      </table>
+
+      <h3>Tại sao Redis không mất data khi tắt máy?</h3>
+      <p>Redis có 2 cơ chế persistence:</p>
+      <ul>
+        <li><strong>RDB (Redis Database)</strong>: Snapshot — chụp toàn bộ data ra file <code>.rdb</code> định kỳ (mỗi 5 phút). Nếu server crash, mất tối đa vài phút data.</li>
+        <li><strong>AOF (Append-Only File)</strong>: Ghi từng command vào log file. Khi restart, replay lại log. An toàn hơn nhưng tốn dung lượng hơn.</li>
+      </ul>
+
+      <h3>Redis dùng cho gì?</h3>
+      <ul>
+        <li><strong>Cache</strong>: Lưu kết quả query DB, API responses tốn thời gian</li>
+        <li><strong>Session Store</strong>: Lưu user sessions cho app multi-server</li>
+        <li><strong>Rate Limiting</strong>: Giới hạn số request/phút từ 1 IP</li>
+        <li><strong>Pub/Sub</strong>: Message broker đơn giản giữa các service</li>
+        <li><strong>Leaderboard</strong>: Sorted set cho ranking real-time</li>
+        <li><strong>Job Queue</strong>: FIFO queue cho background jobs (Bull/BullMQ dùng Redis)</li>
+        <li><strong>Distributed Lock</strong>: Đồng bộ hoá giữa nhiều server instances</li>
+      </ul>
+
+      <!-- Cache flow SVG -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-14a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-14a-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#22c55e"/>
+            </marker>
+            <marker id="arr-14a-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/>
+            </marker>
+          </defs>
+
+          <!-- Client -->
+          <rect x="10" y="75" width="90" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="55" y="99" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="600" font-family="Inter,sans-serif">Client</text>
+          <text x="55" y="115" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Request</text>
+
+          <!-- Arrow client → server -->
+          <line x1="100" y1="100" x2="140" y2="100" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-14a-blue)"/>
+
+          <!-- Server -->
+          <rect x="140" y="75" width="100" height="50" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="190" y="99" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600" font-family="Inter,sans-serif">NodeJS</text>
+          <text x="190" y="115" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Server</text>
+
+          <!-- Arrow server → redis -->
+          <line x1="240" y1="90" x2="290" y2="55" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-14a)"/>
+          <text x="260" y="68" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">1. Check</text>
+
+          <!-- Redis -->
+          <rect x="290" y="20" width="110" height="50" rx="8" fill="#3a1a14" stroke="#dc382d" stroke-width="1.5"/>
+          <text x="345" y="44" text-anchor="middle" fill="#fc8181" font-size="11" font-weight="600" font-family="Inter,sans-serif">Redis Cache</text>
+          <text x="345" y="60" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">in-memory</text>
+
+          <!-- HIT path -->
+          <line x1="290" y1="40" x2="240" y2="86" stroke="#22c55e" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arr-14a-green)"/>
+          <text x="248" y="55" fill="#22c55e" font-size="10" font-family="Inter,sans-serif" font-weight="600">HIT ✓</text>
+          <text x="215" y="68" fill="#22c55e" font-size="9" font-family="Inter,sans-serif">2ms</text>
+
+          <!-- MISS path -->
+          <line x1="400" y1="45" x2="460" y2="45" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-14a)"/>
+          <text x="408" y="38" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">MISS →</text>
+
+          <!-- DB -->
+          <rect x="460" y="20" width="110" height="50" rx="8" fill="#1a2a3a" stroke="#336791" stroke-width="1.5"/>
+          <text x="515" y="44" text-anchor="middle" fill="#90cdf4" font-size="11" font-weight="600" font-family="Inter,sans-serif">Database</text>
+          <text x="515" y="60" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">PostgreSQL/Mongo</text>
+
+          <!-- DB → Redis store -->
+          <line x1="460" y1="60" x2="405" y2="60" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-14a)"/>
+          <text x="415" y="78" fill="#94a3b8" font-size="9" font-family="Inter,sans-serif">3. Store+TTL</text>
+
+          <!-- DB → Server return -->
+          <line x1="460" y1="70" x2="245" y2="108" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-14a)"/>
+          <text x="350" y="108" fill="#94a3b8" font-size="9" font-family="Inter,sans-serif">4. Return (200ms)</text>
+
+          <!-- Server → Client -->
+          <line x1="140" y1="108" x2="100" y2="108" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-14a-green)"/>
+
+          <!-- Legend -->
+          <text x="350" y="185" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Cache HIT: 2ms — Cache MISS: 200ms (query DB + lưu cache cho lần sau)</text>
+        </svg>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>14.2 Cài Đặt và Kết Nối</h2>
+
+      <h3>Option 1: Redis Cloud (Khuyên dùng)</h3>
+      <ol>
+        <li>Vào <code>redis.io/try-free</code> → Sign up miễn phí (30MB free tier)</li>
+        <li>Tạo subscription → chọn plan Free</li>
+        <li>Lấy <strong>Public endpoint</strong> và <strong>Password</strong></li>
+        <li>Connection string: <code>redis://:password@host:port</code></li>
+      </ol>
+
+      <h3>Option 2: Docker (Local)</h3>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Docker</span><button class="copy-btn">Copy</button></div><code># Chạy Redis local bằng Docker
+docker run -d --name redis-local -p 6379:6379 redis:7-alpine
+
+# Với password
+docker run -d --name redis-local -p 6379:6379 redis:7-alpine redis-server --requirepass mypassword
+
+# Kết nối Redis CLI để test
+docker exec -it redis-local redis-cli
+# Hoặc
+redis-cli -h localhost -p 6379 -a mypassword</code></pre>
+
+      <h3>Cài ioredis và kết nối</h3>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>npm install ioredis</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">lib/redis.js</span><button class="copy-btn">Copy</button></div><code>// lib/redis.js — Singleton Redis client
+const Redis = require('ioredis');
+
+const redis = new Redis(process.env.REDIS_URL, {
+  // Retry khi mất kết nối
+  retryStrategy(times) {
+    const delay = Math.min(times * 100, 3000); // Tăng dần, tối đa 3s
+    console.log(`Redis retry #${times}, waiting ${delay}ms`);
+    return delay;
+  },
+  // Timeout connection
+  connectTimeout: 10000,
+  // Tự reconnect
+  lazyConnect: false,
+  // Số lệnh tối đa queue khi đang reconnect
+  maxRetriesPerRequest: 3,
+});
+
+redis.on('connect', () => console.log('✅ Redis connected'));
+redis.on('ready', () => console.log('📗 Redis ready'));
+redis.on('error', (err) => console.error('📕 Redis error:', err.message));
+redis.on('close', () => console.log('📙 Redis connection closed'));
+redis.on('reconnecting', () => console.log('🔄 Redis reconnecting...'));
+
+module.exports = redis;</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">Text</span><span class="code-filename">.env</span><button class="copy-btn">Copy</button></div><code># Redis Cloud
+REDIS_URL=redis://:your-password@redis-12345.c1.us-east-1-2.ec2.cloud.redislabs.com:12345
+
+# Local (không có password)
+REDIS_URL=redis://localhost:6379
+
+# Local với password
+REDIS_URL=redis://:mypassword@localhost:6379</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>14.3 Data Types — 5 Kiểu Dữ Liệu Cần Biết</h2>
+
+      <h3>String — Kiểu phổ biến nhất</h3>
+      <p>String trong Redis có thể chứa text, numbers, hoặc binary data (JSON, serialized objects).</p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">String operations</span><button class="copy-btn">Copy</button></div><code>const redis = require('./lib/redis');
+
+// ── SET với TTL (Time To Live) ──
+await redis.set('greeting', 'Hello World');            // Không expire
+await redis.set('user:42:name', 'Alice', 'EX', 3600); // Expire sau 1 giờ (seconds)
+await redis.set('token:abc123', userId, 'PX', 300000); // Expire sau 5 phút (milliseconds)
+
+// SET NX — chỉ set nếu key chưa tồn tại (NX = Not eXists)
+const isSet = await redis.set('lock:resource_1', 'locked', 'EX', 30, 'NX');
+// isSet = 'OK' nếu set thành công, null nếu key đã tồn tại
+
+// ── GET ──
+const name = await redis.get('user:42:name'); // 'Alice' hoặc null nếu không tồn tại
+const json = await redis.get('product:1');    // String, cần JSON.parse
+
+// ── DEL ──
+await redis.del('user:42:name');
+await redis.del(['key1', 'key2', 'key3']); // Xóa nhiều cùng lúc
+
+// ── EXISTS ──
+const exists = await redis.exists('user:42:name'); // 1 nếu có, 0 nếu không
+
+// ── TTL — xem thời gian sống còn lại ──
+const ttl = await redis.ttl('user:42:name'); // Số giây còn lại, -1 nếu không expire, -2 nếu không tồn tại
+await redis.expire('user:42:name', 7200);    // Đặt TTL mới (2 giờ)
+
+// ── Numeric operations ──
+await redis.set('page:views', 0);
+await redis.incr('page:views');          // Tăng 1 → atomic!
+await redis.incrby('page:views', 5);     // Tăng 5
+await redis.decr('page:views');          // Giảm 1
+await redis.incrbyfloat('price:btc', 100.5); // Float increment
+
+// ── MSET / MGET — bulk operations ──
+await redis.mset('key1', 'val1', 'key2', 'val2', 'key3', 'val3');
+const [v1, v2, v3] = await redis.mget('key1', 'key2', 'key3'); // [val1, val2, val3]</code></pre>
+
+      <h3>Hash — Lưu Object</h3>
+      <p>Hash lưu field-value pairs, giống như object JavaScript. Tốt hơn JSON string khi cần update từng field riêng lẻ.</p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Hash operations</span><button class="copy-btn">Copy</button></div><code>// ── HSET — set một hoặc nhiều fields ──
+await redis.hset('user:42', {
+  name: 'Alice',
+  email: 'alice@example.com',
+  role: 'admin',
+  lastLogin: new Date().toISOString(),
+});
+
+// ── HGET — lấy một field ──
+const name = await redis.hget('user:42', 'name');  // 'Alice'
+
+// ── HGETALL — lấy tất cả fields (trả về object) ──
+const user = await redis.hgetall('user:42');
+// { name: 'Alice', email: 'alice@example.com', role: 'admin', lastLogin: '...' }
+
+// ── HMGET — lấy nhiều fields ──
+const [email, role] = await redis.hmget('user:42', 'email', 'role');
+
+// ── HDEL — xóa field ──
+await redis.hdel('user:42', 'lastLogin');
+
+// ── HEXISTS — kiểm tra field có tồn tại không ──
+const hasEmail = await redis.hexists('user:42', 'email'); // 1 hoặc 0
+
+// ── HINCRBY — tăng số trong hash ──
+await redis.hset('stats:today', 'visits', 0, 'signups', 0);
+await redis.hincrby('stats:today', 'visits', 1);
+
+// ── HKEYS / HVALS / HLEN ──
+const keys = await redis.hkeys('user:42');    // ['name', 'email', 'role']
+const vals = await redis.hvals('user:42');    // ['Alice', 'alice@...', 'admin']
+const count = await redis.hlen('user:42');    // 3</code></pre>
+
+      <h3>List — Queue và Stack</h3>
+      <p>Linked list cho phép push/pop ở 2 đầu. Dùng làm job queue, activity log, hoặc recent items.</p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">List operations</span><button class="copy-btn">Copy</button></div><code>// ── RPUSH — thêm vào cuối (Right Push) ──
+await redis.rpush('notifications:user:42', 'Bạn có follower mới');
+await redis.rpush('job:queue', 'job:email:1', 'job:email:2', 'job:email:3');
+
+// ── LPUSH — thêm vào đầu (Left Push) ──
+await redis.lpush('recent:viewed', 'product:50');
+
+// ── LPOP / RPOP — lấy và xóa phần tử ──
+const job = await redis.lpop('job:queue');   // FIFO Queue: lấy từ đầu
+const last = await redis.rpop('recent:viewed'); // Stack: lấy từ cuối
+
+// ── LRANGE — xem toàn bộ hoặc một phần (không xóa) ──
+const allJobs = await redis.lrange('job:queue', 0, -1);     // Tất cả
+const first3 = await redis.lrange('job:queue', 0, 2);       // 3 phần tử đầu
+const last5 = await redis.lrange('notifications:user:42', -5, -1); // 5 cái cuối
+
+// ── LLEN — độ dài ──
+const queueSize = await redis.llen('job:queue');
+
+// ── LTRIM — giữ lại chỉ N phần tử (rotating buffer) ──
+await redis.lpush('recent:searches', searchTerm);
+await redis.ltrim('recent:searches', 0, 9); // Chỉ giữ 10 gần nhất
+
+// ── BLPOP — blocking pop (đợi đến khi có data, dùng cho worker) ──
+// const [listName, value] = await redis.blpop('job:queue', 30); // Timeout 30s</code></pre>
+
+      <h3>Set — Tập hợp unique</h3>
+      <p>Set chứa các string không trùng lặp. Dùng cho unique visitors, online users, tags.</p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Set operations</span><button class="copy-btn">Copy</button></div><code>// ── SADD — thêm vào set ──
+await redis.sadd('online:users', 'user:1', 'user:2', 'user:3');
+await redis.sadd('product:1:views', visitorId); // Đếm unique visitors
+
+// ── SISMEMBER — kiểm tra có trong set không ──
+const isOnline = await redis.sismember('online:users', 'user:2'); // 1 hoặc 0
+
+// ── SMEMBERS — lấy tất cả members ──
+const onlineUsers = await redis.smembers('online:users');
+
+// ── SCARD — số lượng members ──
+const onlineCount = await redis.scard('online:users');
+const uniqueViews = await redis.scard('product:1:views');
+
+// ── SREM — xóa member ──
+await redis.srem('online:users', 'user:2');
+
+// ── Set operations ──
+// SUNION — hợp 2 sets
+const allFans = await redis.sunion('fans:teamA', 'fans:teamB');
+// SINTER — giao 2 sets
+const commonFans = await redis.sinter('fans:teamA', 'fans:teamB');
+// SDIFF — hiệu (chỉ có trong set đầu, không có ở set sau)
+const exclusiveFans = await redis.sdiff('fans:teamA', 'fans:teamB');</code></pre>
+
+      <h3>Sorted Set — Leaderboard</h3>
+      <p>Giống Set nhưng mỗi member có thêm một <strong>score</strong> (số thực). Tự động sort theo score.</p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Sorted Set — Leaderboard</span><button class="copy-btn">Copy</button></div><code>// ── ZADD — thêm với score ──
+// score thấp = rank cao nếu sort ascending; dùng desc để sort điểm cao lên đầu
+await redis.zadd('leaderboard:global', 1500, 'alice', 2300, 'bob', 980, 'carol');
+
+// ── ZINCRBY — tăng score (atomic) ──
+await redis.zincrby('leaderboard:global', 100, 'alice'); // Alice: 1500 → 1600
+
+// ── ZREVRANGE — lấy top N (điểm cao nhất trước) ──
+const top10 = await redis.zrevrange('leaderboard:global', 0, 9, 'WITHSCORES');
+// ['bob', '2300', 'alice', '1600', 'carol', '980']
+
+// ── ZREVRANK — rank của 1 user (0-indexed, cao nhất là 0) ──
+const rank = await redis.zrevrank('leaderboard:global', 'alice'); // 1 (thứ 2)
+
+// ── ZSCORE — điểm của 1 user ──
+const score = await redis.zscore('leaderboard:global', 'alice'); // '1600'
+
+// ── ZRANGE + WITHSCORES — toàn bộ bảng xếp hạng ──
+const all = await redis.zrange('leaderboard:global', 0, -1, 'WITHSCORES');
+
+// ── ZRANGEBYSCORE — lấy users trong khoảng score ──
+const midRange = await redis.zrangebyscore('leaderboard:global', 1000, 2000, 'WITHSCORES');
+
+// Leaderboard helper function
+async function getLeaderboard(page = 1, pageSize = 10) {
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize - 1;
+
+  const raw = await redis.zrevrange('leaderboard:global', start, end, 'WITHSCORES');
+
+  // Parse kết quả: ['alice', '1600', 'bob', '2300', ...]
+  const entries = [];
+  for (let i = 0; i < raw.length; i += 2) {
+    entries.push({
+      rank: start + (i / 2) + 1,
+      username: raw[i],
+      score: parseInt(raw[i + 1]),
+    });
+  }
+
+  const total = await redis.zcard('leaderboard:global');
+  return { entries, total, totalPages: Math.ceil(total / pageSize) };
+}</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>14.4 Cache-Aside Pattern — Pattern Chính</h2>
+
+      <p>
+        Cache-Aside (còn gọi là Lazy Loading) là pattern cache phổ biến nhất.
+        Application tự quản lý cache: check cache trước, nếu miss thì query DB và lưu vào cache.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Cache-aside implementation</span><button class="copy-btn">Copy</button></div><code>const redis = require('./lib/redis');
+const User = require('./models/User'); // Mongoose hoặc Prisma
+
+// ── Lấy user với cache ──
+async function getUserById(id) {
+  const cacheKey = `user:${id}`;
+
+  // 1. Kiểm tra cache
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached); // Cache HIT — trả về ngay
+  }
+
+  // 2. Cache MISS — query DB
+  const user = await User.findById(id).select('-password').lean();
+  if (!user) return null;
+
+  // 3. Lưu vào cache với TTL 1 giờ
+  await redis.set(cacheKey, JSON.stringify(user), 'EX', 3600);
+
+  return user;
+}
+
+// ── Update user — phải invalidate cache ──
+async function updateUser(id, data) {
+  const user = await User.findByIdAndUpdate(id, data, { new: true }).select('-password');
+  if (!user) return null;
+
+  // Xóa cache cũ để lần sau sẽ lấy fresh data từ DB
+  await redis.del(`user:${id}`);
+
+  return user;
+}
+
+// ── Xóa user — phải xóa cache ──
+async function deleteUser(id) {
+  await User.findByIdAndDelete(id);
+  await redis.del(`user:${id}`);
+}
+
+// ── Cache danh sách (phức tạp hơn) ──
+async function getProductList({ page = 1, limit = 10, categoryId }) {
+  // Tạo cache key từ các params
+  const cacheKey = `products:page:${page}:limit:${limit}:cat:${categoryId || 'all'}`;
+
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  // Query DB
+  const result = await getProductsFromDB({ page, limit, categoryId });
+
+  // Cache danh sách với TTL ngắn hơn (5 phút) — thay đổi thường xuyên hơn
+  await redis.set(cacheKey, JSON.stringify(result), 'EX', 300);
+
+  return result;
+}
+
+// Khi có sản phẩm mới/bị xóa — xóa tất cả cache liên quan
+async function invalidateProductCache() {
+  const keys = await redis.keys('products:page:*');
+  if (keys.length > 0) {
+    await redis.del(...keys); // Xóa tất cả
+  }
+}</code></pre>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Cache Stampede (Thundering Herd)</div>
+        <p>
+          Khi cache expire, nhiều request đến cùng lúc đều query DB → DB bị quá tải.
+          Giải pháp: <strong>Stale-While-Revalidate</strong> (trả về data cũ trong khi refresh)
+          hoặc <strong>Mutex Lock</strong> (chỉ 1 request query DB, các request khác chờ cache).
+        </p>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>14.5 Cache Middleware cho Express</h2>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/cache.js</span><button class="copy-btn">Copy</button></div><code>// middleware/cache.js
+const redis = require('../lib/redis');
+
+/**
+ * Cache middleware cho GET requests
+ * @param {number} ttl - Thời gian cache tính bằng giây (default: 300 = 5 phút)
+ * @param {function} keyFn - Function tạo cache key (optional)
+ */
+function cacheMiddleware(ttl = 300, keyFn = null) {
+  return async (req, res, next) => {
+    // Chỉ cache GET requests
+    if (req.method !== 'GET') return next();
+
+    // Tạo cache key (có thể include user ID nếu cần per-user cache)
+    const cacheKey = keyFn
+      ? keyFn(req)
+      : `http:${req.path}:${JSON.stringify(req.query)}`;
+
+    try {
+      // Kiểm tra cache
+      const cached = await redis.get(cacheKey);
+
+      if (cached) {
+        // Cache HIT
+        const data = JSON.parse(cached);
+        res.setHeader('X-Cache', 'HIT');
+        res.setHeader('X-Cache-TTL', await redis.ttl(cacheKey));
+        return res.json(data);
+      }
+
+      // Cache MISS — ghi đè res.json để intercept response
+      res.setHeader('X-Cache', 'MISS');
+
+      const originalJson = res.json.bind(res);
+      res.json = async (data) => {
+        // Chỉ cache response thành công (status 2xx)
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          await redis.set(cacheKey, JSON.stringify(data), 'EX', ttl);
+        }
+        return originalJson(data);
+      };
+
+      next();
+
+    } catch (err) {
+      // Nếu Redis lỗi, vẫn cho request đi qua (graceful degradation)
+      console.error('Cache middleware error:', err.message);
+      next();
+    }
+  };
+}
+
+module.exports = { cacheMiddleware };</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Sử dụng cache middleware</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const { cacheMiddleware } = require('./middleware/cache');
+const redis = require('./lib/redis');
+const router = express.Router();
+
+// Cache 5 phút cho danh sách products
+router.get('/products', cacheMiddleware(300), async (req, res) => {
+  const products = await getProductsFromDB(req.query);
+  res.json(products);
+});
+
+// Cache 1 giờ cho chi tiết sản phẩm (ít thay đổi)
+router.get('/products/:id', cacheMiddleware(3600, req => `product:${req.params.id}`), async (req, res) => {
+  const product = await getProductById(req.params.id);
+  if (!product) return res.status(404).json({ error: 'Không tìm thấy' });
+  res.json(product);
+});
+
+// Khi update/delete — xóa cache liên quan
+router.put('/products/:id', async (req, res) => {
+  const product = await updateProduct(req.params.id, req.body);
+  // Invalidate cache
+  await redis.del(`product:${req.params.id}`);
+  await redis.del(`http:/products:${JSON.stringify({})}`);
+  res.json(product);
+});
+
+module.exports = router;</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>14.6 Session Store với Redis</h2>
+
+      <p>
+        Mặc định Express lưu sessions trong MemoryStore — bộ nhớ của Node process.
+        Khi restart server, tất cả sessions mất. Khi chạy nhiều server instances,
+        sessions không được chia sẻ. Redis giải quyết cả 2 vấn đề này.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>npm install express-session connect-redis</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js — Session với Redis</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const session = require('express-session');
+const { createClient } = require('redis');
+const RedisStore = require('connect-redis').default;
+
+const app = express();
+
+// Tạo Redis client riêng cho session store
+const redisClient = createClient({
+  url: process.env.REDIS_URL,
+});
+redisClient.connect().catch(console.error);
+
+// Cấu hình session với Redis store
+app.use(session({
+  store: new RedisStore({
+    client: redisClient,
+    prefix: 'sess:',          // Key prefix trong Redis
+    ttl: 86400,               // Session expire sau 24 giờ (giây)
+  }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,              // Không lưu lại nếu session không thay đổi
+  saveUninitialized: false,   // Không tạo session trống
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // Chỉ HTTPS trong prod
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 giờ (milliseconds)
+    sameSite: 'strict',
+  },
+  name: 'sid',               // Tên cookie (thay mặc định 'connect.sid')
+}));
+
+// Sử dụng session
+app.post('/login', async (req, res) => {
+  const user = await authenticateUser(req.body.email, req.body.password);
+  if (!user) return res.status(401).json({ error: 'Sai thông tin đăng nhập' });
+
+  // Lưu thông tin vào session (tự động persist vào Redis)
+  req.session.userId = user.id;
+  req.session.role = user.role;
+
+  // Regenerate session ID để tránh Session Fixation attack
+  req.session.regenerate((err) => {
+    if (err) return res.status(500).json({ error: 'Session error' });
+    req.session.userId = user.id;
+    req.session.role = user.role;
+    res.json({ message: 'Đăng nhập thành công', user: { id: user.id, name: user.name } });
+  });
+});
+
+app.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    res.clearCookie('sid');
+    res.json({ message: 'Đã đăng xuất' });
+  });
+});</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>14.7 Rate Limiting với Redis</h2>
+
+      <p>
+        Rate limiting giới hạn số request mỗi user/IP có thể thực hiện trong khoảng thời gian.
+        Bảo vệ API khỏi brute force, DoS, và abuse.
+      </p>
+
+      <div class="svg-diagram">
+        <svg viewBox="0 0 680 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-14b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <!-- IP -->
+          <rect x="10" y="55" width="90" height="40" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="55" y="72" text-anchor="middle" fill="#93c5fd" font-size="10" font-weight="600" font-family="Inter,sans-serif">IP: 1.2.3.4</text>
+          <text x="55" y="87" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Request</text>
+
+          <line x1="100" y1="75" x2="140" y2="75" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-14b)"/>
+
+          <!-- Middleware -->
+          <rect x="140" y="45" width="130" height="60" rx="6" fill="#2a1a3a" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="205" y="65" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="600" font-family="Inter,sans-serif">Rate Limiter</text>
+          <text x="205" y="80" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">INCR rl:1.2.3.4</text>
+          <text x="205" y="95" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Đếm: 47/100</text>
+
+          <line x1="270" y1="62" x2="330" y2="30" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-14b)"/>
+          <text x="290" y="40" fill="#22c55e" font-size="10" font-family="Inter,sans-serif">&lt; 100 → OK</text>
+
+          <line x1="270" y1="88" x2="330" y2="120" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arr-14b)"/>
+          <text x="278" y="118" fill="#fc8181" font-size="10" font-family="Inter,sans-serif">&gt;= 100 → 429</text>
+
+          <!-- Allow -->
+          <rect x="330" y="10" width="120" height="35" rx="6" fill="#0a3a14" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="390" y="32" text-anchor="middle" fill="#86efac" font-size="11" font-family="Inter,sans-serif">200 OK ✓</text>
+
+          <!-- Block -->
+          <rect x="330" y="105" width="180" height="35" rx="6" fill="#3a1a14" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="420" y="127" text-anchor="middle" fill="#fc8181" font-size="11" font-family="Inter,sans-serif">429 Too Many Requests ✗</text>
+
+          <!-- Redis -->
+          <rect x="480" y="50" width="110" height="50" rx="6" fill="#3a1a14" stroke="#dc382d" stroke-width="1.5"/>
+          <text x="535" y="73" text-anchor="middle" fill="#fc8181" font-size="11" font-weight="600" font-family="Inter,sans-serif">Redis</text>
+          <text x="535" y="90" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">rl:1.2.3.4 = 47</text>
+          <line x1="270" y1="70" x2="480" y2="70" stroke="#64748b" stroke-width="1" stroke-dasharray="3,2"/>
+        </svg>
+      </div>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/rateLimiter.js</span><button class="copy-btn">Copy</button></div><code>// middleware/rateLimiter.js
+const redis = require('../lib/redis');
+
+/**
+ * Rate limiter dùng Fixed Window Counter
+ * @param {number} maxRequests - Số request tối đa trong window
+ * @param {number} windowSecs - Thời gian window (giây)
+ * @param {string} prefix - Prefix cho Redis key
+ */
+function rateLimiter(maxRequests = 100, windowSecs = 60, prefix = 'rl') {
+  return async (req, res, next) => {
+    // Key theo IP (hoặc user ID nếu authenticated)
+    const identifier = req.user?.id || req.ip;
+    const key = `${prefix}:${identifier}`;
+
+    try {
+      // Pipeline: gộp 2 lệnh vào 1 round-trip
+      const pipeline = redis.pipeline();
+      pipeline.incr(key);          // Tăng counter
+      pipeline.ttl(key);           // Lấy TTL hiện tại
+      const results = await pipeline.exec();
+
+      const count = results[0][1];  // Kết quả INCR
+      const ttl = results[1][1];    // Kết quả TTL
+
+      // Nếu key mới (TTL = -1), đặt expire
+      if (ttl === -1) {
+        await redis.expire(key, windowSecs);
+      }
+
+      // Set headers để client biết limit
+      res.setHeader('X-RateLimit-Limit', maxRequests);
+      res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - count));
+      res.setHeader('X-RateLimit-Reset', Math.ceil(Date.now() / 1000) + (ttl > 0 ? ttl : windowSecs));
+
+      if (count > maxRequests) {
+        return res.status(429).json({
+          error: 'Quá nhiều request. Vui lòng thử lại sau.',
+          retryAfter: ttl > 0 ? ttl : windowSecs,
+        });
+      }
+
+      next();
+
+    } catch (err) {
+      // Nếu Redis lỗi, cho request đi qua (tránh block toàn bộ service)
+      console.error('Rate limiter error:', err.message);
+      next();
+    }
+  };
+}
+
+/**
+ * Sliding Window Rate Limiter — chính xác hơn Fixed Window
+ */
+function slidingWindowRateLimiter(maxRequests = 100, windowSecs = 60) {
+  return async (req, res, next) => {
+    const identifier = req.user?.id || req.ip;
+    const key = `sw:rl:${identifier}`;
+    const now = Date.now();
+    const windowStart = now - windowSecs * 1000;
+
+    try {
+      const pipeline = redis.pipeline();
+      // Xóa các timestamps cũ hơn window
+      pipeline.zremrangebyscore(key, 0, windowStart);
+      // Đếm requests trong window
+      pipeline.zcard(key);
+      // Thêm timestamp hiện tại
+      pipeline.zadd(key, now, `${now}-${Math.random()}`);
+      // Set TTL
+      pipeline.expire(key, windowSecs);
+
+      const results = await pipeline.exec();
+      const requestCount = results[1][1]; // ZCARD result
+
+      res.setHeader('X-RateLimit-Limit', maxRequests);
+      res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - requestCount - 1));
+
+      if (requestCount >= maxRequests) {
+        return res.status(429).json({
+          error: 'Rate limit exceeded',
+          retryAfter: windowSecs,
+        });
+      }
+
+      next();
+    } catch (err) {
+      console.error('Sliding window rate limiter error:', err.message);
+      next();
+    }
+  };
+}
+
+module.exports = { rateLimiter, slidingWindowRateLimiter };</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Áp dụng rate limiter</span><button class="copy-btn">Copy</button></div><code>const { rateLimiter, slidingWindowRateLimiter } = require('./middleware/rateLimiter');
+
+// Global rate limit — toàn bộ API
+app.use(rateLimiter(1000, 60)); // 1000 req/phút
+
+// Strict limit cho auth routes — chống brute force
+app.use('/api/auth', rateLimiter(5, 900, 'auth')); // 5 lần/15 phút
+
+// Per-user limit cho upload
+app.post('/api/upload', rateLimiter(20, 3600, 'upload')); // 20 uploads/giờ</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>14.8 Pub/Sub — Real-Time Events</h2>
+
+      <p>
+        Redis Pub/Sub cho phép một publisher gửi message đến nhiều subscribers.
+        Dùng để broadcast events khi có thay đổi — ví dụ: thông báo tất cả
+        server instances invalidate cache khi có update.
+      </p>
+
+      <div class="callout callout-note">
+        <div class="callout-title">📌 Quan trọng: Cần 2 Redis Connections</div>
+        <p>
+          Khi một Redis client đang ở chế độ subscribe, nó <strong>chỉ được dùng cho pub/sub</strong>,
+          không thể dùng cho các lệnh khác. Vì vậy cần tạo <strong>2 clients riêng</strong>:
+          1 cho pub/sub subscriber, 1 cho tất cả operations còn lại.
+        </p>
+      </div>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">lib/pubsub.js</span><button class="copy-btn">Copy</button></div><code>// lib/pubsub.js
+const Redis = require('ioredis');
+
+// Client riêng cho subscriber (không dùng cho operations khác)
+const subscriber = new Redis(process.env.REDIS_URL);
+const publisher = new Redis(process.env.REDIS_URL);
+
+// Subscribe vào channel
+subscriber.subscribe('cache:invalidate', 'user:update', 'order:status', (err, count) => {
+  if (err) console.error('Subscribe error:', err);
+  else console.log(`📡 Subscribed to ${count} channels`);
+});
+
+// Xử lý messages nhận được
+subscriber.on('message', async (channel, message) => {
+  console.log(`📨 [${channel}]:`, message);
+
+  if (channel === 'cache:invalidate') {
+    const { patterns } = JSON.parse(message);
+    // Xóa cache keys match pattern
+    for (const pattern of patterns) {
+      const keys = await redis.keys(pattern);
+      if (keys.length > 0) await redis.del(...keys);
+    }
+  }
+
+  if (channel === 'user:update') {
+    const { userId } = JSON.parse(message);
+    await redis.del(`user:${userId}`); // Invalidate user cache
+  }
+});
+
+// Publisher
+async function publishCacheInvalidation(patterns) {
+  await publisher.publish('cache:invalidate', JSON.stringify({ patterns }));
+}
+
+async function publishUserUpdate(userId) {
+  await publisher.publish('user:update', JSON.stringify({ userId }));
+}
+
+async function publishOrderStatus(orderId, status) {
+  await publisher.publish('order:status', JSON.stringify({ orderId, status }));
+}
+
+module.exports = { publishCacheInvalidation, publishUserUpdate, publishOrderStatus };</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Distributed cache invalidation</span><button class="copy-btn">Copy</button></div><code>// Khi update user trên bất kỳ server nào, broadcast cho tất cả servers
+const { publishUserUpdate } = require('./lib/pubsub');
+
+app.put('/api/users/:id', async (req, res) => {
+  const user = await updateUser(req.params.id, req.body);
+
+  // Broadcast cho tất cả server instances (kể cả server này)
+  // để invalidate cache user này
+  await publishUserUpdate(req.params.id);
+
+  res.json(user);
+});</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>14.9 Distributed Lock — Tránh Race Condition</h2>
+
+      <p>
+        Khi nhiều server instances cùng xử lý một job, race condition có thể xảy ra.
+        Distributed lock đảm bảo chỉ 1 instance thực sự xử lý tại một thời điểm.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">lib/lock.js</span><button class="copy-btn">Copy</button></div><code>// lib/lock.js — Distributed Lock với Redis
+const redis = require('./redis');
+const { randomBytes } = require('crypto');
+
+/**
+ * Thử lấy lock
+ * @param {string} resource - Tên resource cần lock (vd: 'order:123')
+ * @param {number} ttl - Thời gian lock tối đa (ms)
+ * @returns {string|null} - lockId nếu thành công, null nếu đang bị lock
+ */
+async function acquireLock(resource, ttl = 10000) {
+  const lockKey = `lock:${resource}`;
+  const lockId = randomBytes(16).toString('hex'); // Unique ID để xác nhận owner
+
+  // SET key value NX PX ttl
+  // NX = chỉ set nếu chưa tồn tại
+  // PX = expire tính bằng milliseconds
+  const result = await redis.set(lockKey, lockId, 'PX', ttl, 'NX');
+
+  if (result === 'OK') {
+    return lockId; // Lấy lock thành công
+  }
+  return null; // Lock đã bị giữ bởi instance khác
+}
+
+/**
+ * Giải phóng lock (chỉ nếu là owner)
+ */
+async function releaseLock(resource, lockId) {
+  const lockKey = `lock:${resource}`;
+
+  // Dùng Lua script để đảm bảo atomic: kiểm tra owner và xóa trong 1 bước
+  const luaScript = `
+    if redis.call("get", KEYS[1]) == ARGV[1] then
+      return redis.call("del", KEYS[1])
+    else
+      return 0
+    end
+  `;
+
+  const result = await redis.eval(luaScript, 1, lockKey, lockId);
+  return result === 1;
+}
+
+/**
+ * Wrapper tiện lợi — tự acquire và release
+ */
+async function withLock(resource, ttl, fn) {
+  const lockId = await acquireLock(resource, ttl);
+
+  if (!lockId) {
+    throw new Error(`Resource "${resource}" đang bị khóa. Thử lại sau.`);
+  }
+
+  try {
+    return await fn();
+  } finally {
+    await releaseLock(resource, lockId);
+  }
+}
+
+module.exports = { acquireLock, releaseLock, withLock };</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Sử dụng distributed lock</span><button class="copy-btn">Copy</button></div><code>const { withLock } = require('./lib/lock');
+
+// Xử lý payment — chỉ 1 instance được chạy cùng lúc cho cùng orderId
+app.post('/api/orders/:id/pay', async (req, res) => {
+  const { id: orderId } = req.params;
+
+  try {
+    const result = await withLock(`payment:${orderId}`, 30000, async () => {
+      // Kiểm tra order chưa được thanh toán
+      const order = await getOrder(orderId);
+      if (order.status !== 'PENDING') {
+        throw new Error('Order đã được xử lý');
+      }
+
+      // Xử lý thanh toán
+      const payment = await processPayment(order, req.body.paymentMethod);
+
+      // Update order status
+      await updateOrderStatus(orderId, 'PAID');
+
+      return payment;
+    });
+
+    res.json({ success: true, payment: result });
+
+  } catch (error) {
+    if (error.message.includes('đang bị khóa')) {
+      return res.status(409).json({ error: 'Đang xử lý, thử lại sau' });
+    }
+    res.status(400).json({ error: error.message });
+  }
+});</code></pre>
+
+      <!-- ============================================================ -->
+      <div class="summary">
+        <div class="summary-title">📋 Tóm tắt Chương 14</div>
+        <ul>
+          <li><strong>Redis</strong>: In-memory key-value store, nhanh hơn DB 100-1000x, hỗ trợ persistence</li>
+          <li><strong>5 data types</strong>: String (cache), Hash (object), List (queue), Set (unique), Sorted Set (leaderboard)</li>
+          <li><strong>Cache-Aside</strong>: Check cache → HIT return fast / MISS query DB → Store with TTL → Return</li>
+          <li><strong>TTL</strong>: Luôn đặt expire cho cache; invalidate khi data thay đổi (DEL key)</li>
+          <li><strong>Session Store</strong>: connect-redis thay thế MemoryStore, persist qua restarts và share giữa servers</li>
+          <li><strong>Rate Limiting</strong>: INCR + EXPIRE pattern, sliding window dùng Sorted Set chính xác hơn</li>
+          <li><strong>Pub/Sub</strong>: 2 clients riêng (subscriber + publisher), dùng cho cache invalidation broadcast</li>
+          <li><strong>Distributed Lock</strong>: SET NX PX + Lua script release, tránh race condition multi-server</li>
+          <li><strong>Graceful degradation</strong>: Nếu Redis lỗi, app vẫn hoạt động (chậm hơn nhưng không crash)</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">🏋️ Bài Tập Thực Hành</div>
+
+        <div class="exercise-item">
+          <div class="exercise-badge badge-easy">Dễ</div>
+          <div class="exercise-content">
+            <h4>Bài 1: Cache cho Product API</h4>
+            <p>
+              Implement cache cho <code>GET /api/products</code> và <code>GET /api/products/:id</code>.
+              Cache danh sách 5 phút, cache chi tiết 1 giờ. Khi có <code>POST</code>, <code>PUT</code>,
+              hoặc <code>DELETE</code> trên <code>/api/products</code>, tự động xóa cache danh sách.
+              Khi <code>PUT /api/products/:id</code>, xóa cache của sản phẩm đó.
+              Thêm header <code>X-Cache: HIT/MISS</code> vào response để debug.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <div class="exercise-badge badge-medium">Trung bình</div>
+          <div class="exercise-content">
+            <h4>Bài 2: Leaderboard Real-Time</h4>
+            <p>
+              Xây dựng leaderboard game với Sorted Set. Endpoints cần có:
+              <code>POST /scores</code> (nhận <code>{ userId, score }</code>, dùng ZADD nếu score cao hơn hiện tại),
+              <code>GET /leaderboard?page=1</code> (top 10 mỗi page, kèm rank và score),
+              <code>GET /leaderboard/me</code> (rank và score của user hiện tại),
+              <code>GET /leaderboard/around-me?range=5</code> (5 người trên và dưới user hiện tại trong bảng xếp hạng).
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <div class="exercise-badge badge-hard">Khó</div>
+          <div class="exercise-content">
+            <h4>Bài 3: Distributed Lock chống Double Payment</h4>
+            <p>
+              Implement hệ thống xử lý payment an toàn: (1) Tạo endpoint
+              <code>POST /api/orders/:id/pay</code> với distributed lock để tránh double payment;
+              (2) Lock key là <code>payment:{orderId}</code>, TTL 30 giây;
+              (3) Dùng Lua script để atomic release lock;
+              (4) Implement retry logic: nếu không lấy được lock, thử lại tối đa 3 lần với delay 500ms;
+              (5) Thêm idempotency key (<code>X-Idempotency-Key</code> header) — nếu cùng key được dùng lần 2,
+              trả về kết quả từ Redis cache thay vì xử lý lại.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="chapter-nav">
+        <a href="chapter13.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Chương trước</span>
+          <span class="chapter-nav-title">PostgreSQL và Prisma</span>
+        </a>
+        <a href="../part5/chapter15.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp →</span>
+          <span class="chapter-nav-title">REST API Best Practices</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

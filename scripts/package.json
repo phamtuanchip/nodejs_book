@@ -1,0 +1,15 @@
+{
+  "name": "nodejs-book-builder",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:pdf": "node build-pdf.js",
+    "build:epub": "node build-epub.js",
+    "build": "node build-pdf.js && node build-epub.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "epub-gen": "^0.1.0",
+    "puppeteer": "^22.0.0"
+  }
+}

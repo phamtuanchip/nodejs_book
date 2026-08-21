@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chương 16: Testing và Code Quality | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/style.css" />
+</head>
+<body class="layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">NodeJS Book</div>
+      <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-part-label">Phần 1 — Nền tảng</div>
+      <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet &amp; Web</a>
+      <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+      <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS &amp; Môi trường</a>
+      <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+      <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+      <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+      <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+      <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+      <div class="nav-part-label">Phần 3 — Express</div>
+      <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+      <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+      <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth &amp; Session</a>
+      <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating &amp; SSR</a>
+      <div class="nav-part-label">Phần 4 — Database</div>
+      <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB &amp; Mongoose</a>
+      <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL &amp; Prisma</a>
+      <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching &amp; Redis</a>
+      <div class="nav-part-label">Phần 5 — Nâng cao</div>
+      <a href="chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+      <a href="chapter16.html" class="nav-link active"><span class="chapter-num">16</span> Testing</a>
+      <a href="chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy &amp; DevOps</a>
+      <a href="chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless &amp; Cloud</a>
+    </div>
+  </nav>
+
+  <!-- ===== TOPBAR ===== -->
+  <div class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">Trang chủ</a>
+      <span>›</span>
+      <span>Phần 5</span>
+      <span>›</span>
+      <span>Chương 16</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon theme-toggle">🌙 Tối</button>
+    </div>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main">
+
+    <!-- Chapter Header -->
+    <div class="chapter-header">
+      <div class="part-badge">Phần 5 — Nâng Cao và Cloud</div>
+      <h1>Chương 16: Testing và Code Quality</h1>
+      <p class="lead">Code không có test là code bạn không dám sửa. Test không chỉ bắt bugs — chúng là tài liệu sống, là mạng lưới an toàn giúp bạn refactor tự tin. Chương này xây dựng test suite đầy đủ.</p>
+    </div>
+
+    <!-- Objectives -->
+    <div class="objectives">
+      <div class="objectives-title">🎯 Sau chương này bạn sẽ hiểu được</div>
+      <ul>
+        <li>Phân biệt Unit Test, Integration Test, E2E Test</li>
+        <li>Setup Jest và viết tests từ cơ bản đến nâng cao</li>
+        <li>Mock dependencies để test độc lập</li>
+        <li>Integration test HTTP endpoints với Supertest</li>
+        <li>Đo lường test coverage và đặt threshold</li>
+        <li>Cấu hình ESLint và Prettier cho code quality</li>
+      </ul>
+    </div>
+
+    <!-- ===== 16.1 Tại sao cần Test? ===== -->
+    <h2 id="s16-1">16.1 Tại sao cần Test?</h2>
+
+    <p>
+      Câu hỏi này nghe có vẻ đơn giản, nhưng nhiều lập trình viên vẫn bỏ qua testing vì áp lực deadline, hoặc vì nghĩ rằng "code nhỏ thì không cần test". Thực tế cho thấy điều ngược lại: <strong>chi phí sửa một bug tăng theo cấp số nhân theo thời gian bug tồn tại</strong>.
+    </p>
+
+    <h3>Chi phí của Bug theo thời gian</h3>
+
+    <p>
+      Một nghiên cứu nổi tiếng của IBM và nhiều tổ chức phần mềm lớn chỉ ra rằng chi phí sửa một bug phụ thuộc rất lớn vào thời điểm bug được phát hiện:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Giai đoạn phát hiện</th>
+          <th>Chi phí tương đối</th>
+          <th>Mô tả</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Trong lúc dev viết code</strong></td>
+          <td>1x</td>
+          <td>Dev tự phát hiện ngay, sửa trong vài phút</td>
+        </tr>
+        <tr>
+          <td><strong>Trong Code Review</strong></td>
+          <td>5x</td>
+          <td>Reviewer thấy, dev phải sửa lại và review lại</td>
+        </tr>
+        <tr>
+          <td><strong>QA / Testing team</strong></td>
+          <td>15x</td>
+          <td>QA tạo ticket, dev fix, QA retest — mất nhiều ngày</td>
+        </tr>
+        <tr>
+          <td><strong>Production (user phát hiện)</strong></td>
+          <td>100x+</td>
+          <td>Hotfix khẩn cấp, downtime, mất dữ liệu, thiệt hại thương hiệu</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Điều này có nghĩa là đầu tư thời gian viết tests ngay từ đầu là một quyết định kinh tế rất khôn ngoan. Một test suite tốt giúp bạn phát hiện bugs ngay khi chúng được tạo ra, với chi phí thấp nhất có thể.
+    </p>
+
+    <h3>Test là Documentation không thể Outdated</h3>
+
+    <p>
+      Tài liệu thông thường (README, wiki, comments) rất dễ bị lỗi thời. Khi code thay đổi, documentation thường không được cập nhật theo. Nhưng tests thì khác — nếu bạn thay đổi behavior của code mà không cập nhật tests, tests sẽ fail ngay lập tức. Điều này đảm bảo tests luôn phản ánh đúng hành vi thực tế của hệ thống.
+    </p>
+
+    <p>
+      Một bộ tests tốt có thể trả lời câu hỏi: <em>"Hàm này làm gì với input này?"</em> rõ ràng hơn bất kỳ comment nào. Khi một developer mới join team, đọc tests là cách nhanh nhất để hiểu codebase hoạt động như thế nào.
+    </p>
+
+    <h3>Refactor với Confidence</h3>
+
+    <p>
+      Đây là một trong những lợi ích lớn nhất của testing. Khi bạn có test suite đầy đủ, bạn có thể refactor code mạnh dạn hơn. Thay vì lo lắng "tôi đổi cái này liệu có break gì không?", bạn chỉ cần chạy tests và để chúng trả lời câu hỏi đó.
+    </p>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Mẹo</div>
+      <p>Một quy tắc vàng: <strong>không bao giờ refactor mà không có tests</strong>. Nếu cần refactor một module chưa có tests, hãy viết tests trước (characterization tests — tests mô tả behavior hiện tại), rồi mới refactor.</p>
+    </div>
+
+    <h3>Testing Pyramid</h3>
+
+    <p>
+      Martin Fowler đã phổ biến khái niệm <strong>Testing Pyramid</strong> — một mô hình hướng dẫn cách phân bổ các loại tests. Hình tháp có ba tầng, từ dưới lên trên:
+    </p>
+
+    <ul>
+      <li><strong>Unit Tests (tầng đáy)</strong>: Test từng hàm, module riêng lẻ. Nhanh, rẻ, nhiều nhất.</li>
+      <li><strong>Integration Tests (tầng giữa)</strong>: Test sự tương tác giữa các module, database, API. Chậm hơn, ít hơn.</li>
+      <li><strong>E2E Tests (đỉnh)</strong>: Test toàn bộ luồng từ UI đến database. Chậm nhất, đắt nhất, ít nhất.</li>
+    </ul>
+
+    <div class="svg-diagram">
+      <svg viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+        <defs>
+          <marker id="arr-16a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#64748b" />
+          </marker>
+        </defs>
+
+        <!-- Background label -->
+        <text x="300" y="28" text-anchor="middle" font-family="Inter,sans-serif" font-size="15" font-weight="600" fill="#94a3b8" letter-spacing="1">Testing Pyramid</text>
+
+        <!-- Bottom layer — Unit Tests -->
+        <polygon points="60,300 540,300 430,215 170,215" fill="#1a3a24" stroke="#22c55e" stroke-width="2" rx="0" />
+        <text x="300" y="262" text-anchor="middle" font-family="Inter,sans-serif" font-size="16" font-weight="700" fill="#86efac">Unit Tests</text>
+        <text x="300" y="283" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="#86efac" opacity="0.8">Nhiều • Nhanh • Rẻ</text>
+
+        <!-- Middle layer — Integration Tests -->
+        <polygon points="170,215 430,215 360,140 240,140" fill="#3a2a14" stroke="#f59e0b" stroke-width="2" />
+        <text x="300" y="182" text-anchor="middle" font-family="Inter,sans-serif" font-size="15" font-weight="700" fill="#fcd34d">Integration Tests</text>
+        <text x="300" y="200" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="#fcd34d" opacity="0.8">Vừa • Vừa</text>
+
+        <!-- Top layer — E2E Tests -->
+        <polygon points="240,140 360,140 300,65" fill="#3a1a1a" stroke="#ef4444" stroke-width="2" />
+        <text x="300" y="108" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="700" fill="#fca5a5">E2E Tests</text>
+        <text x="300" y="124" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#fca5a5" opacity="0.8">Ít • Chậm • Đắt</text>
+
+        <!-- Side labels left -->
+        <text x="50" y="108" text-anchor="end" font-family="Inter,sans-serif" font-size="13" fill="#ef4444" font-weight="600">~10%</text>
+        <line x1="55" y1="104" x2="235" y2="120" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-16a)" />
+
+        <text x="50" y="182" text-anchor="end" font-family="Inter,sans-serif" font-size="13" fill="#f59e0b" font-weight="600">~20%</text>
+        <line x1="55" y1="178" x2="165" y2="185" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-16a)" />
+
+        <text x="50" y="262" text-anchor="end" font-family="Inter,sans-serif" font-size="13" fill="#22c55e" font-weight="600">~70%</text>
+        <line x1="55" y1="258" x2="108" y2="260" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-16a)" />
+      </svg>
+    </div>
+
+    <p>
+      Lý do tỉ lệ này được khuyến nghị: Unit tests cung cấp phản hồi nhanh nhất (chạy trong mili-giây), dễ debug nhất khi fail, và ít tốn kém nhất để viết và maintain. E2E tests thì ngược lại — chạy chậm (có thể mất nhiều phút), khó debug, và dễ bị flaky (đôi khi pass đôi khi fail không có lý do rõ ràng).
+    </p>
+
+    <div class="callout callout-note">
+      <div class="callout-title">📌 Ghi nhớ</div>
+      <p>Testing pyramid chỉ là hướng dẫn, không phải quy tắc cứng nhắc. Tùy thuộc vào dự án, đôi khi tầng integration tests có thể chiếm tỉ lệ lớn hơn (ví dụ như các API-heavy backends). Mục tiêu là có <em>đủ</em> tests ở mỗi tầng để đảm bảo độ tin cậy.</p>
+    </div>
+
+    <!-- ===== 16.2 Setup Jest ===== -->
+    <h2 id="s16-2">16.2 Setup Jest</h2>
+
+    <p>
+      <strong>Jest</strong> là testing framework phổ biến nhất trong hệ sinh thái JavaScript/NodeJS, được phát triển bởi Meta (Facebook). Jest có đầy đủ mọi thứ cần thiết trong một package: test runner, assertion library, mocking, và coverage reporting — không cần cài thêm nhiều packages khác nhau như với Mocha/Chai/Sinon.
+    </p>
+
+    <h3>Cài đặt</h3>
+
+<pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">terminal</span><button class="copy-btn">Copy</button></div><code># Cài Jest và Supertest (dùng cho integration tests)
+npm install --save-dev jest supertest
+
+# Nếu dùng TypeScript
+npm install --save-dev ts-jest @types/jest
+
+# Kiểm tra version
+npx jest --version</code></pre>
+
+    <h3>Cấu hình npm scripts</h3>
+
+    <p>
+      Thêm các scripts vào <code>package.json</code> để có thể chạy tests theo nhiều mode khác nhau:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package.json</span><button class="copy-btn">Copy</button></div><code>{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --forceExit"
+  }
+}</code></pre>
+
+    <p>Giải thích từng script:</p>
+    <ul>
+      <li><code>jest</code>: Chạy tất cả tests một lần rồi thoát.</li>
+      <li><code>jest --watch</code>: Chế độ watch — tự động re-run tests khi file thay đổi. Rất hữu ích khi đang phát triển.</li>
+      <li><code>jest --coverage</code>: Chạy tests và sinh báo cáo coverage.</li>
+      <li><code>jest --ci --coverage --forceExit</code>: Mode dùng cho CI/CD. <code>--ci</code> tắt interactive mode, <code>--forceExit</code> đảm bảo process thoát sau khi tests xong (quan trọng khi có database connections chưa đóng).</li>
+    </ul>
+
+    <h3>jest.config.js</h3>
+
+    <p>
+      File cấu hình Jest cho phép bạn tùy chỉnh nhiều thứ — từ test environment, file patterns, đến coverage thresholds:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">jest.config.js</span><button class="copy-btn">Copy</button></div><code>module.exports = {
+  // Environment: 'node' cho backend (mặc định), 'jsdom' cho browser
+  testEnvironment: 'node',
+
+  // Pattern để tìm test files
+  testMatch: [
+    '**/tests/**/*.test.js',
+    '**/__tests__/**/*.js'
+  ],
+
+  // Các file được tính vào coverage report
+  collectCoverageFrom: [
+    'src/**/*.js',
+    '!src/index.js',         // Exclude entry point
+    '!**/node_modules/**'
+  ],
+
+  // Ngưỡng coverage tối thiểu — build fail nếu dưới ngưỡng
+  coverageThresholds: {
+    global: {
+      branches: 70,
+      functions: 75,
+      lines: 75,
+      statements: 75
+    }
+  },
+
+  // File chạy trước khi test suite bắt đầu (setup DB, global mocks...)
+  setupFilesAfterFramework: ['./tests/setup.js'],
+
+  // Verbose output để dễ đọc
+  verbose: true
+};</code></pre>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠️ Cảnh báo</div>
+      <p>Đặt <code>coverageThresholds</code> quá cao (ví dụ 100%) từ đầu có thể gây ra anti-pattern "test chỉ để đạt con số" thay vì test có nghĩa. Bắt đầu với 70-75% và tăng dần là chiến lược hợp lý.</p>
+    </div>
+
+    <h3>Cấu trúc thư mục Tests</h3>
+
+    <p>
+      Tổ chức thư mục tests rõ ràng giúp dễ tìm và maintain. Quy ước phổ biến nhất là tách riêng unit tests và integration tests:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">Text</span><span class="code-filename">project structure</span><button class="copy-btn">Copy</button></div><code>project/
+├── src/
+│   ├── app.js              # Express app (export, không listen)
+│   ├── index.js            # Entry point (gọi app.listen)
+│   ├── utils/
+│   │   └── format.js
+│   ├── services/
+│   │   ├── emailService.js
+│   │   └── userService.js
+│   ├── models/
+│   │   └── User.js
+│   └── routes/
+│       └── auth.js
+└── tests/
+    ├── setup.js            # Global setup/teardown
+    ├── helpers/
+    │   └── testDb.js       # DB helper cho integration tests
+    ├── unit/
+    │   ├── format.test.js
+    │   ├── emailService.test.js
+    │   └── userService.test.js
+    └── integration/
+        ├── auth.test.js
+        └── posts.test.js</code></pre>
+
+    <p>
+      Lưu ý quan trọng: file <code>src/app.js</code> nên <strong>export</strong> Express app mà không gọi <code>app.listen()</code>. File <code>src/index.js</code> mới gọi <code>listen()</code>. Điều này giúp Supertest có thể import app và tự quản lý port trong quá trình test.
+    </p>
+
+    <!-- ===== 16.3 Unit Testing cơ bản ===== -->
+    <h2 id="s16-3">16.3 Unit Testing Cơ Bản</h2>
+
+    <p>
+      Unit test kiểm tra từng đơn vị code nhỏ nhất (thường là một hàm) một cách độc lập. Mục tiêu là: <strong>với input X, hàm có trả về output Y đúng như mong đợi không?</strong> Unit tests không cần database, không cần network — chỉ cần logic của hàm đó.
+    </p>
+
+    <h3>Jest Matchers — Các phép kiểm tra phổ biến</h3>
+
+    <p>Jest cung cấp rất nhiều <em>matchers</em> — các hàm kiểm tra (assertion) có cú pháp đọc gần như tiếng Anh tự nhiên:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Matcher</th>
+          <th>Ý nghĩa</th>
+          <th>Ví dụ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>toBe(val)</code></td>
+          <td>So sánh strict equality (===)</td>
+          <td><code>expect(1 + 1).toBe(2)</code></td>
+        </tr>
+        <tr>
+          <td><code>toEqual(val)</code></td>
+          <td>So sánh deep equality (cho objects/arrays)</td>
+          <td><code>expect({a:1}).toEqual({a:1})</code></td>
+        </tr>
+        <tr>
+          <td><code>toContain(item)</code></td>
+          <td>Array/string chứa item</td>
+          <td><code>expect([1,2,3]).toContain(2)</code></td>
+        </tr>
+        <tr>
+          <td><code>toHaveLength(n)</code></td>
+          <td>Array/string có độ dài n</td>
+          <td><code>expect('abc').toHaveLength(3)</code></td>
+        </tr>
+        <tr>
+          <td><code>toThrow(msg)</code></td>
+          <td>Hàm throw error</td>
+          <td><code>expect(() =&gt; fn()).toThrow('err')</code></td>
+        </tr>
+        <tr>
+          <td><code>toBeTruthy()</code></td>
+          <td>Giá trị truthy</td>
+          <td><code>expect('hello').toBeTruthy()</code></td>
+        </tr>
+        <tr>
+          <td><code>toBeFalsy()</code></td>
+          <td>Giá trị falsy</td>
+          <td><code>expect(null).toBeFalsy()</code></td>
+        </tr>
+        <tr>
+          <td><code>toBeNull()</code></td>
+          <td>Giá trị null</td>
+          <td><code>expect(val).toBeNull()</code></td>
+        </tr>
+        <tr>
+          <td><code>toBeUndefined()</code></td>
+          <td>Giá trị undefined</td>
+          <td><code>expect(val).toBeUndefined()</code></td>
+        </tr>
+        <tr>
+          <td><code>toBeGreaterThan(n)</code></td>
+          <td>Số lớn hơn n</td>
+          <td><code>expect(5).toBeGreaterThan(3)</code></td>
+        </tr>
+        <tr>
+          <td><code>toMatch(regex)</code></td>
+          <td>String khớp regex/substring</td>
+          <td><code>expect('hello').toMatch(/ell/)</code></td>
+        </tr>
+        <tr>
+          <td><code>toHaveProperty(key)</code></td>
+          <td>Object có property</td>
+          <td><code>expect(obj).toHaveProperty('id')</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Bạn có thể thêm <code>.not</code> vào trước bất kỳ matcher nào để đảo ngược: <code>expect(val).not.toBeNull()</code>.
+    </p>
+
+    <h3>Ví dụ thực tế: Unit Test cho Utility Functions</h3>
+
+    <p>
+      Hãy bắt đầu với một module utility đơn giản gồm ba hàm: format tiền tệ, tạo slug từ text, và validate email:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">src/utils/format.js</span><button class="copy-btn">Copy</button></div><code>// Hàm format tiền tệ Việt Nam
+const formatCurrency = (amount) => {
+  if (amount &lt; 0) throw new Error('Số tiền không được âm');
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(amount);
+};
+
+// Hàm tạo slug từ text (kể cả tiếng Việt có dấu)
+const slugify = (text) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')   // Xóa dấu
+    .replace(/[^a-z0-9]+/g, '-')       // Thay ký tự đặc biệt bằng gạch ngang
+    .replace(/^-|-$/g, '');             // Xóa gạch ngang đầu/cuối
+};
+
+// Hàm validate email
+const validateEmail = (email) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+module.exports = { formatCurrency, slugify, validateEmail };</code></pre>
+
+    <p>
+      Bây giờ viết tests cho module này. Mỗi hàm sẽ có một <code>describe</code> block riêng, bên trong là các <code>it</code> (hoặc <code>test</code>) blocks cho từng case:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">tests/unit/format.test.js</span><button class="copy-btn">Copy</button></div><code>const { formatCurrency, slugify, validateEmail } = require('../../src/utils/format');
+
+// describe() nhóm các tests liên quan lại với nhau
+describe('formatCurrency', () => {
+  it('formats VND correctly', () => {
+    // toMatch() cho phép kiểm tra string chứa pattern
+    expect(formatCurrency(1000000)).toMatch(/1\.000\.000/);
+  });
+
+  it('handles zero', () => {
+    expect(formatCurrency(0)).toMatch(/0/);
+  });
+
+  it('throws for negative values', () => {
+    // Khi test hàm throw, phải bọc trong arrow function
+    expect(() => formatCurrency(-100)).toThrow('Số tiền không được âm');
+  });
+});
+
+describe('slugify', () => {
+  it('converts Vietnamese text to slug', () => {
+    expect(slugify('Xin chào thế giới')).toBe('xin-chao-the-gioi');
+  });
+
+  it('handles special characters', () => {
+    expect(slugify('Hello World!')).toBe('hello-world');
+  });
+
+  it('removes leading/trailing dashes', () => {
+    expect(slugify('  hello  ')).toBe('hello');
+  });
+
+  it('handles numbers in text', () => {
+    expect(slugify('Chapter 16 Testing')).toBe('chapter-16-testing');
+  });
+});
+
+describe('validateEmail', () => {
+  it('validates correct email', () => {
+    expect(validateEmail('user@example.com')).toBe(true);
+    expect(validateEmail('name.last@domain.org')).toBe(true);
+  });
+
+  it('rejects invalid email', () => {
+    expect(validateEmail('not-an-email')).toBe(false);
+    expect(validateEmail('missing@tld')).toBe(false);
+    expect(validateEmail('@domain.com')).toBe(false);
+    expect(validateEmail('')).toBe(false);
+  });
+});</code></pre>
+
+    <h3>Lifecycle Hooks: beforeEach / afterEach / beforeAll / afterAll</h3>
+
+    <p>
+      Jest cung cấp các hàm <em>lifecycle hooks</em> để chạy code trước/sau tests. Hiểu rõ sự khác biệt giữa chúng rất quan trọng:
+    </p>
+
+    <ul>
+      <li><code>beforeAll(fn)</code>: Chạy <strong>một lần</strong> trước tất cả tests trong describe block. Dùng cho setup tốn kém như kết nối database.</li>
+      <li><code>afterAll(fn)</code>: Chạy <strong>một lần</strong> sau tất cả tests. Dùng cho cleanup như đóng kết nối database.</li>
+      <li><code>beforeEach(fn)</code>: Chạy <strong>trước mỗi</strong> test. Dùng cho reset state, tạo test data mới.</li>
+      <li><code>afterEach(fn)</code>: Chạy <strong>sau mỗi</strong> test. Dùng cho cleanup state, clear mocks.</li>
+    </ul>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">tests/unit/lifecycle-example.test.js</span><button class="copy-btn">Copy</button></div><code>describe('Lifecycle Hooks Demo', () => {
+  let db;
+  let user;
+
+  // Chạy 1 lần — kết nối database (ví dụ concept)
+  beforeAll(async () => {
+    db = await createTestDatabase();
+    console.log('DB connected');
+  });
+
+  // Chạy trước MỖI test — tạo data sạch
+  beforeEach(async () => {
+    user = await db.users.create({
+      name: 'Test User',
+      email: 'test@example.com'
+    });
+  });
+
+  // Chạy sau MỖI test — dọn dẹp data
+  afterEach(async () => {
+    await db.users.deleteMany({});
+    jest.clearAllMocks(); // Reset tất cả mock function calls
+  });
+
+  // Chạy 1 lần sau tất cả tests — đóng kết nối
+  afterAll(async () => {
+    await db.close();
+  });
+
+  it('test 1 — user tồn tại', () => {
+    expect(user).toBeDefined();
+    expect(user.email).toBe('test@example.com');
+  });
+
+  it('test 2 — user được tạo mới (không bị ảnh hưởng từ test 1)', () => {
+    // Mỗi test có user riêng nhờ beforeEach
+    expect(user.name).toBe('Test User');
+  });
+});</code></pre>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Mẹo</div>
+      <p>Dùng <code>beforeEach</code> thay vì <code>beforeAll</code> khi muốn đảm bảo mỗi test bắt đầu với state hoàn toàn sạch (test isolation). Tests phụ thuộc vào nhau là một anti-pattern nguy hiểm — thứ tự chạy tests có thể thay đổi.</p>
+    </div>
+
+    <!-- ===== 16.4 Mocking với Jest ===== -->
+    <h2 id="s16-4">16.4 Mocking với Jest</h2>
+
+    <p>
+      Một trong những thách thức lớn nhất khi viết unit tests là <strong>dependencies</strong>. Hàm của bạn có thể gọi database, gửi email, gọi API bên ngoài — những thứ này không nên thực sự chạy trong unit tests (chậm, không ổn định, có side effects). Đây là lúc <strong>mocking</strong> phát huy tác dụng.
+    </p>
+
+    <p>Mocking là kỹ thuật thay thế một dependency thật bằng một "giả" (mock) có behavior do bạn kiểm soát. Jest có ba cơ chế mocking chính:</p>
+
+    <ul>
+      <li><strong><code>jest.fn()</code></strong>: Tạo một mock function từ đầu.</li>
+      <li><strong><code>jest.spyOn(obj, 'method')</code></strong>: "Spy" lên một method có sẵn, theo dõi nó được gọi như thế nào mà không cần thay thế behavior (hoặc có thể override).</li>
+      <li><strong><code>jest.mock('module')</code></strong>: Mock toàn bộ một module — mọi export của module đó đều trở thành mock function tự động.</li>
+    </ul>
+
+    <h3>Ví dụ 1: Mock External Service (Nodemailer)</h3>
+
+    <p>
+      Giả sử có hàm <code>sendWelcomeEmail</code> dùng Nodemailer để gửi email. Trong unit test, ta không muốn gửi email thật — ta chỉ muốn kiểm tra hàm gọi nodemailer đúng cách không:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">src/services/emailService.js</span><button class="copy-btn">Copy</button></div><code>const nodemailer = require('nodemailer');
+
+const sendWelcomeEmail = async (user) => {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: 587,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+
+  await transporter.sendMail({
+    from: '"MyApp" &lt;noreply@myapp.com&gt;',
+    to: user.email,
+    subject: `Chào mừng ${user.name}!`,
+    html: `&lt;h1&gt;Xin chào ${user.name}&lt;/h1&gt;&lt;p&gt;Cảm ơn bạn đã đăng ký.&lt;/p&gt;`
+  });
+};
+
+module.exports = { sendWelcomeEmail };</code></pre>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">tests/unit/emailService.test.js</span><button class="copy-btn">Copy</button></div><code>// jest.mock() PHẢI được gọi trước khi require module cần test
+jest.mock('nodemailer');
+
+const nodemailer = require('nodemailer');
+const { sendWelcomeEmail } = require('../../src/services/emailService');
+
+describe('sendWelcomeEmail', () => {
+  let mockSendMail;
+
+  beforeEach(() => {
+    // Tạo mock function cho sendMail
+    // mockResolvedValue() — mock async function trả về resolved Promise
+    mockSendMail = jest.fn().mockResolvedValue({ messageId: 'test-id' });
+
+    // Khi code gọi nodemailer.createTransport(), nó nhận object giả
+    nodemailer.createTransport.mockReturnValue({
+      sendMail: mockSendMail
+    });
+  });
+
+  afterEach(() => {
+    // Reset tất cả mock sau mỗi test để tránh ảnh hưởng chéo
+    jest.clearAllMocks();
+  });
+
+  it('sends email to correct recipient', async () => {
+    const user = { name: 'Alice', email: 'alice@test.com' };
+    await sendWelcomeEmail(user);
+
+    // Kiểm tra sendMail được gọi đúng 1 lần
+    expect(mockSendMail).toHaveBeenCalledTimes(1);
+
+    // expect.objectContaining() — kiểm tra object có các field này (có thể có thêm field khác)
+    expect(mockSendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'alice@test.com',
+        subject: 'Chào mừng Alice!'
+      })
+    );
+  });
+
+  it('propagates send errors', async () => {
+    // mockRejectedValue() — mock async function throw error
+    mockSendMail.mockRejectedValue(new Error('SMTP error'));
+
+    // Test async throw: dùng await + expect().rejects.toThrow()
+    await expect(
+      sendWelcomeEmail({ name: 'Bob', email: 'bob@test.com' })
+    ).rejects.toThrow('SMTP error');
+  });
+
+  it('creates transporter with correct config', async () => {
+    const user = { name: 'Alice', email: 'alice@test.com' };
+    await sendWelcomeEmail(user);
+
+    expect(nodemailer.createTransport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: process.env.SMTP_HOST,
+        port: 587
+      })
+    );
+  });
+});</code></pre>
+
+    <h3>Ví dụ 2: Mock Database Model</h3>
+
+    <p>
+      Trong unit tests cho service layer, ta không muốn thực sự kết nối MongoDB. Thay vào đó, ta mock Mongoose model để kiểm soát data trả về:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">tests/unit/userService.test.js</span><button class="copy-btn">Copy</button></div><code>// Mock toàn bộ module User model
+jest.mock('../../src/models/User');
+
+const User = require('../../src/models/User');
+const userService = require('../../src/services/userService');
+
+describe('userService', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('getUserById', () => {
+    it('returns user when found', async () => {
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439011',
+        name: 'Alice',
+        email: 'alice@test.com'
+      };
+
+      // Khi code gọi User.findById(), nó nhận mockUser thay vì query DB thật
+      User.findById.mockResolvedValue(mockUser);
+
+      const result = await userService.getUserById('507f1f77bcf86cd799439011');
+
+      expect(result).toEqual(mockUser);
+      expect(User.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+    });
+
+    it('throws when user not found', async () => {
+      User.findById.mockResolvedValue(null);
+
+      await expect(userService.getUserById('999')).rejects.toThrow('User not found');
+    });
+  });
+
+  describe('updateUser', () => {
+    it('updates user fields', async () => {
+      const mockUpdatedUser = {
+        _id: '123',
+        name: 'Alice Updated',
+        email: 'alice@test.com'
+      };
+
+      User.findByIdAndUpdate.mockResolvedValue(mockUpdatedUser);
+
+      const result = await userService.updateUser('123', { name: 'Alice Updated' });
+
+      expect(result).toEqual(mockUpdatedUser);
+      expect(User.findByIdAndUpdate).toHaveBeenCalledWith(
+        '123',
+        { name: 'Alice Updated' },
+        { new: true, runValidators: true }
+      );
+    });
+  });
+});</code></pre>
+
+    <h3>jest.spyOn — Theo dõi mà không thay thế</h3>
+
+    <p>
+      Đôi khi bạn chỉ muốn theo dõi xem một method có được gọi không, mà không cần thay đổi behavior của nó. <code>jest.spyOn()</code> cho phép điều này:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">tests/unit/spy-example.test.js</span><button class="copy-btn">Copy</button></div><code>const logger = require('../../src/utils/logger');
+
+describe('Spy Example', () => {
+  it('logs error when operation fails', async () => {
+    // Spy lên logger.error — không thay đổi behavior
+    const logSpy = jest.spyOn(logger, 'error');
+
+    // Thực thi logic gây ra error...
+    await someServiceThatLogs();
+
+    // Kiểm tra logger.error đã được gọi
+    expect(logSpy).toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Error:'));
+
+    // Restore method về implementation thật
+    logSpy.mockRestore();
+  });
+});</code></pre>
+
+    <div class="callout callout-note">
+      <div class="callout-title">📌 Ghi nhớ</div>
+      <p>Luôn gọi <code>jest.clearAllMocks()</code> trong <code>afterEach</code> để reset mock call counts và implementations. Nếu không, mock state từ test trước sẽ "rò rỉ" sang test sau, gây ra kết quả không đoán trước được.</p>
+    </div>
+
+    <!-- ===== 16.5 Integration Testing với Supertest ===== -->
+    <h2 id="s16-5">16.5 Integration Testing với Supertest</h2>
+
+    <p>
+      Integration tests kiểm tra sự phối hợp giữa nhiều thành phần: routes, middleware, service, và database. Thay vì mock mọi thứ, integration tests sử dụng một test database thật (hoặc in-memory database) để đảm bảo tất cả các thành phần hoạt động đúng khi kết hợp với nhau.
+    </p>
+
+    <p>
+      <strong>Supertest</strong> là thư viện cho phép test HTTP endpoints mà không cần start một HTTP server thật — nó tự xử lý việc binding port, gửi request, và nhận response.
+    </p>
+
+    <h3>Global Test Setup</h3>
+
+    <p>
+      File <code>tests/setup.js</code> được chạy một lần cho toàn bộ test suite — đây là nơi kết nối và cleanup database:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">tests/setup.js</span><button class="copy-btn">Copy</button></div><code>const mongoose = require('mongoose');
+
+// Chạy một lần trước TẤT CẢ test files
+beforeAll(async () => {
+  const uri = process.env.TEST_MONGODB_URI || 'mongodb://localhost:27017/testdb';
+  await mongoose.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  });
+});
+
+// Chạy sau MỖI test — xóa data để tests độc lập nhau
+afterEach(async () => {
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    await collections[key].deleteMany({});
+  }
+});
+
+// Chạy một lần sau TẤT CẢ test files
+afterAll(async () => {
+  await mongoose.connection.close();
+});</code></pre>
+
+    <h3>Integration Test cho Auth Routes</h3>
+
+    <p>
+      Đây là ví dụ điển hình về integration test: test toàn bộ luồng đăng ký, đăng nhập, và truy cập protected route:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">tests/integration/auth.test.js</span><button class="copy-btn">Copy</button></div><code>const request = require('supertest');
+const app = require('../../src/app');
+
+describe('Auth Routes', () => {
+
+  // ===== POST /api/v1/auth/register =====
+  describe('POST /api/v1/auth/register', () => {
+    it('should create user with valid data', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'Alice Nguyen',
+          email: 'alice@test.com',
+          password: 'SecurePass123!'
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('token');
+
+      // Password KHÔNG được trả về trong response
+      expect(res.body.data).not.toHaveProperty('password');
+      expect(res.body.data.user.email).toBe('alice@test.com');
+    });
+
+    it('should fail with missing required fields', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({ email: 'test@test.com' }); // Thiếu name và password
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toBeDefined();
+    });
+
+    it('should fail with invalid email format', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'Test User',
+          email: 'not-an-email',
+          password: 'Password123!'
+        });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should fail with duplicate email', async () => {
+      const userData = {
+        name: 'Bob',
+        email: 'bob@test.com',
+        password: 'Password123!'
+      };
+
+      // Đăng ký lần 1 — thành công
+      await request(app).post('/api/v1/auth/register').send(userData);
+
+      // Đăng ký lần 2 với cùng email — phải fail
+      const res = await request(app).post('/api/v1/auth/register').send(userData);
+
+      expect(res.statusCode).toBe(409);
+      expect(res.body.error.code).toBe('EMAIL_ALREADY_EXISTS');
+    });
+  });
+
+  // ===== POST /api/v1/auth/login =====
+  describe('POST /api/v1/auth/login', () => {
+    // Tạo user trước mỗi test trong describe block này
+    beforeEach(async () => {
+      await request(app).post('/api/v1/auth/register').send({
+        name: 'Alice',
+        email: 'alice@test.com',
+        password: 'Password123!'
+      });
+    });
+
+    it('should login with correct credentials', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'alice@test.com', password: 'Password123!' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data).toHaveProperty('token');
+      expect(typeof res.body.data.token).toBe('string');
+    });
+
+    it('should fail with wrong password', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'alice@test.com', password: 'wrongpassword' });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should fail with non-existent email', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'nobody@test.com', password: 'Password123!' });
+
+      expect(res.statusCode).toBe(401);
+    });
+  });
+
+  // ===== GET /api/v1/users/me (Protected Route) =====
+  describe('GET /api/v1/users/me', () => {
+    it('should return current user with valid token', async () => {
+      // Setup: đăng ký để lấy token
+      const registerRes = await request(app)
+        .post('/api/v1/auth/register')
+        .send({ name: 'Alice', email: 'alice@test.com', password: 'Password123!' });
+
+      const token = registerRes.body.data.token;
+
+      // Dùng token để gọi protected route
+      const res = await request(app)
+        .get('/api/v1/users/me')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.email).toBe('alice@test.com');
+      expect(res.body.data).not.toHaveProperty('password');
+    });
+
+    it('should fail without token', async () => {
+      const res = await request(app).get('/api/v1/users/me');
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('should fail with invalid/expired token', async () => {
+      const res = await request(app)
+        .get('/api/v1/users/me')
+        .set('Authorization', 'Bearer invalid.token.here');
+
+      expect(res.statusCode).toBe(401);
+    });
+  });
+});</code></pre>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Mẹo</div>
+      <p>Khi viết integration tests, hãy test theo <strong>user stories</strong>: "Khi user đăng ký với email hợp lệ, hệ thống tạo account và trả về token". Điều này giúp tests có ý nghĩa business và dễ hiểu hơn.</p>
+    </div>
+
+    <!-- ===== 16.6 Test Coverage ===== -->
+    <h2 id="s16-6">16.6 Test Coverage</h2>
+
+    <p>
+      Test coverage (độ bao phủ test) đo lường phần trăm code đã được tests "chạm tới". Đây là metric quan trọng nhưng thường bị hiểu sai. Coverage cao không đảm bảo code chất lượng — một test chạy qua code mà không assert gì cũng tính vào coverage.
+    </p>
+
+    <h3>Các loại Coverage Metrics</h3>
+
+    <p>Jest (dùng Istanbul/nyc bên dưới) theo dõi 4 loại metrics:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Ý nghĩa</th>
+          <th>Ví dụ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Statements</strong></td>
+          <td>% câu lệnh đã được thực thi</td>
+          <td><code>const x = 1;</code> là 1 statement</td>
+        </tr>
+        <tr>
+          <td><strong>Branches</strong></td>
+          <td>% nhánh rẽ đã được test (if/else, ternary, switch)</td>
+          <td><code>if (x) {...} else {...}</code> có 2 branches</td>
+        </tr>
+        <tr>
+          <td><strong>Functions</strong></td>
+          <td>% hàm đã được gọi ít nhất một lần</td>
+          <td>Mỗi function/arrow function được đếm</td>
+        </tr>
+        <tr>
+          <td><strong>Lines</strong></td>
+          <td>% dòng code đã được thực thi</td>
+          <td>Giống statements nhưng tính theo dòng</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Trong 4 metrics, <strong>Branches</strong> thường là khó đạt nhất vì mỗi điều kiện if/else tạo ra 2 nhánh. Nếu tests chỉ test happy path mà bỏ qua error cases, branches coverage sẽ thấp.
+    </p>
+
+    <h3>Sinh và đọc Coverage Report</h3>
+
+<pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">terminal</span><button class="copy-btn">Copy</button></div><code># Chạy tests với coverage report
+npx jest --coverage
+
+# Output trong terminal:
+# -----------------------------------------------------------------------
+# File                  | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines
+# -----------------------------------------------------------------------
+# src/utils/format.js   |   95.23 |    87.50 |  100.00 |   95.23 | 28
+# src/services/email.js |   82.14 |    75.00 |   88.88 |   82.14 | 45, 67-70
+# src/routes/auth.js    |   91.30 |    83.33 |   94.73 |   91.30 | 120
+# -----------------------------------------------------------------------
+# All files             |   89.55 |    81.94 |   94.54 |   89.55 |
+# -----------------------------------------------------------------------
+
+# Report HTML được tạo tại:
+# coverage/lcov-report/index.html
+# Mở file này trong browser để xem từng dòng code được cover hay không</code></pre>
+
+    <p>
+      Cột <strong>"Uncovered Lines"</strong> cho biết chính xác dòng nào chưa được test — đây là thông tin quý giá để bạn biết cần viết thêm tests gì.
+    </p>
+
+    <h3>Đặt Coverage Threshold</h3>
+
+    <p>
+      Coverage threshold trong <code>jest.config.js</code> đảm bảo CI/CD pipeline fail nếu coverage giảm xuống dưới mức cho phép — một cơ chế quan trọng để bảo vệ chất lượng code theo thời gian:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">jest.config.js</span><button class="copy-btn">Copy</button></div><code>module.exports = {
+  coverageThresholds: {
+    // Ngưỡng global cho toàn bộ codebase
+    global: {
+      branches: 70,
+      functions: 75,
+      lines: 75,
+      statements: 75
+    },
+    // Có thể đặt ngưỡng riêng cho từng file/thư mục quan trọng
+    './src/services/': {
+      branches: 80,
+      functions: 85,
+      lines: 85,
+      statements: 85
+    }
+  }
+};</code></pre>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠️ Cảnh báo</div>
+      <p><strong>Đừng chase 100% coverage.</strong> Một số code không cần test (configuration files, simple getters/setters). Quan trọng hơn là test <em>critical paths</em>: authentication logic, payment processing, data validation. Tập trung vào chất lượng tests, không phải số lượng.</p>
+    </div>
+
+    <div class="callout callout-note">
+      <div class="callout-title">📌 Ghi nhớ</div>
+      <p>70-80% là ngưỡng coverage hợp lý cho hầu hết dự án. Tăng dần theo thời gian khi team quen với TDD. Đừng đột ngột đặt 90% cho codebase cũ — sẽ tạo ra nhiều tests vô nghĩa chỉ để đạt số.</p>
+    </div>
+
+    <!-- ===== 16.7 ESLint và Prettier ===== -->
+    <h2 id="s16-7">16.7 ESLint và Prettier</h2>
+
+    <p>
+      Testing kiểm tra code có chạy đúng không. <strong>ESLint</strong> và <strong>Prettier</strong> kiểm tra code có được viết đúng chuẩn không. Cùng nhau, chúng tạo thành bức tường bảo vệ code quality toàn diện.
+    </p>
+
+    <ul>
+      <li><strong>ESLint</strong>: Phân tích code để tìm lỗi tiềm ẩn, code smells, và vi phạm style rules. ESLint hiểu <em>ý nghĩa</em> của code.</li>
+      <li><strong>Prettier</strong>: Formatter tự động — chỉ quan tâm đến formatting (indent, quotes, trailing commas), không quan tâm đến logic. Prettier đảm bảo toàn team viết code trông giống nhau.</li>
+    </ul>
+
+    <h3>Cài đặt</h3>
+
+<pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">terminal</span><button class="copy-btn">Copy</button></div><code># ESLint và Prettier core
+npm install --save-dev eslint prettier
+
+# Plugin tích hợp Prettier vào ESLint (tắt ESLint rules xung đột với Prettier)
+npm install --save-dev eslint-config-prettier
+
+# Khởi tạo ESLint config
+npx eslint --init</code></pre>
+
+    <h3>Cấu hình ESLint</h3>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">.eslintrc.js</span><button class="copy-btn">Copy</button></div><code>module.exports = {
+  env: {
+    node: true,      // Biết các global của NodeJS (process, __dirname, etc.)
+    es2022: true,    // Cho phép syntax ES2022+
+    jest: true       // Biết các global của Jest (describe, it, expect, etc.)
+  },
+
+  extends: [
+    'eslint:recommended',  // ESLint recommended rules
+    'prettier'             // TẮT các ESLint rules xung đột với Prettier (luôn để cuối)
+  ],
+
+  parserOptions: {
+    ecmaVersion: 'latest'
+  },
+
+  rules: {
+    // warn: cảnh báo nhưng không fail build
+    // error: fail build nếu vi phạm
+
+    'no-unused-vars': ['warn', {
+      argsIgnorePattern: '^_'  // Bỏ qua args bắt đầu bằng _
+    }],
+    'no-console': ['warn', {
+      allow: ['warn', 'error']  // Cho phép console.warn và console.error
+    }],
+    'prefer-const': 'error',   // Dùng const thay vì let khi có thể
+    'no-var': 'error',         // Không dùng var
+    'eqeqeq': ['error', 'always'],  // Phải dùng === thay vì ==
+    'curly': 'error',               // Luôn có {} cho if/else/for
+    'no-duplicate-imports': 'error',
+    'no-return-await': 'warn'  // return await trong async function thường không cần thiết
+  },
+
+  // Override riêng cho test files
+  overrides: [
+    {
+      files: ['tests/**/*.js', '**/*.test.js'],
+      rules: {
+        'no-unused-expressions': 'off'  // Cho phép expect().toBe() style
+      }
+    }
+  ]
+};</code></pre>
+
+    <h3>Cấu hình Prettier</h3>
+
+<pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">.prettierrc</span><button class="copy-btn">Copy</button></div><code>{
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "printWidth": 100,
+  "arrowParens": "always",
+  "endOfLine": "lf"
+}</code></pre>
+
+    <p>
+      Thêm scripts vào <code>package.json</code> để dễ sử dụng:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package.json</span><button class="copy-btn">Copy</button></div><code>{
+  "scripts": {
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"tests/**/*.js\""
+  }
+}</code></pre>
+
+    <h3>Husky + lint-staged: Tự động hóa trước khi commit</h3>
+
+    <p>
+      Cài ESLint và Prettier là một chuyện, nhưng đảm bảo mọi người trong team thực sự chạy chúng trước khi commit là chuyện khác. <strong>Husky</strong> và <strong>lint-staged</strong> giải quyết vấn đề này bằng cách chạy checks tự động như một Git pre-commit hook.
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">terminal</span><button class="copy-btn">Copy</button></div><code># Cài Husky và lint-staged
+npm install --save-dev husky lint-staged
+
+# Khởi tạo Husky
+npx husky init
+
+# Tạo pre-commit hook
+echo "npx lint-staged" &gt; .husky/pre-commit</code></pre>
+
+    <p>
+      Cấu hình lint-staged trong <code>package.json</code> — chỉ chạy trên các file được staged (staged files):
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package.json</span><button class="copy-btn">Copy</button></div><code>{
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}</code></pre>
+
+    <p>
+      Với cấu hình này, mỗi lần bạn chạy <code>git commit</code>, lint-staged sẽ:
+    </p>
+    <ol>
+      <li>Lấy danh sách các file .js được staged.</li>
+      <li>Chạy <code>eslint --fix</code> để tự động sửa các lỗi có thể fix được.</li>
+      <li>Chạy <code>prettier --write</code> để format code.</li>
+      <li>Tự động stage lại các file đã được sửa.</li>
+      <li>Nếu còn lỗi ESLint không thể tự fix — commit bị block.</li>
+    </ol>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Mẹo</div>
+      <p>Ngoài lint-staged, bạn có thể thêm pre-push hook để chạy tests trước khi push: <code>echo "npm test" &gt; .husky/pre-push</code>. Điều này đảm bảo không ai push code broken lên remote.</p>
+    </div>
+
+    <!-- ===== 16.8 Test Database Strategy với MongoDB Memory Server ===== -->
+    <h2 id="s16-8">16.8 Test Database Strategy với MongoDB Memory Server</h2>
+
+    <p>
+      Một thách thức lớn khi integration testing với MongoDB là: bạn cần một database thật để test, nhưng không muốn test can thiệp vào data production hay development. Có ba chiến lược phổ biến:
+    </p>
+
+    <ol>
+      <li><strong>Dùng database riêng cho test</strong>: Simple nhưng cần MongoDB running, dễ bị conflicts khi nhiều người test cùng lúc.</li>
+      <li><strong>Docker container MongoDB</strong>: Isolated nhưng cần Docker setup và start/stop container.</li>
+      <li><strong>MongoDB Memory Server</strong>: Chạy MongoDB trong memory, không cần cài MongoDB. Khởi động nhanh, hoàn toàn isolated — đây là lựa chọn tốt nhất cho testing.</li>
+    </ol>
+
+    <h3>Cài đặt MongoDB Memory Server</h3>
+
+<pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">terminal</span><button class="copy-btn">Copy</button></div><code>npm install --save-dev mongodb-memory-server
+
+# Lần đầu chạy, mongodb-memory-server sẽ tự download binary MongoDB
+# (~70MB) và cache lại cho lần sau</code></pre>
+
+    <h3>Test Database Helper</h3>
+
+    <p>
+      Tạo một helper module để tái sử dụng logic connect/disconnect/clear trong nhiều test files:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">tests/helpers/testDb.js</span><button class="copy-btn">Copy</button></div><code>const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+
+let mongod; // MongoMemoryServer instance
+
+/**
+ * Khởi động in-memory MongoDB và kết nối Mongoose
+ */
+const connect = async () => {
+  mongod = await MongoMemoryServer.create();
+  const uri = mongod.getUri();
+
+  await mongoose.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  });
+};
+
+/**
+ * Drop database, đóng kết nối, và dừng in-memory server
+ */
+const disconnect = async () => {
+  await mongoose.connection.dropDatabase();
+  await mongoose.connection.close();
+  await mongod.stop();
+};
+
+/**
+ * Xóa tất cả documents trong tất cả collections
+ * (Dùng giữa các tests để đảm bảo isolation)
+ */
+const clearDatabase = async () => {
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    await collections[key].deleteMany({});
+  }
+};
+
+module.exports = { connect, disconnect, clearDatabase };</code></pre>
+
+    <h3>Sử dụng trong Integration Tests</h3>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">tests/integration/posts.test.js</span><button class="copy-btn">Copy</button></div><code>const db = require('../helpers/testDb');
+const request = require('supertest');
+const app = require('../../src/app');
+
+// Lifecycle cho test file này
+beforeAll(async () => await db.connect());
+afterEach(async () => await db.clearDatabase()); // Sạch sau mỗi test
+afterAll(async () => await db.disconnect());
+
+describe('Posts API', () => {
+  let authToken;
+
+  // Setup: đăng nhập để lấy token cho các tests
+  beforeEach(async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ name: 'Test User', email: 'test@test.com', password: 'Pass123!' });
+    authToken = res.body.data.token;
+  });
+
+  describe('GET /api/v1/posts', () => {
+    it('should return empty array when no posts', async () => {
+      const res = await request(app)
+        .get('/api/v1/posts')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.posts).toEqual([]);
+      expect(res.body.data.total).toBe(0);
+    });
+
+    it('should return list of posts', async () => {
+      // Tạo 2 posts trước
+      await request(app)
+        .post('/api/v1/posts')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ title: 'Post 1', content: 'Content 1', tags: ['nodejs'] });
+
+      await request(app)
+        .post('/api/v1/posts')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ title: 'Post 2', content: 'Content 2', tags: ['javascript'] });
+
+      const res = await request(app)
+        .get('/api/v1/posts')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.posts).toHaveLength(2);
+      expect(res.body.data.total).toBe(2);
+    });
+
+    it('should filter posts by tag', async () => {
+      await request(app)
+        .post('/api/v1/posts')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ title: 'NodeJS Post', content: '...', tags: ['nodejs'] });
+
+      await request(app)
+        .post('/api/v1/posts')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ title: 'React Post', content: '...', tags: ['react'] });
+
+      const res = await request(app)
+        .get('/api/v1/posts?tag=nodejs')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.posts).toHaveLength(1);
+      expect(res.body.data.posts[0].title).toBe('NodeJS Post');
+    });
+  });
+
+  describe('POST /api/v1/posts', () => {
+    it('should create post with valid data', async () => {
+      const res = await request(app)
+        .post('/api/v1/posts')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          title: 'Hướng dẫn Jest',
+          content: 'Nội dung bài viết...',
+          tags: ['nodejs', 'testing']
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.data.title).toBe('Hướng dẫn Jest');
+      expect(res.body.data.tags).toContain('testing');
+      expect(res.body.data).toHaveProperty('_id');
+      expect(res.body.data).toHaveProperty('createdAt');
+    });
+
+    it('should require authentication', async () => {
+      const res = await request(app)
+        .post('/api/v1/posts')
+        .send({ title: 'Unauthorized', content: '...' });
+
+      expect(res.statusCode).toBe(401);
+    });
+  });
+});</code></pre>
+
+    <h3>Test Lifecycle Flow</h3>
+
+    <p>
+      Hiểu rõ thứ tự chạy các lifecycle hooks giúp bạn đặt setup và teardown đúng chỗ. Đây là sơ đồ trực quan:
+    </p>
+
+    <div class="svg-diagram">
+      <svg viewBox="0 0 750 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+        <defs>
+          <marker id="arr-16b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#64748b" />
+          </marker>
+        </defs>
+
+        <!-- beforeAll -->
+        <rect x="10" y="55" width="95" height="50" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5" />
+        <text x="57" y="77" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#c7d2fe">beforeAll</text>
+        <text x="57" y="93" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#c7d2fe" opacity="0.7">1 lần</text>
+
+        <line x1="105" y1="80" x2="122" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-16b)" />
+
+        <!-- beforeEach -->
+        <rect x="125" y="55" width="95" height="50" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5" />
+        <text x="172" y="77" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#c7d2fe">beforeEach</text>
+        <text x="172" y="93" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#c7d2fe" opacity="0.7">mỗi test</text>
+
+        <line x1="220" y1="80" x2="237" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-16b)" />
+
+        <!-- Test 1 -->
+        <rect x="240" y="55" width="80" height="50" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5" />
+        <text x="280" y="77" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#86efac">Test 1</text>
+        <text x="280" y="93" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#86efac" opacity="0.7">it('...')</text>
+
+        <line x1="320" y1="80" x2="337" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-16b)" />
+
+        <!-- afterEach -->
+        <rect x="340" y="55" width="95" height="50" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5" />
+        <text x="387" y="77" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#c7d2fe">afterEach</text>
+        <text x="387" y="93" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#c7d2fe" opacity="0.7">mỗi test</text>
+
+        <!-- Loop back arrow for Test 2 -->
+        <path d="M435,80 L460,80 L460,25 L172,25 L172,55" stroke="#64748b" stroke-width="1.2" stroke-dasharray="5,3" fill="none" marker-end="url(#arr-16b)" />
+        <text x="316" y="18" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#94a3b8">lặp lại cho Test 2, 3, ...</text>
+
+        <!-- Test 2 block (ghost) -->
+        <rect x="340" y="110" width="95" height="40" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1" opacity="0.35" />
+        <text x="387" y="134" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#86efac" opacity="0.5">Test 2...</text>
+
+        <line x1="435" y1="80" x2="554" y2="80" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-16b)" />
+
+        <!-- afterAll -->
+        <rect x="557" y="55" width="95" height="50" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5" />
+        <text x="604" y="77" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#c7d2fe">afterAll</text>
+        <text x="604" y="93" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#c7d2fe" opacity="0.7">1 lần</text>
+
+        <!-- End -->
+        <line x1="652" y1="80" x2="700" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-16b)" />
+        <text x="718" y="84" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#64748b">Done</text>
+      </svg>
+    </div>
+
+    <h3>Tối ưu Performance cho Test Suite lớn</h3>
+
+    <p>
+      Khi test suite phát triển, thời gian chạy có thể tăng đáng kể. Một số kỹ thuật tối ưu:
+    </p>
+
+<pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">jest.config.js</span><button class="copy-btn">Copy</button></div><code>module.exports = {
+  // Chạy tests song song trên nhiều worker (mặc định = số CPU cores - 1)
+  maxWorkers: '50%',
+
+  // Chỉ chạy lại tests liên quan đến files đã thay đổi (khi dùng --watch)
+  watchPlugins: [
+    'jest-watch-typeahead/filename',
+    'jest-watch-typeahead/testname'
+  ],
+
+  // Cache transform results để lần chạy sau nhanh hơn
+  cache: true,
+  cacheDirectory: '.jest-cache',
+
+  // Timeout cho mỗi test (mặc định 5000ms)
+  testTimeout: 10000
+};</code></pre>
+
+    <div class="callout callout-note">
+      <div class="callout-title">📌 Ghi nhớ</div>
+      <p>Mỗi Jest worker process có MongoDB Memory Server riêng khi dùng <code>maxWorkers &gt; 1</code>. Điều này tốt cho isolation nhưng tốn nhiều memory hơn. Trên CI/CD, có thể dùng <code>--runInBand</code> (chạy tuần tự) để tiết kiệm memory và tránh race conditions.</p>
+    </div>
+
+    <!-- ===== Exercises ===== -->
+    <h2 id="exercises">Bài tập thực hành</h2>
+
+    <p>
+      Sau đây là các bài tập giúp bạn củng cố kiến thức từ chương này. Mỗi bài được đánh giá độ khó để bạn lên kế hoạch học tập phù hợp.
+    </p>
+
+    <div class="exercise-item">
+      <span class="exercise-badge badge-easy">Dễ</span>
+      <div class="exercise-content">
+        <h4>16.1 Test CRUD Routes</h4>
+        <p>
+          Viết integration tests cho tất cả routes của Posts API: <code>GET /api/posts</code> (lấy danh sách), <code>GET /api/posts?tag=nodejs</code> (lọc theo tag), <code>GET /api/posts?page=2&amp;limit=5</code> (pagination). Mỗi test case cần kiểm tra: status code trả về đúng, cấu trúc response có đủ fields cần thiết (<code>success</code>, <code>data</code>, <code>pagination</code>), và dữ liệu trả về khớp với data đã tạo. Tạo ít nhất 3 posts với các tags khác nhau làm test data trước khi test.
+        </p>
+      </div>
+    </div>
+
+    <div class="exercise-item">
+      <span class="exercise-badge badge-medium">Trung bình</span>
+      <div class="exercise-content">
+        <h4>16.2 Mock Email Service</h4>
+        <p>
+          Mock <code>nodemailer.sendMail()</code> trong unit tests để test email flow mà không gửi email thật. Cụ thể: (1) Viết unit test xác nhận email được gọi với đúng recipient và subject khi user đăng ký mới. (2) Viết test cho trường hợp SMTP server fail — đảm bảo error được propagate và user không được tạo nếu email fail. (3) Viết test kiểm tra nội dung HTML email có chứa tên của user. Dùng <code>jest.mock('nodemailer')</code> và <code>expect.objectContaining()</code>.
+        </p>
+      </div>
+    </div>
+
+    <div class="exercise-item">
+      <span class="exercise-badge badge-hard">Khó</span>
+      <div class="exercise-content">
+        <h4>16.3 CI Pipeline với GitHub Actions</h4>
+        <p>
+          Setup CI test pipeline hoàn chỉnh với GitHub Actions: (1) Tạo <code>.github/workflows/ci.yml</code> để chạy tests tự động khi push hoặc tạo PR vào <code>main</code>/<code>develop</code>. (2) Pipeline phải fail PR nếu coverage dưới 70% ở bất kỳ metric nào. (3) Chạy ESLint check trong CI — fail nếu có errors. (4) Cache <code>node_modules</code> để tăng tốc CI. (5) Tạo coverage badge trong README bằng Shields.io hoặc Codecov. Thêm environment variables cần thiết vào GitHub Secrets.
+        </p>
+      </div>
+    </div>
+
+    <!-- ===== Chapter Nav ===== -->
+    <div class="chapter-nav">
+      <a href="chapter15.html" class="chapter-nav-btn">
+        <span class="chapter-nav-direction">← Chương trước</span>
+        <span class="chapter-nav-title">REST API Best Practices</span>
+      </a>
+      <a href="chapter17.html" class="chapter-nav-btn next">
+        <span class="chapter-nav-direction">Chương tiếp theo →</span>
+        <span class="chapter-nav-title">Deploy và DevOps</span>
+      </a>
+    </div>
+
+  </main>
+
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 18: Serverless và Cloud Functions | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<div class="layout">
+
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">NodeJS Book</div>
+      <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-part-label">Phần 1 — Nền tảng</div>
+      <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet & Web</a>
+      <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+      <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS & Môi trường</a>
+      <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+      <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+      <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+      <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+      <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+      <div class="nav-part-label">Phần 3 — Express</div>
+      <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+      <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+      <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth & Session</a>
+      <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating & SSR</a>
+      <div class="nav-part-label">Phần 4 — Database</div>
+      <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB & Mongoose</a>
+      <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL & Prisma</a>
+      <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching & Redis</a>
+      <div class="nav-part-label">Phần 5 — Nâng cao</div>
+      <a href="chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+      <a href="chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+      <a href="chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy & DevOps</a>
+      <a href="chapter18.html" class="nav-link active"><span class="chapter-num">18</span> Serverless & Cloud</a>
+    </div>
+  </nav>
+
+  <div class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">Trang chủ</a>
+      <span>›</span><span>Phần 5</span><span>›</span><span>Chương 18</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon theme-toggle">🌙 Tối</button>
+    </div>
+  </div>
+
+  <main class="main">
+
+    <div class="chapter-header">
+      <div class="part-badge">Phần 5 — Nâng Cao và Cloud</div>
+      <h1>Chương 18: Serverless và Cloud Functions</h1>
+      <p class="lead">
+        "Serverless" không có nghĩa là không có server — có nghĩa là <em>bạn</em> không cần quản lý server.
+        Viết function, deploy, và chỉ trả tiền khi có request. Chương này giới thiệu paradigm
+        hiện đại nhất của cloud computing và khi nào nên dùng nó.
+      </p>
+    </div>
+
+    <div class="objectives">
+      <div class="objectives-title">🎯 Sau chương này bạn sẽ</div>
+      <ul>
+        <li>Hiểu serverless khác traditional server ở điểm nào</li>
+        <li>Biết cold start là gì và cách giảm thiểu</li>
+        <li>Deploy API lên Vercel Functions trong 5 phút</li>
+        <li>Viết AWS Lambda handler chuẩn</li>
+        <li>Hiểu Cloudflare Workers và edge computing</li>
+        <li>Quyết định khi nào dùng serverless, khi nào dùng server truyền thống</li>
+      </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>18.1 Serverless là gì?</h2>
+
+    <p>
+      Mô hình traditional: bạn thuê VPS chạy 24/7 kể cả lúc không có request nào.
+      Bạn phải lo cập nhật OS, scale khi traffic tăng, xử lý khi server chết.
+    </p>
+    <p>
+      Mô hình serverless: bạn chỉ upload code (một function). Cloud provider tự lo chạy,
+      scale từ 0 đến hàng nghìn instances, và bạn chỉ trả tiền cho số lần function được gọi.
+    </p>
+
+    <div class="svg-diagram">
+    <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+      <defs>
+        <marker id="arr-s1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+        </marker>
+      </defs>
+      <rect width="700" height="200" fill="#0d1117" rx="10"/>
+
+      <!-- LEFT: Traditional -->
+      <text x="168" y="22" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="700" font-family="Inter,sans-serif">Traditional Server</text>
+      <!-- Server box running 24/7 -->
+      <rect x="30" y="35" width="280" height="100" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="170" y="58" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">VPS — Chạy 24/7</text>
+      <!-- Time slots -->
+      <rect x="48" y="68" width="30" height="20" rx="3" fill="#22c55e" opacity="0.8"/>
+      <rect x="82" y="68" width="30" height="20" rx="3" fill="#374151" opacity="0.5"/>
+      <rect x="116" y="68" width="30" height="20" rx="3" fill="#374151" opacity="0.5"/>
+      <rect x="150" y="68" width="30" height="20" rx="3" fill="#22c55e" opacity="0.8"/>
+      <rect x="184" y="68" width="30" height="20" rx="3" fill="#374151" opacity="0.5"/>
+      <rect x="218" y="68" width="30" height="20" rx="3" fill="#374151" opacity="0.5"/>
+      <rect x="252" y="68" width="30" height="20" rx="3" fill="#22c55e" opacity="0.8"/>
+      <text x="170" y="108" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">Trả tiền ngay cả lúc nhàn rỗi</text>
+      <text x="170" y="123" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">■ request  □ idle (vẫn tốn tiền)</text>
+      <!-- Cost label -->
+      <text x="170" y="158" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600" font-family="Inter,sans-serif">$6-20/tháng dù traffic = 0</text>
+
+      <!-- Divider -->
+      <line x1="350" y1="15" x2="350" y2="185" stroke="#334155" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- RIGHT: Serverless -->
+      <text x="530" y="22" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="700" font-family="Inter,sans-serif">Serverless</text>
+      <!-- 3 function instances -->
+      <rect x="365" y="35" width="80" height="40" rx="6" fill="#1a2a3a" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="405" y="51" text-anchor="middle" fill="#fcd34d" font-size="11" font-weight="600" font-family="Inter,sans-serif">fn()</text>
+      <text x="405" y="66" text-anchor="middle" fill="#fb923c" font-size="10" font-family="Inter,sans-serif">request 1</text>
+
+      <rect x="455" y="35" width="80" height="40" rx="6" fill="#1a2a3a" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="495" y="51" text-anchor="middle" fill="#fcd34d" font-size="11" font-weight="600" font-family="Inter,sans-serif">fn()</text>
+      <text x="495" y="66" text-anchor="middle" fill="#fb923c" font-size="10" font-family="Inter,sans-serif">request 2</text>
+
+      <rect x="545" y="35" width="80" height="40" rx="6" fill="#1a2a3a" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="585" y="51" text-anchor="middle" fill="#fcd34d" font-size="11" font-weight="600" font-family="Inter,sans-serif">fn()</text>
+      <text x="585" y="66" text-anchor="middle" fill="#fb923c" font-size="10" font-family="Inter,sans-serif">request 3</text>
+
+      <!-- Idle state -->
+      <text x="530" y="100" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">Không có request → không tốn tiền</text>
+      <rect x="420" y="108" width="220" height="24" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+      <text x="530" y="124" text-anchor="middle" fill="#475569" font-size="11" font-family="Inter,sans-serif">idle — $0</text>
+
+      <!-- Cost label -->
+      <text x="530" y="158" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600" font-family="Inter,sans-serif">$0 khi không có traffic</text>
+      <text x="530" y="173" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Scale 0 → ∞ tự động</text>
+    </svg>
+    </div>
+
+    <h3>Ưu và nhược điểm</h3>
+    <table>
+      <tr><th></th><th>Ưu điểm ✅</th><th>Nhược điểm ❌</th></tr>
+      <tr>
+        <td><strong>Serverless</strong></td>
+        <td>Không quản lý infra, auto scale, pay-per-use, deploy nhanh</td>
+        <td>Cold start, stateless, time limit (~15 min), vendor lock-in</td>
+      </tr>
+      <tr>
+        <td><strong>Traditional</strong></td>
+        <td>Full control, persistent connections (WebSocket), dễ debug local</td>
+        <td>Quản lý server, trả tiền idle, phải tự scale</td>
+      </tr>
+    </table>
+
+    <!-- ============================================================ -->
+    <h2>18.2 Cold Start — Vấn Đề Đặc Trưng</h2>
+
+    <p>
+      Khi function chưa được gọi gần đây, cloud platform phải <strong>boot container mới</strong>,
+      load code, khởi tạo connections — trước khi xử lý request. Đây gọi là <strong>cold start</strong>.
+    </p>
+
+    <div class="svg-diagram">
+    <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+      <defs>
+        <marker id="arr-s2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+        </marker>
+      </defs>
+      <rect width="700" height="160" fill="#0d1117" rx="10"/>
+
+      <!-- COLD START row -->
+      <text x="10" y="40" fill="#ef4444" font-size="12" font-weight="700" font-family="Inter,sans-serif">Cold Start (~500ms - 2s)</text>
+      <!-- Steps -->
+      <rect x="10" y="50" width="110" height="32" rx="5" fill="#3a1a1a" stroke="#ef4444" stroke-width="1"/>
+      <text x="65" y="70" text-anchor="middle" fill="#fca5a5" font-size="10" font-family="Inter,sans-serif">Boot Container</text>
+      <line x1="120" y1="66" x2="138" y2="66" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-s2)"/>
+      <rect x="139" y="50" width="100" height="32" rx="5" fill="#3a1a1a" stroke="#ef4444" stroke-width="1"/>
+      <text x="189" y="70" text-anchor="middle" fill="#fca5a5" font-size="10" font-family="Inter,sans-serif">Load Node.js</text>
+      <line x1="239" y1="66" x2="257" y2="66" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-s2)"/>
+      <rect x="258" y="50" width="110" height="32" rx="5" fill="#3a1a1a" stroke="#ef4444" stroke-width="1"/>
+      <text x="313" y="70" text-anchor="middle" fill="#fca5a5" font-size="10" font-family="Inter,sans-serif">Load Code + DB</text>
+      <line x1="368" y1="66" x2="386" y2="66" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-s2)"/>
+      <rect x="387" y="50" width="110" height="32" rx="5" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+      <text x="442" y="70" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">Execute Handler</text>
+      <line x1="497" y1="66" x2="515" y2="66" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-s2)"/>
+      <rect x="516" y="50" width="100" height="32" rx="5" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+      <text x="566" y="70" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">Response</text>
+
+      <!-- WARM START row -->
+      <text x="10" y="115" fill="#22c55e" font-size="12" font-weight="700" font-family="Inter,sans-serif">Warm Start (~10 - 100ms)</text>
+      <rect x="10" y="125" width="305" height="24" rx="5" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+      <text x="157" y="141" text-anchor="middle" fill="#475569" font-size="10" font-family="Inter,sans-serif">Container đã sẵn sàng (cached)</text>
+      <line x1="315" y1="137" x2="383" y2="137" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-s2)"/>
+      <rect x="384" y="125" width="110" height="24" rx="5" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+      <text x="439" y="141" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">Execute Handler</text>
+      <line x1="494" y1="137" x2="512" y2="137" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-s2)"/>
+      <rect x="513" y="125" width="100" height="24" rx="5" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+      <text x="563" y="141" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">Response ⚡</text>
+    </svg>
+    </div>
+
+    <h3>Cách giảm cold start</h3>
+    <ul>
+      <li><strong>Giảm dependencies</strong>: chỉ import những gì cần, tránh heavy packages</li>
+      <li><strong>Keep connections ngoài handler</strong>: kết nối DB một lần, tái dùng giữa các invocations</li>
+      <li><strong>Provisioned Concurrency</strong> (AWS Lambda): giữ N instances luôn warm, tốn thêm tiền</li>
+      <li><strong>Cloudflare Workers</strong>: không có cold start vì dùng V8 isolates thay vì containers</li>
+    </ul>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Kết nối DB ngoài handler — tái dùng giữa invocations</span><button class="copy-btn">Copy</button></div><code>const mongoose = require('mongoose');
+
+// Kết nối một lần, tái dùng trong mọi invocation
+let isConnected = false;
+
+async function connectDB() {
+  if (isConnected) return;  // Đã kết nối rồi
+  await mongoose.connect(process.env.MONGODB_URI);
+  isConnected = true;
+}
+
+// Handler
+exports.handler = async (event) => {
+  await connectDB();  // Chỉ thực sự connect lần đầu
+  // ... xử lý request
+};</code></pre>
+
+    <!-- ============================================================ -->
+    <h2>18.3 Vercel Functions — Dễ nhất để bắt đầu</h2>
+
+    <p>
+      Vercel là nền tảng deploy phổ biến nhất cho Next.js và static sites,
+      nhưng cũng có Serverless Functions rất dễ dùng — không cần cấu hình gì.
+    </p>
+
+    <h3>Cách hoạt động</h3>
+    <p>Mọi file trong thư mục <code>api/</code> tự động trở thành một serverless endpoint.</p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">api/hello.js → GET /api/hello</span><button class="copy-btn">Copy</button></div><code>// Vercel Function đơn giản nhất
+export default function handler(req, res) {
+  const { name = 'World' } = req.query;
+  res.status(200).json({
+    message: `Xin chào ${name}!`,
+    timestamp: new Date().toISOString(),
+    method: req.method,
+  });
+}</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">api/users/[id].js → GET /api/users/123 (dynamic route)</span><button class="copy-btn">Copy</button></div><code>import mongoose from 'mongoose';
+
+let isConnected = false;
+
+async function dbConnect() {
+  if (isConnected) return;
+  await mongoose.connect(process.env.MONGODB_URI);
+  isConnected = true;
+}
+
+const UserSchema = new mongoose.Schema({ name: String, email: String });
+const User = mongoose.models.User || mongoose.model('User', UserSchema);
+
+export default async function handler(req, res) {
+  await dbConnect();
+
+  const { id } = req.query;
+
+  if (req.method === 'GET') {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ error: 'Không tìm thấy user' });
+    return res.json({ data: user });
+  }
+
+  if (req.method === 'PUT') {
+    const user = await User.findByIdAndUpdate(id, req.body, { new: true });
+    return res.json({ data: user });
+  }
+
+  if (req.method === 'DELETE') {
+    await User.findByIdAndDelete(id);
+    return res.status(204).end();
+  }
+
+  res.status(405).json({ error: 'Method not allowed' });
+}</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">vercel.json</span><button class="copy-btn">Copy</button></div><code>{
+  "version": 2,
+  "env": {
+    "MONGODB_URI": "@mongodb-uri"
+  },
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  }
+}</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Deploy lên Vercel</span><button class="copy-btn">Copy</button></div><code># Cài Vercel CLI
+npm install -g vercel
+
+# Deploy (lần đầu sẽ hỏi thiết lập project)
+vercel
+
+# Deploy production
+vercel --prod
+
+# Xem logs
+vercel logs
+
+# Set env var
+vercel env add MONGODB_URI</code></pre>
+
+    <h3>Migrate Express API sang Vercel</h3>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">api/index.js — Wrap toàn bộ Express app</span><button class="copy-btn">Copy</button></div><code>// Cách này migrate Express app sang Vercel mà không cần rewrite
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.get('/api/posts', async (req, res) => {
+  // ... logic
+  res.json({ posts: [] });
+});
+
+app.post('/api/posts', async (req, res) => {
+  // ...
+});
+
+// Export cho Vercel
+module.exports = app;</code></pre>
+
+    <!-- ============================================================ -->
+    <h2>18.4 AWS Lambda</h2>
+
+    <p>
+      AWS Lambda là serverless platform lớn nhất thế giới — mạnh mẽ hơn nhưng cũng phức tạp hơn Vercel.
+      Phù hợp cho các ứng dụng enterprise hoặc khi cần tích hợp sâu với các AWS services.
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">handler.js — Lambda function chuẩn</span><button class="copy-btn">Copy</button></div><code>// Lambda nhận event từ API Gateway
+exports.handler = async (event, context) => {
+  // context.callbackWaitsForEmptyEventLoop = false; // Cho phép reuse DB connection
+
+  const { httpMethod, path, body, queryStringParameters, pathParameters } = event;
+
+  try {
+    // Router đơn giản
+    if (httpMethod === 'GET' && path === '/users') {
+      const users = [{ id: 1, name: 'Alice' }]; // thay bằng DB query
+      return response(200, { data: users });
+    }
+
+    if (httpMethod === 'GET' && path.startsWith('/users/')) {
+      const { id } = pathParameters;
+      return response(200, { data: { id, name: 'Alice' } });
+    }
+
+    if (httpMethod === 'POST' && path === '/users') {
+      const data = JSON.parse(body || '{}');
+      // validate + save to DB
+      return response(201, { data: { id: Date.now(), ...data } });
+    }
+
+    return response(404, { error: 'Route không tồn tại' });
+
+  } catch (err) {
+    console.error('Lambda error:', err);
+    return response(500, { error: 'Lỗi server' });
+  }
+};
+
+function response(statusCode, body) {
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+    body: JSON.stringify(body),
+  };
+}</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">YAML</span><span class="code-filename">serverless.yml — Dùng Serverless Framework</span><button class="copy-btn">Copy</button></div><code>service: my-api
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-southeast-1  # Singapore — gần Việt Nam nhất
+  environment:
+    MONGODB_URI: ${env:MONGODB_URI}
+    JWT_SECRET: ${env:JWT_SECRET}
+
+functions:
+  api:
+    handler: handler.handler
+    events:
+      - httpApi:
+          path: /{proxy+}   # catch-all route
+          method: ANY
+      - httpApi:
+          path: /
+          method: ANY</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Deploy với Serverless Framework</span><button class="copy-btn">Copy</button></div><code># Cài
+npm install -g serverless
+
+# Deploy
+serverless deploy
+
+# Xem logs
+serverless logs -f api --tail
+
+# Remove
+serverless remove</code></pre>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Chi phí AWS Lambda</div>
+      Free tier: 1 triệu requests/tháng + 400,000 GB-seconds compute miễn phí.
+      Sau đó: $0.20/1 triệu requests. Với traffic nhỏ đến vừa, Lambda thường rẻ hơn VPS nhiều.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>18.5 Cloudflare Workers — Edge Computing</h2>
+
+    <p>
+      Cloudflare Workers chạy code ở <strong>edge</strong> — tức là ở hơn 300 datacenter gần người dùng nhất trên toàn cầu.
+      Response time &lt; 50ms vì code chạy ngay gần user, không phải round trip về US hay Singapore.
+    </p>
+
+    <div class="callout callout-note">
+      <div class="callout-title">📌 Workers khác Lambda ở chỗ nào?</div>
+      Workers dùng <strong>V8 Isolates</strong> thay vì Docker containers. Mỗi isolate boot trong
+      microseconds thay vì hàng trăm ms → <strong>không có cold start</strong>.
+      Nhưng Workers có giới hạn: không có filesystem, hạn chế Node.js APIs, không có native modules.
+    </div>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">src/worker.js</span><button class="copy-btn">Copy</button></div><code>// Cloudflare Workers dùng Web Standard APIs
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    // Router
+    if (url.pathname === '/api/hello') {
+      return Response.json({
+        message: 'Xin chào từ Edge!',
+        location: request.cf?.city || 'Unknown',
+        country: request.cf?.country || 'Unknown',
+      });
+    }
+
+    if (url.pathname === '/api/cache-demo') {
+      const cacheKey = new Request(url.toString());
+      const cache = caches.default;
+
+      // Check cache
+      let response = await cache.match(cacheKey);
+      if (response) {
+        return new Response(response.body, {
+          headers: { ...response.headers, 'X-Cache': 'HIT' }
+        });
+      }
+
+      // Cache miss: fetch data
+      const data = { timestamp: Date.now(), data: 'expensive computation' };
+      response = Response.json(data, {
+        headers: { 'Cache-Control': 'public, max-age=60' }
+      });
+
+      ctx.waitUntil(cache.put(cacheKey, response.clone()));
+      return new Response(response.body, {
+        headers: { ...response.headers, 'X-Cache': 'MISS' }
+      });
+    }
+
+    // KV Storage (Cloudflare's global key-value store)
+    if (url.pathname.startsWith('/api/kv/')) {
+      const key = url.pathname.slice(8);
+      if (request.method === 'GET') {
+        const value = await env.MY_KV.get(key);
+        return value
+          ? Response.json({ key, value })
+          : new Response('Not found', { status: 404 });
+      }
+      if (request.method === 'PUT') {
+        const body = await request.text();
+        await env.MY_KV.put(key, body, { expirationTtl: 3600 });
+        return Response.json({ ok: true });
+      }
+    }
+
+    return new Response('Not Found', { status: 404 });
+  }
+};</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">TOML</span><span class="code-filename">wrangler.toml</span><button class="copy-btn">Copy</button></div><code>name = "my-worker"
+main = "src/worker.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "MY_KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Dev và deploy</span><button class="copy-btn">Copy</button></div><code># Cài Wrangler CLI
+npm install -g wrangler
+
+# Login
+wrangler login
+
+# Dev locally
+wrangler dev
+
+# Deploy
+wrangler deploy</code></pre>
+
+    <!-- ============================================================ -->
+    <h2>18.6 Khi nào dùng Serverless vs Server truyền thống?</h2>
+
+    <table>
+      <tr>
+        <th>Tiêu chí</th>
+        <th>Serverless ✅</th>
+        <th>Traditional Server ✅</th>
+      </tr>
+      <tr>
+        <td><strong>Traffic pattern</strong></td>
+        <td>Spiky, không đều</td>
+        <td>Steady, cao liên tục</td>
+      </tr>
+      <tr>
+        <td><strong>Request type</strong></td>
+        <td>Short-lived (&lt; 15 phút)</td>
+        <td>Long-running, WebSocket</td>
+      </tr>
+      <tr>
+        <td><strong>Team</strong></td>
+        <td>Startup, MVP, ít DevOps</td>
+        <td>Có DevOps, cần full control</td>
+      </tr>
+      <tr>
+        <td><strong>Cost (low traffic)</strong></td>
+        <td>Rất rẻ (có thể $0)</td>
+        <td>Tốn tiền ngay cả lúc idle</td>
+      </tr>
+      <tr>
+        <td><strong>Cost (high traffic)</strong></td>
+        <td>Có thể đắt hơn VPS</td>
+        <td>Dự đoán được, thường rẻ hơn</td>
+      </tr>
+      <tr>
+        <td><strong>Latency</strong></td>
+        <td>Cold start có thể chậm</td>
+        <td>Consistent, không có cold start</td>
+      </tr>
+      <tr>
+        <td><strong>Ví dụ phù hợp</strong></td>
+        <td>API, webhooks, cron jobs, image processing</td>
+        <td>Chat app, game server, admin dashboard</td>
+      </tr>
+    </table>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Hybrid Architecture</div>
+      Không cần chọn một. Nhiều app dùng <strong>cả hai</strong>:
+      Express trên VPS cho core API, Cloudflare Workers cho edge caching,
+      Lambda cho background jobs và webhooks.
+    </div>
+
+    <!-- ============================================================ -->
+    <div class="summary">
+      <div class="summary-title">📚 Tóm tắt chương 18</div>
+      <ul>
+        <li><strong>Serverless</strong>: code chạy theo yêu cầu, auto scale, pay-per-use — không phải không có server mà là không quản lý server</li>
+        <li><strong>Cold start</strong>: delay lần đầu invoke khi container chưa warm — giảm bằng cách giữ connections ngoài handler và giảm dependencies</li>
+        <li><strong>Vercel Functions</strong>: file trong <code>api/</code> tự thành endpoint — dễ nhất để bắt đầu</li>
+        <li><strong>AWS Lambda</strong>: handler function nhận <code>event</code> từ API Gateway, trả về object có <code>statusCode</code> và <code>body</code></li>
+        <li><strong>Cloudflare Workers</strong>: V8 isolates, không có cold start, chạy ở edge (300+ locations), dùng Web Standard APIs</li>
+        <li>Chọn serverless khi traffic spiky, request ngắn, team nhỏ. Chọn VPS khi traffic đều, cần WebSocket, hoặc high traffic</li>
+      </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <div class="exercises">
+      <div class="exercises-title">🏋️ Bài tập thực hành</div>
+
+      <div class="exercise-item">
+        <span class="exercise-badge badge-easy">Dễ</span>
+        <div class="exercise-content">
+          <h4>18.1 Hello World trên Vercel</h4>
+          <p>
+            Tạo project mới, tạo file <code>api/hello.js</code> trả về JSON với thông tin:
+            thời gian hiện tại, method HTTP, query params.
+            Connect GitHub repo và deploy. Verify bằng curl hoặc browser.
+            Thêm env var <code>MY_NAME</code> và đọc trong function.
+          </p>
+        </div>
+      </div>
+
+      <div class="exercise-item">
+        <span class="exercise-badge badge-medium">Trung bình</span>
+        <div class="exercise-content">
+          <h4>18.2 Migrate Express API lên Vercel</h4>
+          <p>
+            Lấy Express API đã làm ở chương 8 (Blog API).
+            Tạo file <code>api/index.js</code> export Express app.
+            Tạo <code>vercel.json</code> để route tất cả requests về <code>api/index.js</code>.
+            Connect MongoDB Atlas. Deploy và test toàn bộ CRUD endpoints.
+            So sánh response time của Vercel Function vs server Express truyền thống.
+          </p>
+        </div>
+      </div>
+
+      <div class="exercise-item">
+        <span class="exercise-badge badge-hard">Khó</span>
+        <div class="exercise-content">
+          <h4>18.3 Image Resize Service với Lambda</h4>
+          <p>
+            Xây dựng Lambda function nhận POST request với base64-encoded image.
+            Dùng package <code>sharp</code> resize thành 3 kích thước: thumbnail (150x150),
+            medium (600x400), large (1200x800). Upload 3 ảnh lên S3.
+            Trả về object với 3 URLs.
+            Cấu hình memory 512MB (sharp cần RAM), timeout 30 giây.
+            Deploy với Serverless Framework.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- FINAL COMPLETION BANNER -->
+    <div style="text-align:center;padding:48px 24px;border-top:2px solid var(--accent);margin-top:48px">
+      <div style="font-size:2.5rem;margin-bottom:16px">🎉</div>
+      <h2 style="border:none;padding:0;margin:0 0 12px;color:var(--accent);font-size:1.6rem">Chúc mừng bạn đã hoàn thành!</h2>
+      <p style="color:var(--text-muted);max-width:560px;margin:0 auto 12px;line-height:1.8">
+        Bạn vừa học xong <strong>18 chương</strong> về NodeJS — từ cách HTTP hoạt động,
+        viết server thuần, đến Express, database, authentication, testing và serverless cloud.
+      </p>
+      <p style="color:var(--text-muted);max-width:560px;margin:0 auto 28px;line-height:1.8">
+        Bước tiếp theo: hãy xây dựng một dự án thực tế của bạn. Áp dụng kiến thức tốt nhất khi bạn thực sự làm sản phẩm.
+      </p>
+      <a href="../../index.html" style="display:inline-block;background:var(--accent);color:#fff;padding:13px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.95rem">← Xem lại mục lục đầy đủ</a>
+    </div>
+
+    <div class="chapter-nav">
+      <a href="chapter17.html" class="chapter-nav-btn">
+        <span class="chapter-nav-direction">← Chương trước</span>
+        <span class="chapter-nav-title">Deploy và DevOps Cơ Bản</span>
+      </a>
+      <a href="../../index.html" class="chapter-nav-btn next">
+        <span class="chapter-nav-direction">Xong rồi! →</span>
+        <span class="chapter-nav-title">Về trang mục lục</span>
+      </a>
+    </div>
+
+  </main>
+</div>
+
+<button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

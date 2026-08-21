@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 7: npm Ecosystem | NodeJS Book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet &amp; Web</a>
+        <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS &amp; Môi trường</a>
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="chapter07.html" class="nav-link active"><span class="chapter-num">07</span> npm Ecosystem</a>
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+        <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth &amp; Session</a>
+        <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating &amp; SSR</a>
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB &amp; Mongoose</a>
+        <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL &amp; Prisma</a>
+        <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching &amp; Redis</a>
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy &amp; DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless &amp; Cloud</a>
+      </div>
+    </nav>
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span><span>Phần 2</span><span>›</span><span>Chương 7</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 2 — NodeJS Cơ Bản</div>
+        <h1>Chương 7: npm Ecosystem — Quản Lý Packages và Dependencies</h1>
+        <p class="lead">
+          npm là kho thư viện lớn nhất thế giới với hơn 2 triệu packages và hàng tỷ lượt
+          tải mỗi tuần. Hiểu rõ npm giúp bạn quản lý project chuyên nghiệp, tránh các pitfalls
+          phổ biến về phiên bản, bảo mật và hiệu suất.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ</div>
+        <ul>
+          <li>Hiểu npm là gì và sự khác biệt giữa npm, yarn, pnpm</li>
+          <li>Đọc và viết <code>package.json</code> đúng chuẩn với từng field</li>
+          <li>Phân biệt <code>dependencies</code>, <code>devDependencies</code>, <code>peerDependencies</code></li>
+          <li>Hiểu Semantic Versioning và các range operators (^, ~, *)</li>
+          <li>Viết npm scripts hiệu quả với pre/post hooks</li>
+          <li>Tạo và publish npm package của riêng mình</li>
+          <li>Dùng <code>npm audit</code> để kiểm tra bảo mật</li>
+          <li>Hiểu sự khác biệt giữa <code>npm install</code> và <code>npm ci</code></li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>7.1 npm là gì?</h2>
+
+      <p>
+        npm (Node Package Manager) thực ra là <strong>3 thứ riêng biệt</strong>:
+      </p>
+
+      <ul>
+        <li><strong>CLI tool</strong> — lệnh <code>npm</code> bạn chạy trong terminal</li>
+        <li><strong>Registry</strong> — cơ sở dữ liệu packages tại <code>registry.npmjs.org</code></li>
+        <li><strong>Website</strong> — <code>npmjs.com</code> để tìm kiếm và xem docs của packages</li>
+      </ul>
+
+      <div class="svg-diagram">
+        <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+
+          <!-- Developer -->
+          <rect x="20" y="115" width="130" height="70" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="85" y="143" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter, sans-serif">Developer</text>
+          <text x="85" y="163" text-anchor="middle" fill="#64748b" font-size="10" font-family="JetBrains Mono, monospace">npm install</text>
+          <text x="85" y="178" text-anchor="middle" fill="#64748b" font-size="10" font-family="JetBrains Mono, monospace">express</text>
+
+          <!-- Arrow: npm CLI -->
+          <line x1="150" y1="150" x2="225" y2="150" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-3)"/>
+          <text x="187" y="140" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter, sans-serif">npm CLI</text>
+
+          <!-- npm CLI box -->
+          <rect x="230" y="115" width="130" height="70" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="295" y="143" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="600" font-family="Inter, sans-serif">npm CLI</text>
+          <text x="295" y="163" text-anchor="middle" fill="#818cf8" font-size="10" font-family="JetBrains Mono, monospace">v10.x</text>
+          <text x="295" y="178" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">đi kèm NodeJS</text>
+
+          <!-- Arrow: HTTPS request -->
+          <line x1="360" y1="150" x2="430" y2="150" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-3)"/>
+          <text x="395" y="138" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter, sans-serif">HTTPS</text>
+          <text x="395" y="152" text-anchor="middle" fill="#64748b" font-size="9" font-family="Inter, sans-serif">registry.npmjs.org</text>
+
+          <!-- npm Registry -->
+          <rect x="435" y="85" width="145" height="130" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="507" y="113" text-anchor="middle" fill="#86efac" font-size="13" font-weight="600" font-family="Inter, sans-serif">npm Registry</text>
+          <text x="507" y="133" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">2M+ packages</text>
+          <text x="507" y="152" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono, monospace">express@4.19.2</text>
+          <text x="507" y="168" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono, monospace">lodash@4.17.21</text>
+          <text x="507" y="184" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono, monospace">mongoose@8.x</text>
+          <text x="507" y="200" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">...</text>
+
+          <!-- Arrow: download -->
+          <line x1="295" y1="185" x2="295" y2="240" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-3)"/>
+
+          <!-- node_modules -->
+          <rect x="185" y="245" width="220" height="45" rx="8" fill="#3a1a1a" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="295" y="265" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="600" font-family="Inter, sans-serif">node_modules/</text>
+          <text x="295" y="281" text-anchor="middle" fill="#92400e" font-size="10" font-family="Inter, sans-serif">Lưu tại project directory</text>
+
+          <!-- package-lock label -->
+          <line x1="507" y1="215" x2="507" y2="260" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-3)"/>
+          <text x="560" y="245" fill="#94a3b8" font-size="10" font-family="Inter, sans-serif">tải .tgz</text>
+          <line x1="507" y1="260" x2="405" y2="260" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-3)"/>
+        </svg>
+      </div>
+
+      <h3>npm vs yarn vs pnpm</h3>
+
+      <table>
+        <tr>
+          <th>Thuộc tính</th>
+          <th>npm</th>
+          <th>yarn</th>
+          <th>pnpm</th>
+        </tr>
+        <tr>
+          <td>Tạo bởi</td>
+          <td>npm Inc. (GitHub)</td>
+          <td>Meta (Facebook)</td>
+          <td>Zoltan Kochan</td>
+        </tr>
+        <tr>
+          <td>Cài đặt</td>
+          <td>Đi kèm NodeJS</td>
+          <td><code>npm i -g yarn</code></td>
+          <td><code>npm i -g pnpm</code></td>
+        </tr>
+        <tr>
+          <td>Tốc độ</td>
+          <td>Trung bình</td>
+          <td>Nhanh (parallel)</td>
+          <td>Rất nhanh (content-addressable)</td>
+        </tr>
+        <tr>
+          <td>Disk space</td>
+          <td>Nhiều (copy files)</td>
+          <td>Nhiều (copy files)</td>
+          <td>Ít nhất (symlinks + store)</td>
+        </tr>
+        <tr>
+          <td>Lock file</td>
+          <td>package-lock.json</td>
+          <td>yarn.lock</td>
+          <td>pnpm-lock.yaml</td>
+        </tr>
+        <tr>
+          <td>Workspaces</td>
+          <td>Có (npm v7+)</td>
+          <td>Có</td>
+          <td>Có (tốt nhất)</td>
+        </tr>
+        <tr>
+          <td>Nên dùng khi</td>
+          <td>Mặc định, đơn giản</td>
+          <td>Monorepo lớn</td>
+          <td>Disk quan trọng, CI nhanh</td>
+        </tr>
+      </table>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Nên dùng cái nào?</div>
+        <p>
+          Nếu bạn mới bắt đầu, dùng <strong>npm</strong> vì nó đã có sẵn, không cần cài thêm.
+          Khi làm monorepo hoặc team lớn, <strong>pnpm</strong> tiết kiệm disk và CI nhanh hơn đáng kể.
+          Đừng mix — trong một project chỉ dùng một package manager.
+        </p>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>7.2 package.json — Hồ Sơ Project</h2>
+
+      <p>
+        <code>package.json</code> là "hồ sơ" của project NodeJS — chứa metadata, dependencies,
+        scripts và cấu hình. Tạo bằng <code>npm init</code> hoặc <code>npm init -y</code> (bỏ qua hỏi).
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package.json — Ví dụ đầy đủ có giải thích</span><button class="copy-btn">Copy</button></div><code>{
+  // ─── Định danh ─────────────────────────────────────────────────────
+  "name": "my-node-api",          // Tên package (lowercase, no spaces, no uppercase)
+  "version": "1.2.3",             // Semantic version: MAJOR.MINOR.PATCH
+  "description": "REST API cho ứng dụng quản lý tasks",
+  "keywords": ["nodejs", "rest-api", "tasks"],
+  "homepage": "https://github.com/user/my-node-api#readme",
+  "license": "MIT",
+
+  // ─── Tác giả & Đóng góp viên ────────────────────────────────────────
+  "author": {
+    "name": "Nguyen Van A",
+    "email": "nguyen@example.com",
+    "url": "https://nguyenvana.dev"
+  },
+  "contributors": [
+    "Tran Thi B <b@example.com>"
+  ],
+
+  // ─── Source code ─────────────────────────────────────────────────────
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/my-node-api.git"
+  },
+  "bugs": { "url": "https://github.com/user/my-node-api/issues" },
+
+  // ─── Entry points ─────────────────────────────────────────────────────
+  "main": "src/index.js",         // Entry point cho CommonJS (require())
+  "module": "dist/index.mjs",     // Entry point cho ES Modules
+  "exports": {                    // Hiện đại hơn "main" — kiểm soát exports chi tiết
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./src/index.js"
+    },
+    "./utils": "./src/utils.js"   // Cho phép: require('my-package/utils')
+  },
+  "types": "dist/index.d.ts",     // TypeScript type definitions
+
+  // ─── Files được include khi publish ──────────────────────────────────
+  "files": [
+    "dist/",
+    "src/",
+    "README.md"
+  ],
+
+  // ─── Runtime requirements ──────────────────────────────────────────────
+  "engines": {
+    "node": ">=18.0.0",           // Yêu cầu Node >= 18
+    "npm": ">=9.0.0"
+  },
+
+  // ─── Ngăn publish nhầm lên npm registry ───────────────────────────────
+  "private": true,                // true = không thể npm publish
+
+  // ─── Scripts ──────────────────────────────────────────────────────────
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "build": "tsc",
+    "test": "jest --coverage",
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
+  },
+
+  // ─── Dependencies ─────────────────────────────────────────────────────
+  "dependencies": {
+    "express": "^4.19.2",         // Cần cho PRODUCTION
+    "mongoose": "^8.3.1",
+    "dotenv": "^16.4.5"
+  },
+
+  "devDependencies": {            // Chỉ cần khi DEVELOPMENT / TESTING
+    "nodemon": "^3.1.0",
+    "jest": "^29.7.0",
+    "eslint": "^9.3.0",
+    "prettier": "^3.2.5",
+    "@types/express": "^4.17.21"
+  },
+
+  "peerDependencies": {           // HOST PROJECT phải cài — dùng khi viết plugin/library
+    "react": ">=18.0.0"
+  },
+
+  "optionalDependencies": {       // Có thể thiếu — package vẫn hoạt động nếu cài thất bại
+    "fsevents": "^2.3.3"          // Chỉ hoạt động trên macOS
+  }
+}</code></pre>
+
+      <h3>Tại sao phân biệt dependencies và devDependencies?</h3>
+
+      <p>
+        Khi deploy lên production, bạn thường chạy <code>npm install --omit=dev</code> — lệnh này
+        bỏ qua <code>devDependencies</code>. Điều này giúp:
+      </p>
+
+      <ul>
+        <li>Giảm kích thước thư mục <code>node_modules</code> đáng kể (đôi khi 50-70%)</li>
+        <li>Deploy nhanh hơn, Docker image nhỏ hơn</li>
+        <li>Giảm attack surface bảo mật (ít packages = ít vulnerability)</li>
+      </ul>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Quy tắc phân loại</span><button class="copy-btn">Copy</button></div><code># ─── dependencies: cần cho production ────────────────────────────
+npm install express mongoose jsonwebtoken bcrypt dotenv
+# Đây là những package mà server ĐANG CHẠY cần dùng
+
+# ─── devDependencies: chỉ cần khi development/build ──────────────
+npm install --save-dev nodemon jest eslint prettier typescript
+# Những package này chỉ cần khi bạn đang VIẾT CODE
+
+# ─── Cài production chỉ (khi deploy) ─────────────────────────────
+npm install --omit=dev
+# Hoặc (cách cũ): npm install --production</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>7.3 Semantic Versioning — Đọc Số Version</h2>
+
+      <p>
+        npm dùng chuẩn <strong>Semantic Versioning (semver)</strong> cho tất cả packages.
+        Hiểu semver giúp bạn biết khi nào update an toàn và khi nào có thể gây breaking change.
+      </p>
+
+      <div class="svg-diagram">
+        <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-4" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+
+          <!-- Version number large display -->
+          <text x="360" y="75" text-anchor="middle" fill="#e2e8f0" font-size="52" font-weight="800" font-family="JetBrains Mono, monospace" letter-spacing="4">2 . 4 . 1</text>
+
+          <!-- Arrows pointing down -->
+          <line x1="248" y1="82" x2="248" y2="110" stroke="#ef4444" stroke-width="2" marker-end="url(#arr-4)"/>
+          <line x1="360" y1="82" x2="360" y2="110" stroke="#f59e0b" stroke-width="2" marker-end="url(#arr-4)"/>
+          <line x1="472" y1="82" x2="472" y2="110" stroke="#22c55e" stroke-width="2" marker-end="url(#arr-4)"/>
+
+          <!-- Labels boxes -->
+          <rect x="168" y="112" width="160" height="70" rx="8" fill="#3a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="248" y="135" text-anchor="middle" fill="#fca5a5" font-size="13" font-weight="700" font-family="Inter, sans-serif">MAJOR</text>
+          <text x="248" y="153" text-anchor="middle" fill="#f87171" font-size="11" font-family="Inter, sans-serif">Breaking change</text>
+          <text x="248" y="170" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">API thay đổi không tương thích</text>
+
+          <rect x="280" y="112" width="160" height="70" rx="8" fill="#2a1800" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="360" y="135" text-anchor="middle" fill="#fcd34d" font-size="13" font-weight="700" font-family="Inter, sans-serif">MINOR</text>
+          <text x="360" y="153" text-anchor="middle" fill="#fbbf24" font-size="11" font-family="Inter, sans-serif">New feature</text>
+          <text x="360" y="170" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">Backward compatible</text>
+
+          <rect x="392" y="112" width="160" height="70" rx="8" fill="#0d2e1e" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="472" y="135" text-anchor="middle" fill="#86efac" font-size="13" font-weight="700" font-family="Inter, sans-serif">PATCH</text>
+          <text x="472" y="153" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter, sans-serif">Bug fix</text>
+          <text x="472" y="170" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">Không thêm feature mới</text>
+
+          <!-- Range operators section -->
+          <text x="36" y="215" fill="#94a3b8" font-size="12" font-weight="700" font-family="Inter, sans-serif">Range Operators:</text>
+          <text x="36" y="237" fill="#fcd34d" font-size="12" font-family="JetBrains Mono, monospace">^2.4.1</text>
+          <text x="110" y="237" fill="#94a3b8" font-size="11" font-family="Inter, sans-serif">→ chấp nhận 2.x.x (minor + patch OK, MAJOR phải = 2)</text>
+          <text x="36" y="256" fill="#86efac" font-size="12" font-family="JetBrains Mono, monospace">~2.4.1</text>
+          <text x="110" y="256" fill="#94a3b8" font-size="11" font-family="Inter, sans-serif">→ chấp nhận 2.4.x (chỉ patch OK, MINOR phải = 4)</text>
+          <text x="36" y="275" fill="#c7d2fe" font-size="12" font-family="JetBrains Mono, monospace">2.4.1</text>
+          <text x="110" y="275" fill="#94a3b8" font-size="11" font-family="Inter, sans-serif">→ chính xác version 2.4.1 (không cập nhật tự động)</text>
+        </svg>
+      </div>
+
+      <h3>Bảng tổng hợp Range Operators</h3>
+
+      <table>
+        <tr>
+          <th>Operator</th>
+          <th>Ví dụ</th>
+          <th>Chấp nhận</th>
+          <th>Không chấp nhận</th>
+        </tr>
+        <tr>
+          <td><code>^</code> (caret)</td>
+          <td><code>^2.4.1</code></td>
+          <td>2.4.1, 2.5.0, 2.9.9</td>
+          <td>3.0.0, 1.9.9</td>
+        </tr>
+        <tr>
+          <td><code>~</code> (tilde)</td>
+          <td><code>~2.4.1</code></td>
+          <td>2.4.1, 2.4.8, 2.4.99</td>
+          <td>2.5.0, 3.0.0</td>
+        </tr>
+        <tr>
+          <td>Chính xác</td>
+          <td><code>2.4.1</code></td>
+          <td>2.4.1 (chỉ version này)</td>
+          <td>2.4.2, 2.5.0</td>
+        </tr>
+        <tr>
+          <td><code>*</code> (wildcard)</td>
+          <td><code>*</code></td>
+          <td>Mọi version (kể cả major)</td>
+          <td>(không có giới hạn)</td>
+        </tr>
+        <tr>
+          <td><code>&gt;=</code></td>
+          <td><code>&gt;=2.4.0</code></td>
+          <td>2.4.0, 3.0.0, 99.0.0</td>
+          <td>2.3.9</td>
+        </tr>
+        <tr>
+          <td>Range</td>
+          <td><code>2.0.0 - 3.0.0</code></td>
+          <td>2.0.0 đến 3.0.0</td>
+          <td>1.x, 3.0.1+</td>
+        </tr>
+      </table>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Tại sao không dùng * (wildcard) cho mọi thứ?</div>
+        <p>
+          Dùng <code>*</code> nghĩa là "chấp nhận bất kỳ version nào kể cả major".
+          Nếu package X ra version 3.0.0 với breaking changes, app của bạn sẽ tự động "nâng cấp"
+          và có thể bị lỗi ngay lập tức. Đây là lý do <code>package-lock.json</code> tồn tại —
+          để lock chính xác version đã test.
+        </p>
+      </div>
+
+      <h3>Kiểm tra và cập nhật packages</h3>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Quản lý versions</span><button class="copy-btn">Copy</button></div><code># Xem packages nào có update
+npm outdated
+# Package  Current  Wanted  Latest
+# express  4.17.1   4.19.2  4.19.2    ← Wanted = trong range ^4.17.1
+# mongoose 7.0.0    7.6.1   8.3.1     ← Latest 8.x nhưng Wanted vẫn 7.x (major!)
+
+# Cập nhật packages trong range đã khai báo (an toàn)
+npm update
+
+# Cập nhật một package cụ thể lên latest (CÓ THỂ BREAKING!)
+npm install express@latest
+
+# Kiểm tra semver: version nào khớp range?
+node -e "console.log(require('semver').satisfies('2.5.0', '^2.4.1'))"
+# true</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>7.4 package-lock.json và node_modules</h2>
+
+      <p>
+        <code>package-lock.json</code> là file quan trọng mà nhiều người bỏ qua hoặc
+        thậm chí thêm vào <code>.gitignore</code> (sai!). Hãy hiểu tại sao nó quan trọng:
+      </p>
+
+      <h3>Vấn đề không có lock file</h3>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ "Works on my machine" vì không có lock file</div>
+        <p>
+          Developer A cài dependencies hôm nay → package X 2.4.1 được cài.<br>
+          Developer B pull code tuần sau → <code>npm install</code> → package X 2.5.0 được cài (có bug mới).<br>
+          CI server → X 2.5.1 được cài.<br>
+          Production → X 2.5.2 được cài.<br>
+          Tất cả đang chạy các version KHÁC NHAU, dù cùng một source code!
+        </p>
+      </div>
+
+      <h3>package-lock.json giải quyết vấn đề này</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package-lock.json (fragment)</span><button class="copy-btn">Copy</button></div><code>{
+  "name": "my-app",
+  "version": "1.0.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "my-app",
+      "version": "1.0.0",
+      "dependencies": { "express": "^4.19.2" }
+    },
+    "node_modules/express": {
+      "version": "4.19.2",          // ← EXACT version, không phải ^4.19.2
+      "resolved": "https://registry.npmjs.org/express/-/express-4.19.2.tgz",
+      "integrity": "sha512-...",    // ← SHA hash để verify file không bị tamper
+      "dependencies": {
+        "accepts": "~1.3.8",        // ← Dependencies của express cũng bị lock!
+        "body-parser": "1.20.2",
+        "debug": "2.6.9",
+        ...
+      }
+    },
+    "node_modules/accepts": {
+      "version": "1.3.8",           // ← Transitive dep cũng lock
+      ...
+    }
+  }
+}</code></pre>
+
+      <p>
+        <code>package-lock.json</code> lock cả <strong>transitive dependencies</strong>
+        (dependencies của dependencies). Nhờ vậy, mọi người trong team, CI và production
+        đều cài <em>y hệt</em> nhau.
+      </p>
+
+      <h3>Quy tắc node_modules và git</h3>
+
+      <pre><div class="code-header"><span class="code-lang">Text</span><span class="code-filename">.gitignore</span><button class="copy-btn">Copy</button></div><code># ─── KHÔNG commit ─────────────────────────────────────────────────
+node_modules/         # Rất lớn, có thể tái tạo từ package-lock.json
+.env                  # Chứa secrets (API keys, passwords)
+.env.local
+.env.production
+dist/                 # Build output — tái tạo được từ source
+*.log
+npm-debug.log*
+.DS_Store             # macOS metadata
+
+# ─── NÊN commit ───────────────────────────────────────────────────
+# package.json        ← Danh sách dependencies
+# package-lock.json  ← Lock file để reproducible installs
+# .env.example        ← Template không chứa secrets thật</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">Text</span><span class="code-filename">.env.example</span><button class="copy-btn">Copy</button></div><code># Copy file này thành .env và điền giá trị thật
+# ĐỪNG bao giờ commit .env!
+
+NODE_ENV=development
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/mydb
+JWT_SECRET=your-secret-key-here
+REDIS_URL=redis://localhost:6379</code></pre>
+
+      <h3>npm install vs npm ci</h3>
+
+      <table>
+        <tr>
+          <th>Lệnh</th>
+          <th>npm install</th>
+          <th>npm ci</th>
+        </tr>
+        <tr>
+          <td>Mục đích</td>
+          <td>Development, thêm/xóa packages</td>
+          <td>CI/CD, production deploy</td>
+        </tr>
+        <tr>
+          <td>package-lock.json</td>
+          <td>Cập nhật nếu cần</td>
+          <td>KHÔNG bao giờ thay đổi</td>
+        </tr>
+        <tr>
+          <td>Hành vi khi lock lệch</td>
+          <td>Tự update lock file</td>
+          <td>Báo lỗi và dừng</td>
+        </tr>
+        <tr>
+          <td>node_modules</td>
+          <td>Update incremental</td>
+          <td>Xóa sạch rồi cài lại</td>
+        </tr>
+        <tr>
+          <td>Tốc độ</td>
+          <td>Chậm hơn</td>
+          <td>Nhanh hơn (không resolve)</td>
+        </tr>
+        <tr>
+          <td>Dùng khi</td>
+          <td>Hàng ngày khi dev</td>
+          <td>GitHub Actions, Docker build</td>
+        </tr>
+      </table>
+
+      <pre><div class="code-header"><span class="code-lang">YAML</span><span class="code-filename">.github/workflows/ci.yml</span><button class="copy-btn">Copy</button></div><code>name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'         # Cache node_modules giữa các runs
+      - run: npm ci            # ← Dùng ci, không dùng install!
+      - run: npm test</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>7.5 npm Scripts — Automation</h2>
+
+      <p>
+        Thay vì ghi nhớ các lệnh dài, đặt chúng vào <code>scripts</code> trong <code>package.json</code>.
+        npm scripts chạy trong một shell environment đặc biệt nơi <code>node_modules/.bin</code>
+        được thêm vào PATH — nên bạn có thể dùng tên binary trực tiếp.
+      </p>
+
+      <h3>Scripts cơ bản</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package.json — scripts section</span><button class="copy-btn">Copy</button></div><code>{
+  "scripts": {
+    // ── Built-in scripts (không cần "run") ──────────────────────────
+    "start": "node src/index.js",      // npm start
+    "test": "jest",                    // npm test
+    "stop": "...",                     // npm stop
+    "restart": "...",                  // npm restart
+
+    // ── Custom scripts (cần "npm run <name>") ──────────────────────
+    "dev": "nodemon src/index.js",     // npm run dev
+    "dev:debug": "node --inspect src/index.js", // npm run dev:debug
+
+    // ── Build ────────────────────────────────────────────────────────
+    "build": "tsc --project tsconfig.json",
+    "build:watch": "tsc --watch",
+
+    // ── Lint & format ────────────────────────────────────────────────
+    "lint": "eslint src/ --ext .js,.ts",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.{js,ts,json}\"",
+
+    // ── Database ─────────────────────────────────────────────────────
+    "db:seed": "node scripts/seed.js",
+    "db:migrate": "node scripts/migrate.js",
+
+    // ── Kết hợp nhiều lệnh (cross-platform dùng npm-run-all) ────────
+    "check": "npm run lint && npm run test",
+    "clean": "rimraf dist/ node_modules/.cache/"
+  }
+}</code></pre>
+
+      <h3>pre và post hooks</h3>
+
+      <p>
+        npm tự động chạy script có tên <code>pre&lt;scriptname&gt;</code> trước và
+        <code>post&lt;scriptname&gt;</code> sau:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package.json — pre/post hooks</span><button class="copy-btn">Copy</button></div><code>{
+  "scripts": {
+    "pretest": "npm run lint",       // Chạy TRƯỚC npm test
+    "test": "jest",
+    "posttest": "npm run coverage",  // Chạy SAU npm test thành công
+
+    "prebuild": "npm run clean",     // Dọn dẹp trước khi build
+    "build": "tsc",
+    "postbuild": "node scripts/copy-assets.js", // Copy assets sau build
+
+    "preinstall": "node check-node-version.js",
+    "postinstall": "node scripts/setup.js"
+    // postinstall chạy sau npm install — dùng để setup, generate files...
+  }
+}</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Chạy npm test — thứ tự thực thi</span><button class="copy-btn">Copy</button></div><code>npm test
+# 1. Chạy pretest (npm run lint)
+# 2. Chạy test (jest)
+# 3. Nếu test thành công → chạy posttest
+# Nếu bước nào fail → dừng ngay, không chạy bước sau</code></pre>
+
+      <h3>Environment variables trong scripts</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package.json — env vars</span><button class="copy-btn">Copy</button></div><code>{
+  "scripts": {
+    // ── Set trực tiếp (KHÔNG cross-platform — chỉ Unix/Mac) ──────────
+    "test:unix": "NODE_ENV=test jest",
+
+    // ── cross-env: chạy được trên mọi OS (Windows, Mac, Linux) ──────
+    "test": "cross-env NODE_ENV=test jest",
+    "dev": "cross-env NODE_ENV=development PORT=3001 nodemon src/index.js",
+    "build:prod": "cross-env NODE_ENV=production npm run build"
+  }
+}
+
+// Cài cross-env:
+// npm install --save-dev cross-env</code></pre>
+
+      <h3>npx — Chạy package mà không cần cài global</h3>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">npx usage</span><button class="copy-btn">Copy</button></div><code># Chạy package mà không cài global
+npx create-react-app my-app      # Tải tạm thời, chạy, xóa
+npx prisma migrate dev           # Chạy prisma từ devDependencies
+npx jest --watchAll              # Chạy jest local (không global)
+
+# ── Tại sao dùng npx thay vì cài global? ────────────────────────
+# Global:
+npm install -g create-react-app  # Cài vào hệ thống
+create-react-app my-app          # Có thể outdated!
+
+# npx:
+npx create-react-app@latest my-app  # Luôn dùng version mới nhất
+# Không làm ô nhiễm global npm, mỗi lần chạy là version đúng</code></pre>
+
+      <h3>Ví dụ thực tế: Scripts cho Express API project</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package.json</span><button class="copy-btn">Copy</button></div><code>{
+  "name": "my-express-api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start":        "node dist/index.js",
+    "dev":          "cross-env NODE_ENV=development nodemon --watch src --ext ts src/index.ts",
+    "build":        "tsc --project tsconfig.json",
+    "prebuild":     "rimraf dist/",
+    "test":         "cross-env NODE_ENV=test jest --forceExit",
+    "test:watch":   "jest --watchAll",
+    "test:cov":     "jest --coverage --coverageDirectory=coverage",
+    "lint":         "eslint src/ --ext .ts",
+    "lint:fix":     "eslint src/ --ext .ts --fix",
+    "format":       "prettier --write \"src/**/*.ts\"",
+    "typecheck":    "tsc --noEmit",
+    "validate":     "npm run typecheck && npm run lint && npm test",
+    "db:seed":      "cross-env NODE_ENV=development ts-node scripts/seed.ts",
+    "docker:up":    "docker-compose up -d",
+    "docker:down":  "docker-compose down"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongoose": "^8.3.1",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "ts-node": "^10.9.2",
+    "nodemon": "^3.1.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.4",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.11",
+    "eslint": "^9.3.0",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.7",
+    "cross-env": "^7.0.3"
+  }
+}</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>7.6 Tạo và Publish npm Package</h2>
+
+      <p>
+        npm không chỉ là nơi tải packages — bạn cũng có thể đóng góp cho cộng đồng
+        bằng cách publish package của riêng mình. Hãy tạo một package thực tế:
+        <strong>format-vnd</strong> — format số thành tiền VND.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Tạo cấu trúc package</span><button class="copy-btn">Copy</button></div><code># Tạo thư mục package
+mkdir format-vnd
+cd format-vnd
+npm init  # Điền đầy đủ thông tin
+
+# Cài dependencies (nếu cần)
+# Package này không cần dependencies nào!
+
+# Cấu trúc thư mục:
+# format-vnd/
+# ├── src/
+# │   └── index.js      ← Source chính
+# ├── test/
+# │   └── index.test.js ← Tests
+# ├── package.json
+# ├── .npmignore        ← Files không publish
+# └── README.md</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">src/index.js</span><button class="copy-btn">Copy</button></div><code>'use strict';
+
+/**
+ * Format số thành chuỗi tiền VND
+ * @param {number} amount - Số tiền
+ * @param {object} [options]
+ * @param {boolean} [options.symbol=true] - Thêm ký hiệu ₫ hoặc VND
+ * @param {string} [options.style='symbol'] - 'symbol' (₫) hoặc 'code' (VND)
+ * @returns {string}
+ *
+ * @example
+ * formatVND(1500000)              // '1.500.000 ₫'
+ * formatVND(1500000, { style: 'code' }) // '1.500.000 VND'
+ * formatVND(1500000, { symbol: false }) // '1.500.000'
+ */
+function formatVND(amount, options = {}) {
+  const { symbol = true, style = 'symbol' } = options;
+
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    throw new TypeError(`formatVND: expected a number, got ${typeof amount}`);
+  }
+
+  // Dùng Intl.NumberFormat cho format chuẩn
+  const formatter = new Intl.NumberFormat('vi-VN', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+
+  const formatted = formatter.format(Math.abs(amount));
+  const prefix = amount < 0 ? '-' : '';
+
+  if (!symbol) return `${prefix}${formatted}`;
+  if (style === 'code') return `${prefix}${formatted} VND`;
+  return `${prefix}${formatted} ₫`;
+}
+
+/**
+ * Parse chuỗi tiền VND về number
+ * @param {string} str - Ví dụ: '1.500.000 ₫' hoặc '1500000'
+ * @returns {number}
+ */
+function parseVND(str) {
+  if (typeof str !== 'string') {
+    throw new TypeError(`parseVND: expected a string, got ${typeof str}`);
+  }
+  // Xóa ký hiệu tiền, dấu chấm ngăn cách
+  const cleaned = str
+    .replace(/[₫VND\s]/g, '')
+    .replace(/\./g, '');
+  const num = parseInt(cleaned, 10);
+  if (isNaN(num)) throw new Error(`parseVND: không thể parse "${str}"`);
+  return num;
+}
+
+/**
+ * So sánh hai giá trị tiền (trả về âm/0/dương như Array.sort comparator)
+ */
+function compareVND(a, b) {
+  return a - b;
+}
+
+module.exports = { formatVND, parseVND, compareVND };</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">test/index.test.js</span><button class="copy-btn">Copy</button></div><code>const { formatVND, parseVND } = require('../src/index');
+
+describe('formatVND', () => {
+  test('format số dương cơ bản', () => {
+    expect(formatVND(1500000)).toBe('1.500.000 ₫');
+    expect(formatVND(0)).toBe('0 ₫');
+    expect(formatVND(999)).toBe('999 ₫');
+  });
+
+  test('format số âm', () => {
+    expect(formatVND(-50000)).toBe('-50.000 ₫');
+  });
+
+  test('options: symbol=false', () => {
+    expect(formatVND(1500000, { symbol: false })).toBe('1.500.000');
+  });
+
+  test('options: style=code', () => {
+    expect(formatVND(1500000, { style: 'code' })).toBe('1.500.000 VND');
+  });
+
+  test('throw khi không phải number', () => {
+    expect(() => formatVND('1000')).toThrow(TypeError);
+    expect(() => formatVND(NaN)).toThrow(TypeError);
+  });
+});
+
+describe('parseVND', () => {
+  test('parse string có ký hiệu', () => {
+    expect(parseVND('1.500.000 ₫')).toBe(1500000);
+    expect(parseVND('1.500.000 VND')).toBe(1500000);
+  });
+
+  test('parse string số thuần', () => {
+    expect(parseVND('1500000')).toBe(1500000);
+  });
+});</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package.json cho format-vnd</span><button class="copy-btn">Copy</button></div><code>{
+  "name": "format-vnd",
+  "version": "1.0.0",
+  "description": "Format và parse số tiền Việt Nam Đồng (VND)",
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "require": "./src/index.js"
+    }
+  },
+  "files": [
+    "src/"
+  ],
+  "scripts": {
+    "test": "jest",
+    "prepublishOnly": "npm test"  // Tự động test trước khi publish
+  },
+  "keywords": ["vnd", "vietnam", "currency", "format", "money"],
+  "author": "Nguyen Van A <a@example.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">Text</span><span class="code-filename">.npmignore</span><button class="copy-btn">Copy</button></div><code># Files KHÔNG publish lên npm registry
+test/
+*.test.js
+*.spec.js
+.github/
+.vscode/
+coverage/
+.env*
+*.log</code></pre>
+
+      <h3>Publish lên npm registry</h3>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Publish flow</span><button class="copy-btn">Copy</button></div><code># 1. Đăng ký tài khoản tại npmjs.com
+
+# 2. Đăng nhập
+npm login
+# Username: your-username
+# Password: ****
+# Email: your@email.com
+
+# 3. Kiểm tra những gì sẽ được publish
+npm pack --dry-run
+# Danh sách files sẽ được đóng gói
+
+# 4. Publish
+npm publish
+# + format-vnd@1.0.0
+
+# 5. Khi có thay đổi — bump version trước khi publish lại
+npm version patch   # 1.0.0 → 1.0.1 (bug fix)
+npm version minor   # 1.0.0 → 1.1.0 (new feature)
+npm version major   # 1.0.0 → 2.0.0 (breaking change)
+# Lệnh trên tự tạo git commit + tag
+
+npm publish         # Publish version mới
+
+# 6. Publish package scoped (namespace cá nhân)
+# Đổi name thành "@username/format-vnd" trong package.json
+npm publish --access public  # Scoped packages mặc định là private</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>7.7 Bảo Mật và Best Practices</h2>
+
+      <h3>npm audit — Kiểm tra vulnerability</h3>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Security audit</span><button class="copy-btn">Copy</button></div><code># Kiểm tra tất cả packages có vulnerability không
+npm audit
+# ── Kết quả mẫu ──────────────────────────────────────────────────
+# found 3 vulnerabilities (1 low, 2 moderate)
+#
+# moderate  Prototype Pollution in lodash
+# Package   lodash
+# Severity  moderate
+# Via       some-old-package > lodash@3.10.1
+# Fix:      npm audit fix
+# More info https://...
+
+# Tự động fix các vulnerability có thể fix được
+npm audit fix
+
+# Fix kể cả các breaking change (dùng cẩn thận)
+npm audit fix --force
+
+# Chỉ audit, không fail (dùng trong CI script)
+npm audit --audit-level=high || true
+# (|| true) ngăn CI fail nếu chỉ có low/moderate issues</code></pre>
+
+      <h3>Kiểm tra package trước khi cài</h3>
+
+      <p>
+        Không phải package nào trên npm cũng tốt. Trước khi cài một package mới,
+        hãy kiểm tra:
+      </p>
+
+      <table>
+        <tr>
+          <th>Tiêu chí</th>
+          <th>Cách kiểm tra</th>
+          <th>Red flags</th>
+        </tr>
+        <tr>
+          <td>Downloads/tuần</td>
+          <td>npmjs.com → package stats</td>
+          <td>&lt; 1.000 downloads/tuần</td>
+        </tr>
+        <tr>
+          <td>Last publish</td>
+          <td>npmjs.com → versions tab</td>
+          <td>Không update &gt; 2 năm</td>
+        </tr>
+        <tr>
+          <td>Open issues</td>
+          <td>GitHub repository</td>
+          <td>Nhiều issues bị bỏ lơ</td>
+        </tr>
+        <tr>
+          <td>Bundle size</td>
+          <td>bundlephobia.com</td>
+          <td>Quá lớn so với tính năng</td>
+        </tr>
+        <tr>
+          <td>Dependencies</td>
+          <td><code>npm install --dry-run</code></td>
+          <td>Kéo theo 100+ packages</td>
+        </tr>
+        <tr>
+          <td>License</td>
+          <td>package.json / GitHub</td>
+          <td>GPL (copyleft) cho app thương mại</td>
+        </tr>
+      </table>
+
+      <h3>Best Practices tổng hợp</h3>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Best practices cheat sheet</span><button class="copy-btn">Copy</button></div><code># ✅ Luôn commit package-lock.json
+git add package-lock.json
+
+# ✅ Dùng npm ci trong CI/CD (không dùng npm install)
+npm ci
+
+# ✅ Không commit node_modules
+echo "node_modules/" >> .gitignore
+
+# ✅ Không commit .env
+echo ".env" >> .gitignore
+
+# ✅ Kiểm tra security định kỳ
+npm audit
+
+# ✅ Chỉ cài những gì bạn thực sự cần
+# (Tránh "package obesity" — cài package chỉ dùng 1 function)
+
+# ✅ Lock phiên bản Node trong package.json
+# "engines": { "node": ">=20.0.0" }
+
+# ✅ Dùng .nvmrc để team dùng cùng Node version
+echo "20" > .nvmrc
+# Khi pull code: nvm use (đọc .nvmrc tự động)
+
+# ✅ Xem size thực của node_modules
+du -sh node_modules/    # Linux/Mac
+# dir node_modules /s   # Windows
+
+# ✅ Tìm package lớn nhất để tối ưu
+npx cost-of-modules</code></pre>
+
+      <h3>npm workspaces — Monorepo đơn giản</h3>
+
+      <p>
+        Từ npm v7, có thể quản lý nhiều packages trong một repo mà không cần
+        công cụ riêng. Đây là cách setup monorepo đơn giản nhất:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">Text</span><span class="code-filename">Cấu trúc monorepo</span><button class="copy-btn">Copy</button></div><code>my-monorepo/
+├── package.json          ← Root package.json (khai báo workspaces)
+├── package-lock.json     ← Một lock file duy nhất cho toàn repo
+├── node_modules/         ← Shared node_modules (deduped)
+└── packages/
+    ├── shared-utils/     ← Package dùng chung
+    │   ├── package.json  (name: "@myrepo/shared-utils")
+    │   └── src/index.js
+    └── api/              ← API server
+        ├── package.json  (name: "@myrepo/api")
+        └── src/index.js</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">package.json (root)</span><button class="copy-btn">Copy</button></div><code>{
+  "name": "my-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"     // Tất cả thư mục trong packages/ đều là workspace
+  ],
+  "scripts": {
+    // Chạy script trong TẤT CẢ workspaces
+    "build": "npm run build --workspaces",
+    "test":  "npm test --workspaces --if-present",
+
+    // Chạy trong workspace CỤ THỂ
+    "dev:api": "npm run dev --workspace=packages/api"
+  }
+}</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">packages/api/package.json</span><button class="copy-btn">Copy</button></div><code>{
+  "name": "@myrepo/api",
+  "version": "0.1.0",
+  "dependencies": {
+    // Tham chiếu workspace khác — npm tự resolve local
+    "@myrepo/shared-utils": "*",
+    "express": "^4.19.2"
+  },
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js"
+  }
+}</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Dùng workspaces</span><button class="copy-btn">Copy</button></div><code># Cài tất cả dependencies cho toàn monorepo (root directory)
+npm install
+
+# Cài package cho workspace cụ thể
+npm install axios --workspace=packages/api
+
+# Chạy script trong workspace cụ thể
+npm run dev --workspace=packages/api
+
+# npm tự động symlink @myrepo/shared-utils → packages/shared-utils
+# nên require('@myrepo/shared-utils') sẽ dùng code local!</code></pre>
+
+      <!-- ============================================================ -->
+      <div class="summary">
+        <div class="summary-title">📚 Tóm tắt chương 7</div>
+        <ul>
+          <li><strong>npm</strong> gồm 3 thứ: CLI tool, registry (npmjs.com), website — <code>yarn</code> và <code>pnpm</code> là alternatives</li>
+          <li><strong>package.json</strong> chứa metadata, dependencies và scripts; <code>private: true</code> ngăn publish nhầm</li>
+          <li><strong>dependencies</strong> cần cho production; <strong>devDependencies</strong> chỉ cho development/build; <strong>peerDependencies</strong> host phải tự cài</li>
+          <li><strong>Semver</strong>: <code>^</code> cho phép minor+patch, <code>~</code> chỉ cho phép patch, exact version lock chặt nhất</li>
+          <li><strong>package-lock.json</strong> lock exact version của mọi transitive dep — luôn commit file này</li>
+          <li>Dùng <strong>npm ci</strong> trong CI/CD; dùng <strong>npm install</strong> khi development</li>
+          <li><strong>npm scripts</strong> hỗ trợ pre/post hooks, chạy binaries từ node_modules/.bin tự động</li>
+          <li><strong>npm audit</strong> kiểm tra vulnerability — chạy định kỳ và trong CI</li>
+          <li><strong>npm workspaces</strong> quản lý monorepo mà không cần công cụ riêng</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">🏋️ Bài tập thực hành</div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>7.1 Khám phá npm</h4>
+            <p>
+              Tạo project mới, cài 3 packages: <code>chalk</code> (in màu terminal),
+              <code>dayjs</code> (format ngày), <code>nanoid</code> (generate ID ngắn).
+              Viết script <code>npm run info</code> in ra:
+              Node version, npm version, danh sách top-level packages đã cài
+              (<code>npm list --depth=0</code>), và ngày giờ hiện tại dùng dayjs.
+              Giải thích sự khác biệt giữa <code>npm list</code> và <code>npm list --depth=0</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-medium">Trung bình</span>
+          <div class="exercise-content">
+            <h4>7.2 Package tiện ích vn-utils</h4>
+            <p>
+              Tạo package <code>vn-utils</code> export 3 functions:
+              <code>formatCurrency(amount, currency?)</code> — format VND hoặc USD,
+              <code>formatDate(date, format?)</code> — format ngày theo chuẩn DD/MM/YYYY,
+              <code>slugify(str)</code> — chuyển "Xin Chào NodeJS" thành "xin-chao-nodejs"
+              (bao gồm bỏ dấu tiếng Việt).
+              Viết unit tests dùng Jest với ít nhất 3 test case mỗi function.
+              Thêm <code>prepublishOnly</code> hook để test tự chạy trước khi publish.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-hard">Khó</span>
+          <div class="exercise-content">
+            <h4>7.3 Monorepo với npm workspaces</h4>
+            <p>
+              Setup monorepo gồm 2 packages:
+              <strong>packages/shared-utils</strong> — export <code>formatDate()</code> và <code>validateEmail()</code>.
+              <strong>packages/api</strong> — Express server dùng shared-utils, có route
+              <code>POST /validate</code> nhận <code>{ email }</code> và trả về kết quả validate.
+              Yêu cầu: (1) Root <code>package.json</code> khai báo workspaces.
+              (2) api dùng <code>"@myapp/shared-utils": "*"</code> trong dependencies — npm symlink local.
+              (3) Viết script ở root: <code>npm run dev</code> khởi động api,
+              <code>npm test --workspaces</code> chạy tests của tất cả packages.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chapter-nav">
+        <a href="chapter06.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Chương trước</span>
+          <span class="chapter-nav-title">HTTP Server thuần — Tự xây dựng server với module http</span>
+        </a>
+        <a href="../part3/chapter08.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp theo →</span>
+          <span class="chapter-nav-title">Express.js cơ bản — Framework web phổ biến nhất</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

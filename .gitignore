@@ -1,0 +1,17 @@
+# Build dependencies
+scripts/node_modules/
+scripts/.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temp files từ build
+dist/_tmp_*.html

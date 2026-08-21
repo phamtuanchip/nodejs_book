@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 3: NodeJS là gì? Cài đặt môi trường | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet & Web</a>
+        <a href="chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="chapter03.html" class="nav-link active"><span class="chapter-num">03</span> NodeJS & Môi trường</a>
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+        <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth & Session</a>
+        <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating & SSR</a>
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB & Mongoose</a>
+        <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL & Prisma</a>
+        <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching & Redis</a>
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy & DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless & Cloud</a>
+      </div>
+    </nav>
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span><span>Phần 1</span><span>›</span><span>Chương 3</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 1 — Nền tảng</div>
+        <h1>Chương 3: NodeJS là gì? Cài đặt Môi Trường Lập Trình</h1>
+        <p class="lead">
+          Bây giờ bạn đã hiểu web hoạt động như thế nào, đã đến lúc gặp gỡ công cụ chính.
+          Chương này giải thích NodeJS là gì, tại sao nó đặc biệt, và giúp bạn cài đặt
+          đầy đủ môi trường để bắt đầu code.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ</div>
+        <ul>
+          <li>Hiểu NodeJS là gì và tại sao JavaScript có thể chạy ngoài trình duyệt</li>
+          <li>Cài đặt NodeJS, npm và VS Code</li>
+          <li>Chạy được chương trình NodeJS đầu tiên</li>
+          <li>Hiểu cơ bản về Event Loop — thứ làm NodeJS khác biệt</li>
+          <li>Biết cách dùng npm để quản lý packages</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>3.1 NodeJS là gì?</h2>
+
+      <p>
+        Trước năm 2009, JavaScript chỉ sống trong trình duyệt. Bạn không thể dùng JS để đọc file,
+        truy cập database, hay xây dựng server.
+      </p>
+
+      <p>
+        Năm 2009, <strong>Ryan Dahl</strong> tạo ra NodeJS — một môi trường chạy JavaScript bên ngoài trình duyệt,
+        sử dụng <strong>V8 engine</strong> (engine JS của Chrome) cùng với thư viện <strong>libuv</strong>
+        để xử lý I/O bất đồng bộ.
+      </p>
+
+      <!-- Diagram 1: NodeJS history — Before vs After 2009 -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 680 200" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="680" height="200" fill="#0d1117" rx="10"/>
+
+          <!-- Divider -->
+          <line x1="340" y1="10" x2="340" y2="190" stroke="#334155" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+          <!-- LEFT PANEL: Before 2009 -->
+          <text x="170" y="28" text-anchor="middle" fill="#ef4444" font-size="13" font-weight="700" font-family="Inter,sans-serif">Trước 2009</text>
+
+          <!-- Browser box (CLIENT) -->
+          <rect x="20" y="40" width="140" height="60" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="90" y="63" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Browser</text>
+          <text x="90" y="80" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">V8 + JavaScript</text>
+          <text x="90" y="94" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">(chỉ ở đây)</text>
+
+          <!-- Server box (old) -->
+          <rect x="175" y="40" width="140" height="60" rx="8" fill="#3a1a1a" stroke="#f87171" stroke-width="1.5"/>
+          <text x="245" y="63" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="600" font-family="Inter,sans-serif">Server</text>
+          <text x="245" y="80" text-anchor="middle" fill="#f87171" font-size="11" font-family="Inter,sans-serif">PHP / Java</text>
+          <text x="245" y="94" text-anchor="middle" fill="#f87171" font-size="10" font-family="Inter,sans-serif">Python / C#</text>
+
+          <!-- Caption left -->
+          <text x="170" y="130" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">JavaScript bị nhốt</text>
+          <text x="170" y="145" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">trong trình duyệt</text>
+          <text x="170" y="165" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">2 ngôn ngữ khác nhau</text>
+          <text x="170" y="180" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">cho frontend &amp; backend</text>
+
+          <!-- RIGHT PANEL: After 2009 -->
+          <text x="510" y="28" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="700" font-family="Inter,sans-serif">Sau 2009 (NodeJS)</text>
+
+          <!-- Browser box (CLIENT) -->
+          <rect x="355" y="40" width="140" height="60" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="425" y="63" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Browser</text>
+          <text x="425" y="80" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">V8 + JavaScript</text>
+
+          <!-- NodeJS server box (SERVER) -->
+          <rect x="510" y="40" width="155" height="60" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="587" y="58" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">NodeJS</text>
+          <text x="587" y="74" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">V8 + libuv</text>
+          <text x="587" y="88" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">JavaScript trên Server!</text>
+
+          <!-- Caption right -->
+          <text x="510" y="130" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">JavaScript chạy khắp nơi</text>
+          <text x="510" y="145" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">frontend &amp; backend</text>
+          <text x="510" y="165" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">1 ngôn ngữ duy nhất</text>
+          <text x="510" y="180" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">JavaScript everywhere!</text>
+        </svg>
+      </div>
+
+      <p>
+        NodeJS không phải là ngôn ngữ mới hay framework — nó là <strong>runtime environment</strong>
+        (môi trường chạy) cho JavaScript.
+      </p>
+
+      <h3>Tại sao NodeJS phổ biến?</h3>
+
+      <ul>
+        <li><strong>Một ngôn ngữ cho cả frontend lẫn backend</strong> — dùng JS ở khắp nơi</li>
+        <li><strong>Non-blocking I/O</strong> — xử lý hàng nghìn kết nối đồng thời hiệu quả</li>
+        <li><strong>Hệ sinh thái npm khổng lồ</strong> — hơn 2 triệu packages</li>
+        <li><strong>Cộng đồng lớn</strong> — dễ tìm tài liệu, giải pháp</li>
+        <li><strong>Nhanh</strong> — V8 engine tối ưu cao, libuv xử lý I/O hiệu quả</li>
+      </ul>
+
+      <h3>NodeJS phù hợp cho gì?</h3>
+
+      <table>
+        <tr>
+          <th>Phù hợp ✅</th>
+          <th>Không phù hợp ❌</th>
+        </tr>
+        <tr>
+          <td>REST API, GraphQL API</td>
+          <td>CPU-intensive tasks (ML, video encoding)</td>
+        </tr>
+        <tr>
+          <td>Real-time apps (chat, gaming)</td>
+          <td>Tính toán nặng liên tục</td>
+        </tr>
+        <tr>
+          <td>Microservices</td>
+          <td>Heavy computation without worker threads</td>
+        </tr>
+        <tr>
+          <td>Streaming (video, audio)</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>CLI tools, build tools</td>
+          <td></td>
+        </tr>
+      </table>
+
+      <!-- ============================================================ -->
+      <h2>3.2 Event Loop — Trái Tim của NodeJS</h2>
+
+      <p>
+        Điều làm NodeJS đặc biệt là <strong>non-blocking, event-driven architecture</strong>.
+        Hãy so sánh với cách server truyền thống hoạt động:
+      </p>
+
+      <!-- Diagram 2: Event Loop concept — Traditional vs NodeJS -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 700 220" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr-8" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-8g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#22c55e"/>
+            </marker>
+          </defs>
+          <rect width="700" height="220" fill="#0d1117" rx="10"/>
+
+          <!-- SECTION 1: Traditional (blocking) -->
+          <text x="16" y="22" fill="#f87171" font-size="12" font-weight="700" font-family="Inter,sans-serif">Server truyền thống — Blocking (Apache/PHP)</text>
+
+          <!-- User A -->
+          <rect x="16" y="32" width="55" height="22" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="43" y="47" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">User A</text>
+          <line x1="71" y1="43" x2="90" y2="43" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-8)"/>
+          <rect x="91" y="32" width="200" height="22" rx="4" fill="#3a1a1a" stroke="#f87171" stroke-width="1"/>
+          <text x="191" y="47" text-anchor="middle" fill="#f87171" font-size="10" font-family="Inter,sans-serif">Thread 1: [==== Đọc DB ====] Trả kết quả</text>
+
+          <!-- User B -->
+          <rect x="16" y="62" width="55" height="22" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="43" y="77" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">User B</text>
+          <line x1="71" y1="73" x2="90" y2="73" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-8)"/>
+          <rect x="91" y="62" width="200" height="22" rx="4" fill="#3a1a1a" stroke="#f87171" stroke-width="1"/>
+          <text x="191" y="77" text-anchor="middle" fill="#f87171" font-size="10" font-family="Inter,sans-serif">Thread 2: [==== Đọc DB ====] Trả kết quả</text>
+
+          <!-- User C -->
+          <rect x="16" y="92" width="55" height="22" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="43" y="107" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">User C</text>
+          <line x1="71" y1="103" x2="90" y2="103" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-8)"/>
+          <rect x="91" y="92" width="200" height="22" rx="4" fill="#3a1a1a" stroke="#f87171" stroke-width="1"/>
+          <text x="191" y="107" text-anchor="middle" fill="#f87171" font-size="10" font-family="Inter,sans-serif">Thread 3: [==== Đọc DB ====] Trả kết quả</text>
+
+          <text x="16" y="128" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">1000 users = 1000 threads = tốn nhiều RAM</text>
+
+          <!-- Divider -->
+          <line x1="10" y1="138" x2="690" y2="138" stroke="#334155" stroke-width="1" stroke-dasharray="5,4"/>
+
+          <!-- SECTION 2: NodeJS (non-blocking) -->
+          <text x="16" y="155" fill="#22c55e" font-size="12" font-weight="700" font-family="Inter,sans-serif">NodeJS — Non-blocking Event Loop</text>
+
+          <!-- Users -->
+          <rect x="16" y="163" width="55" height="20" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="43" y="177" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">User A</text>
+          <rect x="16" y="187" width="55" height="20" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="43" y="201" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Inter,sans-serif">User B</text>
+          <rect x="16" y="211" width="55" height="16" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="43" y="222" text-anchor="middle" fill="#93c5fd" font-size="9" font-family="Inter,sans-serif">User C</text>
+
+          <!-- Arrows to event loop -->
+          <line x1="71" y1="173" x2="130" y2="185" stroke="#64748b" stroke-width="1.2" marker-end="url(#arr-8)"/>
+          <line x1="71" y1="197" x2="130" y2="191" stroke="#64748b" stroke-width="1.2" marker-end="url(#arr-8)"/>
+          <line x1="71" y1="219" x2="130" y2="196" stroke="#64748b" stroke-width="1.2" marker-end="url(#arr-8)"/>
+
+          <!-- Event Loop box -->
+          <rect x="131" y="163" width="130" height="50" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="196" y="183" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Event Loop</text>
+          <text x="196" y="200" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">1 Thread duy nhất</text>
+
+          <!-- Arrow to DB -->
+          <line x1="261" y1="188" x2="310" y2="188" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-8g)"/>
+
+          <!-- DB box -->
+          <rect x="311" y="163" width="120" height="50" rx="8" fill="#3a2a14" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="371" y="183" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="600" font-family="Inter,sans-serif">Database</text>
+          <text x="371" y="200" text-anchor="middle" fill="#fb923c" font-size="10" font-family="Inter,sans-serif">Async I/O</text>
+
+          <!-- Arrow back + result -->
+          <line x1="431" y1="188" x2="480" y2="173" stroke="#22c55e" stroke-width="1.2" marker-end="url(#arr-8g)"/>
+          <line x1="431" y1="188" x2="480" y2="188" stroke="#22c55e" stroke-width="1.2" marker-end="url(#arr-8g)"/>
+          <line x1="431" y1="188" x2="480" y2="203" stroke="#22c55e" stroke-width="1.2" marker-end="url(#arr-8g)"/>
+
+          <!-- Result labels -->
+          <text x="483" y="170" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">→ Trả A</text>
+          <text x="483" y="190" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">→ Trả B</text>
+          <text x="483" y="210" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">→ Trả C</text>
+
+          <text x="350" y="222" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Không block — callback khi DB xong</text>
+        </svg>
+      </div>
+
+      <p>
+        NodeJS dùng <strong>Event Loop</strong> để quản lý điều này. Khi có I/O (đọc file, query DB, HTTP request),
+        NodeJS không đứng chờ — nó đăng ký callback và tiếp tục xử lý việc khác.
+        Khi I/O xong, callback được gọi.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">event-loop-demo.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const fs = require('fs');
+
+console.log('1 - Bắt đầu đọc file...');
+
+// Đọc file bất đồng bộ - không block
+fs.readFile('data.txt', 'utf8', (err, content) => {
+  // Callback này chạy SAU khi file đọc xong
+  console.log('3 - File đã đọc xong:', content.length, 'ký tự');
+});
+
+// Dòng này chạy NGAY LẬP TỨC, không chờ file
+console.log('2 - Dòng này chạy trong khi file đang được đọc!');
+
+// Kết quả:
+// 1 - Bắt đầu đọc file...
+// 2 - Dòng này chạy trong khi file đang được đọc!
+// 3 - File đã đọc xong: 1234 ký tự</code>
+      </pre>
+
+      <div class="callout callout-note">
+        <div class="callout-title">📌 Ghi nhớ</div>
+        NodeJS là <strong>single-threaded</strong> nhưng <strong>non-blocking</strong>.
+        Một thread, nhưng không bao giờ "ngồi chờ" I/O — nó luôn làm việc khác trong lúc chờ.
+        Đây là sức mạnh của Event Loop.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>3.3 Cài Đặt Môi Trường</h2>
+
+      <h3>Bước 1: Cài NodeJS</h3>
+
+      <p>Có hai cách cài NodeJS:</p>
+
+      <p><strong>Cách 1: Cài trực tiếp (đơn giản)</strong></p>
+      <p>Vào <code>nodejs.org</code> → tải bản LTS (Long Term Support) → cài như phần mềm bình thường.</p>
+
+      <p><strong>Cách 2: Dùng nvm — Node Version Manager (khuyên dùng)</strong></p>
+      <p>nvm cho phép cài nhiều version NodeJS và chuyển đổi dễ dàng — rất hữu ích khi làm nhiều project.</p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Cài nvm trên macOS/Linux</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code># Cài nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+# Restart terminal, sau đó:
+nvm install --lts        # Cài version LTS mới nhất
+nvm use --lts            # Dùng version LTS
+nvm list                 # Xem các version đã cài</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Cài nvm-windows (Windows)</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code># Tải nvm-windows từ:
+# https://github.com/coreybutler/nvm-windows/releases
+# Tải file nvm-setup.exe và chạy
+
+# Sau khi cài:
+nvm install lts
+nvm use lts</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Kiểm tra cài đặt thành công</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>node --version    # v20.x.x hoặc cao hơn
+npm --version     # 10.x.x hoặc cao hơn</code>
+      </pre>
+
+      <h3>Bước 2: Cài VS Code</h3>
+      <p>VS Code là editor tốt nhất cho NodeJS development.</p>
+      <ul>
+        <li>Tải tại <code>code.visualstudio.com</code></li>
+        <li>Extensions nên cài: <strong>ESLint</strong>, <strong>Prettier</strong>, <strong>REST Client</strong>, <strong>GitLens</strong></li>
+      </ul>
+
+      <h3>Bước 3: Tạo project đầu tiên</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code># Tạo thư mục project
+mkdir hello-node
+cd hello-node
+
+# Khởi tạo project (tạo file package.json)
+npm init -y
+
+# Mở bằng VS Code
+code .</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>3.4 Chương Trình NodeJS Đầu Tiên</h2>
+
+      <h3>Hello World</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">hello.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>console.log('Hello, NodeJS!');
+console.log('Node version:', process.version);
+console.log('Platform:', process.platform);
+console.log('Current directory:', process.cwd());</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Chạy trong Terminal</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>node hello.js
+
+# Kết quả:
+# Hello, NodeJS!
+# Node version: v20.11.0
+# Platform: win32
+# Current directory: C:\Users\you\hello-node</code>
+      </pre>
+
+      <h3>NodeJS REPL — Thử code ngay trong Terminal</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">REPL — Read Eval Print Loop</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code># Gõ 'node' không có argument để vào REPL
+node
+
+# Trong REPL, gõ code và nhấn Enter để chạy ngay:
+> 2 + 2
+4
+> const name = 'NodeJS'
+undefined
+> `Hello ${name}!`
+'Hello NodeJS!'
+> [1,2,3].map(x => x * 2)
+[ 2, 4, 6 ]
+
+# Thoát REPL: Ctrl+C hai lần, hoặc gõ .exit</code>
+      </pre>
+
+      <h3>HTTP Server trong 5 dòng</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">server.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const http = require('http');
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Xin chào từ NodeJS server!');
+});
+
+server.listen(3000, () => {
+  console.log('Server đang chạy tại http://localhost:3000');
+});</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>node server.js
+# Server đang chạy tại http://localhost:3000
+
+# Mở trình duyệt và vào: http://localhost:3000
+# Bạn sẽ thấy: "Xin chào từ NodeJS server!"
+
+# Nhấn Ctrl+C để dừng server</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>3.5 Module System trong NodeJS</h2>
+
+      <p>NodeJS sử dụng hệ thống module để chia code thành các file riêng biệt.</p>
+
+      <h3>CommonJS (require) — Cách truyền thống</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">math.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// Định nghĩa và export
+function add(a, b) { return a + b; }
+function subtract(a, b) { return a - b; }
+const PI = 3.14159;
+
+module.exports = { add, subtract, PI };
+
+// Hoặc export từng cái:
+// module.exports.add = add;</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">main.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// Import module tự viết
+const math = require('./math');           // ./ = cùng thư mục
+console.log(math.add(5, 3));              // 8
+console.log(math.PI);                     // 3.14159
+
+// Destructuring
+const { add, PI } = require('./math');
+console.log(add(10, 5));                  // 15
+
+// Import module built-in (không cần ./)
+const fs = require('fs');
+const path = require('path');
+
+// Import package từ npm (không cần ./)
+const express = require('express');</code>
+      </pre>
+
+      <h3>ES Modules (import/export) — Cách hiện đại</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">math.mjs (hoặc thêm "type":"module" vào package.json)</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// ES Module export
+export function add(a, b) { return a + b; }
+export const PI = 3.14159;
+export default function multiply(a, b) { return a * b; }
+
+// Import
+import multiply, { add, PI } from './math.mjs';
+console.log(add(2, 3));      // 5
+console.log(multiply(4, 5)); // 20</code>
+      </pre>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Nên dùng cái nào?</div>
+        Hiện tại hầu hết tutorial và codebase NodeJS dùng <strong>CommonJS (require)</strong>.
+        ES Modules đang dần phổ biến hơn, đặc biệt với Typescript.
+        Trong sách này chúng ta sẽ dùng CommonJS ở phần đầu, chuyển sang ES Modules ở phần sau.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>3.6 npm — Node Package Manager</h2>
+
+      <h3>npm là gì?</h3>
+      <p>
+        npm là kho thư viện lớn nhất thế giới với hơn 2 triệu packages.
+        Nó đi kèm với NodeJS và dùng để cài, quản lý các thư viện bên thứ ba.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Các lệnh npm hay dùng</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code># Khởi tạo project mới
+npm init -y
+
+# Cài package (thêm vào dependencies)
+npm install express
+npm install mongoose jsonwebtoken  # Cài nhiều cùng lúc
+
+# Cài package chỉ cho development (không deploy lên production)
+npm install --save-dev nodemon jest
+
+# Cài package globally (dùng như CLI tool)
+npm install -g nodemon
+
+# Xóa package
+npm uninstall express
+
+# Xem danh sách package đã cài
+npm list
+
+# Cập nhật packages
+npm update
+
+# Kiểm tra lỗi bảo mật
+npm audit
+npm audit fix</code>
+      </pre>
+
+      <h3>package.json — Hồ sơ của project</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JSON</span>
+          <span class="code-filename">package.json</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>{
+  "name": "my-node-app",
+  "version": "1.0.0",
+  "description": "Ứng dụng NodeJS đầu tiên của tôi",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0"
+  }
+}</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Chạy scripts</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>npm start      # Chạy script "start"
+npm run dev    # Chạy script "dev" (dùng nodemon - auto restart khi code thay đổi)
+npm test       # Chạy tests</code>
+      </pre>
+
+      <h3>nodemon — Tự động restart server</h3>
+      <p>Khi dev, mỗi lần sửa code bạn phải Ctrl+C rồi <code>node server.js</code> lại. Rất mất thời gian.
+        <code>nodemon</code> theo dõi file và tự restart server khi có thay đổi.</p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>npm install --save-dev nodemon
+npx nodemon server.js   # Tự restart khi lưu file</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>3.7 Cấu trúc Project NodeJS chuẩn</h2>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Text</span>
+          <span class="code-filename">Cấu trúc project Express API</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>my-app/
+├── src/
+│   ├── index.js          # Entry point - khởi động server
+│   ├── app.js            # Cấu hình Express app
+│   ├── routes/           # Định nghĩa routes
+│   │   ├── users.js
+│   │   └── products.js
+│   ├── controllers/      # Xử lý logic request/response
+│   │   ├── userController.js
+│   │   └── productController.js
+│   ├── models/           # Database models
+│   │   ├── User.js
+│   │   └── Product.js
+│   ├── middleware/       # Custom middleware
+│   │   ├── auth.js
+│   │   └── errorHandler.js
+│   └── utils/            # Helper functions
+│       └── logger.js
+├── tests/                # Test files
+├── .env                  # Environment variables (KHÔNG commit lên git!)
+├── .env.example          # Template .env để người khác tham khảo
+├── .gitignore
+├── package.json
+└── README.md</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Text</span>
+          <span class="code-filename">.gitignore</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>node_modules/    # Thư mục này có thể rất lớn, KHÔNG commit
+.env             # Chứa secrets, KHÔNG commit
+.env.local
+dist/
+*.log</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>3.8 Script tính toán đầu tiên</h2>
+
+      <p>Hãy viết một script thực tế hơn Hello World:</p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">calculator.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// Nhận arguments từ command line
+// Chạy: node calculator.js 10 + 5
+const args = process.argv.slice(2); // Bỏ "node" và "calculator.js"
+
+if (args.length !== 3) {
+  console.error('Cách dùng: node calculator.js <số1> <phép tính> <số2>');
+  console.error('Ví dụ: node calculator.js 10 + 5');
+  process.exit(1); // Thoát với lỗi
+}
+
+const [num1Str, operator, num2Str] = args;
+const num1 = parseFloat(num1Str);
+const num2 = parseFloat(num2Str);
+
+if (isNaN(num1) || isNaN(num2)) {
+  console.error('Lỗi: Vui lòng nhập số hợp lệ');
+  process.exit(1);
+}
+
+let result;
+switch (operator) {
+  case '+': result = num1 + num2; break;
+  case '-': result = num1 - num2; break;
+  case '*': result = num1 * num2; break;
+  case '/':
+    if (num2 === 0) {
+      console.error('Lỗi: Không thể chia cho 0');
+      process.exit(1);
+    }
+    result = num1 / num2;
+    break;
+  default:
+    console.error(`Lỗi: Phép tính '${operator}' không được hỗ trợ`);
+    process.exit(1);
+}
+
+console.log(`${num1} ${operator} ${num2} = ${result}`);</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>node calculator.js 10 + 5
+# 10 + 5 = 15
+
+node calculator.js 100 / 4
+# 100 / 4 = 25
+
+node calculator.js 7.5 "*" 3
+# 7.5 * 3 = 22.5
+
+node calculator.js 10 / 0
+# Lỗi: Không thể chia cho 0</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <div class="summary">
+        <div class="summary-title">📚 Tóm tắt chương 3</div>
+        <ul>
+          <li><strong>NodeJS</strong> là runtime environment cho JavaScript bên ngoài browser, dùng V8 engine + libuv</li>
+          <li><strong>Event Loop</strong> cho phép NodeJS xử lý I/O bất đồng bộ với single thread — hiệu quả cao</li>
+          <li>Cài NodeJS qua <strong>nvm</strong> (khuyên dùng) hoặc tải trực tiếp từ nodejs.org</li>
+          <li><strong>CommonJS</strong> (<code>require/module.exports</code>) là module system mặc định</li>
+          <li><strong>npm</strong> quản lý packages; <strong>package.json</strong> là hồ sơ project</li>
+          <li><strong>nodemon</strong> giúp tự động restart server khi dev</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">🏋️ Bài tập thực hành</div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>3.1 Cài đặt và Hello World</h4>
+            <p>
+              Cài NodeJS bằng nvm. Chạy <code>node --version</code> và <code>npm --version</code> để xác nhận.
+              Tạo file <code>info.js</code> in ra: Node version, npm version, platform, current user (dùng <code>process.env.USER</code> hoặc <code>process.env.USERNAME</code> tùy OS).
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>3.2 Module system</h4>
+            <p>
+              Tạo file <code>utils.js</code> export 3 hàm: <code>formatCurrency(amount)</code> (format số thành tiền VND),
+              <code>capitalizeFirst(str)</code> (viết hoa chữ đầu), và <code>slugify(str)</code> (chuyển "Xin Chào" thành "xin-chao").
+              Import và test trong <code>main.js</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-medium">Trung bình</span>
+          <div class="exercise-content">
+            <h4>3.3 HTTP Server nâng cao</h4>
+            <p>
+              Nâng cấp server.js để xử lý các route khác nhau:
+              <code>GET /</code> → "Trang chủ",
+              <code>GET /about</code> → "Giới thiệu",
+              <code>GET /api/time</code> → JSON chứa thời gian hiện tại,
+              Route không tồn tại → 404 với message phù hợp.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-hard">Khó</span>
+          <div class="exercise-content">
+            <h4>3.4 CLI Task Manager</h4>
+            <p>
+              Xây dựng CLI tool quản lý todo list đơn giản lưu vào file JSON.
+              Commands: <code>node todo.js add "Học NodeJS"</code>,
+              <code>node todo.js list</code> (hiện danh sách),
+              <code>node todo.js done 1</code> (đánh dấu hoàn thành task số 1),
+              <code>node todo.js delete 2</code> (xóa task số 2).
+              Dùng <code>fs</code> module để đọc/ghi file JSON.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chapter-nav">
+        <a href="chapter02.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Chương trước</span>
+          <span class="chapter-nav-title">Stateful vs Stateless — Cookie, Session, Browser Storage</span>
+        </a>
+        <a href="../part2/chapter04.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp theo →</span>
+          <span class="chapter-nav-title">NodeJS Core Modules — fs, path, events, crypto</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

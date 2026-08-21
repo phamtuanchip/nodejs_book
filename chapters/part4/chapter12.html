@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 12: MongoDB với Mongoose | NodeJS Book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet &amp; Web</a>
+        <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS &amp; Môi trường</a>
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+        <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth &amp; Session</a>
+        <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating &amp; SSR</a>
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="chapter12.html" class="nav-link active"><span class="chapter-num">12</span> MongoDB &amp; Mongoose</a>
+        <a href="chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL &amp; Prisma</a>
+        <a href="chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching &amp; Redis</a>
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy &amp; DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless &amp; Cloud</a>
+      </div>
+    </nav>
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span><span>Phần 4</span><span>›</span><span>Chương 12</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 4 — Database và Lưu Trữ</div>
+        <h1>Chương 12: MongoDB với Mongoose — Database NoSQL</h1>
+        <p class="lead">
+          MongoDB lưu data như JSON object — không cần schema cứng nhắc, scale dễ dàng.
+          Mongoose thêm validation, hooks, và relationships trên nền MongoDB,
+          biến việc làm việc với database thành trải nghiệm tự nhiên và an toàn.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ</div>
+        <ul>
+          <li>Hiểu sự khác biệt NoSQL vs SQL và khi nào chọn MongoDB</li>
+          <li>Kết nối NodeJS với MongoDB Atlas (cloud miễn phí)</li>
+          <li>Định nghĩa Schema và Model với Mongoose</li>
+          <li>Thực hiện CRUD đầy đủ: Create, Read, Update, Delete</li>
+          <li>Dùng Population để liên kết các document</li>
+          <li>Viết Middleware hooks (pre/post) để tự động hóa logic</li>
+          <li>Aggregation pipeline cho thống kê phức tạp</li>
+          <li>Tạo Indexes để tăng tốc truy vấn</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>12.1 NoSQL vs SQL — Chọn Gì Cho Đúng?</h2>
+
+      <p>
+        Trước khi học MongoDB, cần hiểu rõ <strong>tại sao</strong> bạn chọn nó thay vì SQL.
+        Đây không phải là "cái nào tốt hơn" — mà là "cái nào phù hợp hơn cho bài toán này".
+      </p>
+
+      <div class="svg-diagram">
+        <svg viewBox="0 0 740 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-12a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <!-- SQL Side -->
+          <rect x="20" y="20" width="330" height="300" rx="10" fill="#1a2240" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="185" y="48" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter,sans-serif">SQL — Bảng cứng nhắc</text>
+          <!-- Table Header -->
+          <rect x="40" y="60" width="290" height="30" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="80" y="80" fill="#93c5fd" font-size="11" font-family="Inter,sans-serif" font-weight="600">id</text>
+          <text x="130" y="80" fill="#93c5fd" font-size="11" font-family="Inter,sans-serif" font-weight="600">name</text>
+          <text x="210" y="80" fill="#93c5fd" font-size="11" font-family="Inter,sans-serif" font-weight="600">email</text>
+          <text x="280" y="80" fill="#93c5fd" font-size="11" font-family="Inter,sans-serif" font-weight="600">age</text>
+          <!-- Row 1 -->
+          <rect x="40" y="90" width="290" height="28" rx="0" fill="#152a45"/>
+          <text x="80" y="109" fill="#94a3b8" font-size="11" font-family="monospace">1</text>
+          <text x="130" y="109" fill="#94a3b8" font-size="11" font-family="monospace">Alice</text>
+          <text x="210" y="109" fill="#94a3b8" font-size="11" font-family="monospace">alice@…</text>
+          <text x="280" y="109" fill="#94a3b8" font-size="11" font-family="monospace">28</text>
+          <!-- Row 2 -->
+          <rect x="40" y="118" width="290" height="28" rx="0" fill="#1e3a5f" fill-opacity="0.4"/>
+          <text x="80" y="137" fill="#94a3b8" font-size="11" font-family="monospace">2</text>
+          <text x="130" y="137" fill="#94a3b8" font-size="11" font-family="monospace">Bob</text>
+          <text x="210" y="137" fill="#94a3b8" font-size="11" font-family="monospace">bob@…</text>
+          <text x="280" y="137" fill="#ef4444" font-size="11" font-family="monospace">NULL</text>
+          <!-- warning -->
+          <rect x="40" y="160" width="290" height="50" rx="6" fill="#3a1a14" stroke="#dc2626" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="185" y="183" text-anchor="middle" fill="#fc8181" font-size="11" font-family="Inter,sans-serif">Thêm field "phone" → phải ALTER TABLE</text>
+          <text x="185" y="198" text-anchor="middle" fill="#fc8181" font-size="11" font-family="Inter,sans-serif">→ toàn bộ hàng cũ bị NULL hoặc lỗi</text>
+          <!-- vertical scale icon -->
+          <rect x="80" y="230" width="170" height="60" rx="6" fill="#1a2a3a" stroke="#3b82f6" stroke-width="1"/>
+          <text x="165" y="256" text-anchor="middle" fill="#93c5fd" font-size="11" font-family="Inter,sans-serif">Vertical Scaling</text>
+          <text x="165" y="272" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Nâng cấp server to hơn</text>
+          <text x="165" y="286" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">(giới hạn &amp; đắt)</text>
+
+          <!-- MongoDB Side -->
+          <rect x="390" y="20" width="330" height="300" rx="10" fill="#1a3a14" stroke="#00ed64" stroke-width="1.5"/>
+          <text x="555" y="48" text-anchor="middle" fill="#86efac" font-size="13" font-weight="600" font-family="Inter,sans-serif">MongoDB — Document linh hoạt</text>
+          <!-- Doc 1 -->
+          <rect x="410" y="60" width="130" height="120" rx="6" fill="#0f2d0f" stroke="#00ed64" stroke-width="1"/>
+          <text x="475" y="82" text-anchor="middle" fill="#86efac" font-size="10" font-family="monospace" font-weight="600">{ document }</text>
+          <text x="425" y="100" fill="#6ee7b7" font-size="10" font-family="monospace">_id: ObjectId</text>
+          <text x="425" y="116" fill="#6ee7b7" font-size="10" font-family="monospace">name: "Alice"</text>
+          <text x="425" y="132" fill="#6ee7b7" font-size="10" font-family="monospace">email: "alice@"</text>
+          <text x="425" y="148" fill="#6ee7b7" font-size="10" font-family="monospace">age: 28</text>
+          <text x="425" y="164" fill="#6ee7b7" font-size="10" font-family="monospace">phone: "091…"</text>
+          <!-- Doc 2 -->
+          <rect x="555" y="60" width="145" height="120" rx="6" fill="#0f2d0f" stroke="#00ed64" stroke-width="1"/>
+          <text x="627" y="82" text-anchor="middle" fill="#86efac" font-size="10" font-family="monospace" font-weight="600">{ document }</text>
+          <text x="570" y="100" fill="#6ee7b7" font-size="10" font-family="monospace">_id: ObjectId</text>
+          <text x="570" y="116" fill="#6ee7b7" font-size="10" font-family="monospace">name: "Bob"</text>
+          <text x="570" y="132" fill="#6ee7b7" font-size="10" font-family="monospace">tags: ["js","ts"]</text>
+          <text x="570" y="148" fill="#6ee7b7" font-size="10" font-family="monospace">address: {</text>
+          <text x="570" y="164" fill="#6ee7b7" font-size="10" font-family="monospace">  city: "HCM" }</text>
+          <!-- tip -->
+          <rect x="410" y="195" width="290" height="50" rx="6" fill="#0a3a14" stroke="#00ed64" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="555" y="218" text-anchor="middle" fill="#86efac" font-size="11" font-family="Inter,sans-serif">Mỗi document có thể có fields khác nhau</text>
+          <text x="555" y="233" text-anchor="middle" fill="#86efac" font-size="11" font-family="Inter,sans-serif">→ Thêm field mới, không ảnh hưởng docs cũ</text>
+          <!-- horizontal scale -->
+          <rect x="410" y="260" width="130" height="44" rx="6" fill="#0f2d0f" stroke="#00ed64" stroke-width="1"/>
+          <text x="475" y="282" text-anchor="middle" fill="#86efac" font-size="11" font-family="Inter,sans-serif">Shard 1</text>
+          <rect x="560" y="260" width="130" height="44" rx="6" fill="#0f2d0f" stroke="#00ed64" stroke-width="1"/>
+          <text x="625" y="282" text-anchor="middle" fill="#86efac" font-size="11" font-family="Inter,sans-serif">Shard 2</text>
+          <text x="555" y="315" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Horizontal Scaling — thêm máy dễ dàng</text>
+
+          <!-- VS label -->
+          <circle cx="370" cy="170" r="18" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="370" y="175" text-anchor="middle" fill="#c7d2fe" font-size="12" font-weight="700" font-family="Inter,sans-serif">VS</text>
+        </svg>
+      </div>
+
+      <table>
+        <tr>
+          <th>Tiêu chí</th>
+          <th>SQL (MySQL, PostgreSQL)</th>
+          <th>MongoDB (NoSQL)</th>
+        </tr>
+        <tr>
+          <td>Cấu trúc dữ liệu</td>
+          <td>Bảng với hàng và cột cố định</td>
+          <td>Collection chứa Documents (JSON)</td>
+        </tr>
+        <tr>
+          <td>Schema</td>
+          <td>Cứng nhắc — phải định nghĩa trước</td>
+          <td>Linh hoạt — có thể thay đổi</td>
+        </tr>
+        <tr>
+          <td>Quan hệ</td>
+          <td>JOIN giữa các bảng</td>
+          <td>Embed hoặc Reference + populate</td>
+        </tr>
+        <tr>
+          <td>ACID</td>
+          <td>Đầy đủ natively</td>
+          <td>Hỗ trợ từ v4.0 (multi-doc transactions)</td>
+        </tr>
+        <tr>
+          <td>Scale</td>
+          <td>Vertical (nâng cấp server)</td>
+          <td>Horizontal (sharding)</td>
+        </tr>
+        <tr>
+          <td>Khi nào dùng</td>
+          <td>Tài chính, quan hệ phức tạp, báo cáo</td>
+          <td>Social, catalog, content, real-time</td>
+        </tr>
+      </table>
+
+      <h3>MongoDB phù hợp khi nào?</h3>
+      <ul>
+        <li><strong>Social media</strong> — Mỗi user profile có fields khác nhau (bio, links, preferences)</li>
+        <li><strong>Product catalog</strong> — Sản phẩm có attributes rất khác nhau (điện thoại vs áo quần)</li>
+        <li><strong>Content management</strong> — Blog, CMS, nơi mỗi loại content có cấu trúc riêng</li>
+        <li><strong>Real-time analytics</strong> — Ghi log nhanh, không cần schema chặt</li>
+        <li><strong>IoT data</strong> — Cảm biến gửi dữ liệu với format biến đổi</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <h2>12.2 MongoDB Atlas — Setup Cloud Miễn Phí</h2>
+
+      <p>
+        MongoDB Atlas là dịch vụ cloud chính thức của MongoDB. Tier M0 miễn phí hoàn toàn —
+        đủ dùng cho học tập và project nhỏ.
+      </p>
+
+      <h3>Bước 1: Tạo tài khoản và cluster</h3>
+      <ol>
+        <li>Vào <code>cloud.mongodb.com</code> → Sign up miễn phí</li>
+        <li>Chọn <strong>Create a deployment</strong> → <strong>M0 Free</strong></li>
+        <li>Chọn provider (AWS/GCP/Azure) và region gần nhất (Singapore)</li>
+        <li>Đặt tên cluster và tạo</li>
+        <li>Tạo <strong>Database User</strong>: username + password mạnh</li>
+        <li><strong>Network Access</strong> → Add IP Address → <code>0.0.0.0/0</code> (cho phép mọi IP trong development)</li>
+      </ol>
+
+      <h3>Bước 2: Lấy connection string</h3>
+
+      <pre><div class="code-header"><span class="code-lang">Text</span><span class="code-filename">Connection String</span><button class="copy-btn">Copy</button></div><code>mongodb+srv://&lt;username&gt;:&lt;password&gt;@cluster0.xxxxx.mongodb.net/&lt;dbname&gt;?retryWrites=true&w=majority
+
+# Ví dụ thực tế:
+mongodb+srv://admin:Passw0rd@cluster0.abc12.mongodb.net/myapp?retryWrites=true&w=majority</code></pre>
+
+      <h3>Bước 3: Cài Mongoose và kết nối</h3>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>npm install mongoose dotenv</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">config/database.js</span><button class="copy-btn">Copy</button></div><code>// config/database.js
+const mongoose = require('mongoose');
+
+const MONGODB_URI = process.env.MONGODB_URI;
+const MAX_RETRIES = 5;
+let retryCount = 0;
+
+async function connectDB() {
+  try {
+    await mongoose.connect(MONGODB_URI, {
+      // Mongoose 6+ không cần useNewUrlParser, useUnifiedTopology nữa
+      serverSelectionTimeoutMS: 5000,  // Timeout sau 5s nếu không kết nối được
+      heartbeatFrequencyMS: 10000,     // Kiểm tra kết nối mỗi 10s
+    });
+
+    console.log('✅ MongoDB kết nối thành công');
+    retryCount = 0; // Reset counter khi thành công
+
+  } catch (error) {
+    console.error(`❌ MongoDB lỗi (lần ${retryCount + 1}/${MAX_RETRIES}):`, error.message);
+
+    if (retryCount < MAX_RETRIES) {
+      retryCount++;
+      const delay = Math.min(1000 * 2 ** retryCount, 30000); // Exponential backoff, max 30s
+      console.log(`Thử lại sau ${delay / 1000}s...`);
+      setTimeout(connectDB, delay);
+    } else {
+      console.error('Đã thử quá nhiều lần. Thoát...');
+      process.exit(1);
+    }
+  }
+}
+
+// Lắng nghe các events của Mongoose
+mongoose.connection.on('connected', () => {
+  console.log('📗 Mongoose connected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('📕 Mongoose connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('📙 Mongoose disconnected — Đang thử kết nối lại...');
+  connectDB();
+});
+
+// Đóng kết nối khi app tắt
+process.on('SIGINT', async () => {
+  await mongoose.connection.close();
+  console.log('MongoDB kết nối đã đóng (app shutdown)');
+  process.exit(0);
+});
+
+module.exports = { connectDB };</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js</span><button class="copy-btn">Copy</button></div><code>require('dotenv').config();
+const express = require('express');
+const { connectDB } = require('./config/database');
+
+const app = express();
+app.use(express.json());
+
+// Kết nối DB trước khi start server
+connectDB().then(() => {
+  app.listen(3000, () => console.log('Server chạy trên port 3000'));
+});</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>12.3 Schema và Model — Blueprint của Document</h2>
+
+      <p>
+        Mongoose thêm lớp <strong>Schema</strong> lên MongoDB để định nghĩa cấu trúc,
+        kiểu dữ liệu và validation. Dù MongoDB linh hoạt, trong thực tế bạn vẫn cần
+        đảm bảo data nhất quán — đó là việc của Schema.
+      </p>
+
+      <h3>Các kiểu dữ liệu trong Mongoose</h3>
+
+      <table>
+        <tr>
+          <th>Type</th>
+          <th>Ví dụ</th>
+          <th>Ghi chú</th>
+        </tr>
+        <tr>
+          <td><code>String</code></td>
+          <td><code>name: String</code></td>
+          <td>Text, có thể dùng trim, lowercase, uppercase</td>
+        </tr>
+        <tr>
+          <td><code>Number</code></td>
+          <td><code>age: Number</code></td>
+          <td>Integer hoặc float, có min/max</td>
+        </tr>
+        <tr>
+          <td><code>Boolean</code></td>
+          <td><code>isActive: Boolean</code></td>
+          <td>true/false</td>
+        </tr>
+        <tr>
+          <td><code>Date</code></td>
+          <td><code>birthday: Date</code></td>
+          <td>Lưu dạng ISO, so sánh được</td>
+        </tr>
+        <tr>
+          <td><code>mongoose.Schema.Types.ObjectId</code></td>
+          <td><code>author: ObjectId</code></td>
+          <td>Reference đến document khác</td>
+        </tr>
+        <tr>
+          <td><code>[String]</code></td>
+          <td><code>tags: [String]</code></td>
+          <td>Mảng các giá trị</td>
+        </tr>
+        <tr>
+          <td><code>Mixed</code></td>
+          <td><code>metadata: Mixed</code></td>
+          <td>Bất kỳ kiểu gì (dùng cẩn thận)</td>
+        </tr>
+      </table>
+
+      <h3>Schema đầy đủ cho hệ thống user</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">models/User.js</span><button class="copy-btn">Copy</button></div><code>const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+
+const userSchema = new mongoose.Schema({
+  // String với validation
+  name: {
+    type: String,
+    required: [true, 'Tên không được để trống'],
+    trim: true,              // Tự cắt khoảng trắng 2 đầu
+    minlength: [2, 'Tên phải từ 2 ký tự'],
+    maxlength: [50, 'Tên không quá 50 ký tự'],
+  },
+
+  email: {
+    type: String,
+    required: [true, 'Email không được để trống'],
+    unique: true,            // Tạo unique index
+    lowercase: true,         // Tự chuyển thành chữ thường
+    trim: true,
+    match: [/^\S+@\S+\.\S+$/, 'Email không hợp lệ'],
+  },
+
+  password: {
+    type: String,
+    required: true,
+    minlength: [6, 'Mật khẩu tối thiểu 6 ký tự'],
+    select: false,           // Mặc định KHÔNG trả về trong query (bảo mật!)
+  },
+
+  role: {
+    type: String,
+    enum: {
+      values: ['user', 'moderator', 'admin'],
+      message: 'Role không hợp lệ: {VALUE}',
+    },
+    default: 'user',
+  },
+
+  avatar: {
+    type: String,
+    default: null,
+  },
+
+  bio: {
+    type: String,
+    maxlength: 200,
+    default: '',
+  },
+
+  // Reference đến document khác
+  followers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',  // Tên model để populate
+  }],
+
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+
+  lastLogin: {
+    type: Date,
+    default: null,
+  },
+
+}, {
+  timestamps: true,         // Tự thêm createdAt và updatedAt
+  toJSON: { virtuals: true },  // Include virtual fields khi convert sang JSON
+  toObject: { virtuals: true },
+});
+
+// ── Virtual field (không lưu DB, tính khi cần) ──
+userSchema.virtual('followerCount').get(function () {
+  return this.followers ? this.followers.length : 0;
+});
+
+// ── Instance method ──
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+// ── Static method ──
+userSchema.statics.findByEmail = function (email) {
+  return this.findOne({ email: email.toLowerCase() });
+};
+
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;</code></pre>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 select: false — Quan trọng cho bảo mật</div>
+        <p>
+          Đặt <code>select: false</code> cho field <code>password</code> nghĩa là
+          mọi query mặc định sẽ <strong>không trả về password</strong>.
+          Khi cần (đăng nhập), dùng <code>.select('+password')</code> để lấy về.
+        </p>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>12.4 CRUD Operations — Làm Việc Với Dữ Liệu</h2>
+
+      <h3>Create — Tạo mới</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Tạo document</span><button class="copy-btn">Copy</button></div><code>const User = require('./models/User');
+
+// Cách 1: Dùng new + save (có thể add logic trước save)
+const user = new User({
+  name: 'Nguyễn Văn A',
+  email: 'nguyenvana@gmail.com',
+  password: 'hashedPassword123',
+});
+const saved = await user.save();
+console.log(saved._id); // ObjectId tự generate
+
+// Cách 2: User.create — ngắn gọn hơn
+const user2 = await User.create({
+  name: 'Trần Thị B',
+  email: 'tranthib@gmail.com',
+  password: 'hashedPassword456',
+});
+
+// Tạo nhiều cùng lúc
+const users = await User.insertMany([
+  { name: 'A', email: 'a@example.com', password: 'pass1' },
+  { name: 'B', email: 'b@example.com', password: 'pass2' },
+], { ordered: false }); // ordered: false — các document khác vẫn insert dù có lỗi</code></pre>
+
+      <h3>Read — Đọc dữ liệu</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Query dữ liệu</span><button class="copy-btn">Copy</button></div><code>// Tìm tất cả (có filter)
+const admins = await User.find({ role: 'admin', isActive: true });
+
+// Tìm 1 document
+const user = await User.findOne({ email: 'nguyenvana@gmail.com' });
+
+// Tìm theo _id
+const userById = await User.findById('507f1f77bcf86cd799439011');
+
+// ── Query operators ──
+const users = await User.find({
+  role: { $in: ['admin', 'moderator'] },   // role là admin hoặc moderator
+  createdAt: { $gte: new Date('2024-01-01') }, // tạo từ đầu 2024
+  name: { $regex: /nguyen/i },              // tên chứa "nguyen" (case-insensitive)
+});
+
+// ── Chaining methods ──
+const result = await User
+  .find({ isActive: true })
+  .select('name email avatar role')   // Chỉ lấy các fields này
+  .sort({ createdAt: -1 })           // Mới nhất trước (-1) hoặc cũ nhất (1)
+  .limit(10)                         // Tối đa 10 kết quả
+  .skip(20)                          // Bỏ qua 20 đầu (cho pagination)
+  .lean();                           // Trả về plain JS object (nhanh hơn Mongoose document)
+
+// ── Pagination helper ──
+async function getUsers({ page = 1, limit = 10, search = '' }) {
+  const skip = (page - 1) * limit;
+  const filter = search
+    ? { $or: [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ]}
+    : {};
+
+  const [users, total] = await Promise.all([
+    User.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    User.countDocuments(filter),
+  ]);
+
+  return {
+    data: users,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrev: page > 1,
+    },
+  };
+}</code></pre>
+
+      <h3>Update — Cập nhật</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Update operations</span><button class="copy-btn">Copy</button></div><code>// findByIdAndUpdate — trả về document sau khi update
+const updated = await User.findByIdAndUpdate(
+  userId,
+  { $set: { name: 'Tên Mới', bio: 'Bio mới' } },
+  {
+    new: true,             // Trả về document SAU khi update (default là trước)
+    runValidators: true,   // Chạy schema validators khi update
+  }
+);
+
+// Update nhiều documents
+await User.updateMany(
+  { isActive: false, lastLogin: { $lt: new Date('2023-01-01') } },
+  { $set: { role: 'user' } }
+);
+
+// ── Atomic operators ──
+// $set: set field value
+// $unset: xóa field
+// $inc: tăng/giảm số
+// $push: thêm vào array
+// $pull: xóa khỏi array
+// $addToSet: thêm vào array nếu chưa có (unique)
+
+// Ví dụ: tăng view count và thêm tag
+await Post.findByIdAndUpdate(postId, {
+  $inc: { viewCount: 1 },
+  $addToSet: { tags: 'nodejs' },  // Thêm 'nodejs' vào tags nếu chưa có
+});
+
+// Ví dụ: xóa follower
+await User.findByIdAndUpdate(userId, {
+  $pull: { followers: followerId },
+});</code></pre>
+
+      <h3>Delete — Xóa</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Delete operations</span><button class="copy-btn">Copy</button></div><code>// Xóa 1 document theo ID
+const deleted = await User.findByIdAndDelete(userId);
+if (!deleted) throw new Error('User không tồn tại');
+
+// Xóa nhiều
+const result = await User.deleteMany({
+  isActive: false,
+  createdAt: { $lt: new Date('2022-01-01') },
+});
+console.log(`Đã xóa ${result.deletedCount} users`);
+
+// Soft delete — không xóa thật, chỉ đánh dấu
+await User.findByIdAndUpdate(userId, {
+  $set: {
+    isDeleted: true,
+    deletedAt: new Date(),
+  },
+});</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>12.5 Population — Liên Kết Documents</h2>
+
+      <p>
+        MongoDB không có JOIN như SQL, nhưng Mongoose có <strong>populate</strong> —
+        tự động thay thế ObjectId bằng document thực tế từ collection khác.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">models/Post.js</span><button class="copy-btn">Copy</button></div><code>const mongoose = require('mongoose');
+
+const commentSchema = new mongoose.Schema({
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  content: { type: String, required: true },
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  createdAt: { type: Date, default: Date.now },
+});
+
+const postSchema = new mongoose.Schema({
+  title: { type: String, required: true, trim: true },
+  content: { type: String, required: true },
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',   // Tên model để populate
+    required: true,
+  },
+  tags: [String],
+  comments: [commentSchema],  // Embed sub-documents
+  viewCount: { type: Number, default: 0 },
+  isPublished: { type: Boolean, default: false },
+}, { timestamps: true });
+
+module.exports = mongoose.model('Post', postSchema);</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Sử dụng populate</span><button class="copy-btn">Copy</button></div><code>const Post = require('./models/Post');
+
+// Populate đơn giản
+const post = await Post.findById(postId)
+  .populate('author', 'name email avatar');  // Chỉ lấy name, email, avatar từ User
+
+// Populate nhiều fields
+const posts = await Post.find({ isPublished: true })
+  .populate('author', 'name avatar')
+  .populate('comments.author', 'name avatar')
+  .sort({ createdAt: -1 });
+
+// Populate với filter
+const post2 = await Post.findById(postId)
+  .populate({
+    path: 'author',
+    select: 'name email',
+    match: { isActive: true },   // Chỉ populate nếu user đang active
+  });
+
+// Lấy posts với thông tin author + số lượng comments
+const postsWithStats = await Post.find({ isPublished: true })
+  .populate('author', 'name avatar')
+  .lean()
+  .then(posts => posts.map(p => ({
+    ...p,
+    commentCount: p.comments.length,
+  })));</code></pre>
+
+      <div class="callout callout-note">
+        <div class="callout-title">📌 Embed vs Reference</div>
+        <p>
+          <strong>Embed</strong> (nhúng vào document — như comments trong post): khi data thường được đọc cùng nhau,
+          không bao giờ đọc riêng, array không quá lớn (&lt;100 items).
+          <strong>Reference</strong> (ObjectId + populate — như author của post): khi data được dùng độc lập,
+          cần update riêng, hoặc array có thể rất lớn.
+        </p>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>12.6 Middleware (Hooks) — Tự Động Hóa Logic</h2>
+
+      <p>
+        Mongoose Middleware (còn gọi là hooks) cho phép thực thi code
+        <strong>trước</strong> hoặc <strong>sau</strong> một operation nhất định.
+        Dùng để hash password, ghi log, xóa data liên quan, v.v.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">models/User.js — với middleware</span><button class="copy-btn">Copy</button></div><code>const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+
+const userSchema = new mongoose.Schema({ /* ...fields như trên... */ });
+
+// ── PRE SAVE HOOK — Hash password trước khi lưu ──
+userSchema.pre('save', async function (next) {
+  // 'this' là document đang được save
+  // Chỉ hash khi password thực sự thay đổi
+  if (!this.isModified('password')) return next();
+
+  try {
+    const saltRounds = 12;
+    this.password = await bcrypt.hash(this.password, saltRounds);
+    next();
+  } catch (error) {
+    next(error); // Truyền lỗi về Mongoose
+  }
+});
+
+// ── PRE FIND HOOK — Tự filter users bị xóa mềm ──
+userSchema.pre(/^find/, function (next) {
+  // 'this' là query object
+  // Tự động filter isDeleted nếu không có trong query
+  if (this._conditions.isDeleted === undefined) {
+    this.where({ isDeleted: { $ne: true } });
+  }
+  next();
+});
+
+// ── POST SAVE HOOK — Ghi log sau khi tạo user mới ──
+userSchema.post('save', function (doc, next) {
+  if (doc.wasNew) {  // Chỉ log khi là document mới
+    console.log(`📧 User mới tạo: ${doc.email} lúc ${doc.createdAt}`);
+    // Có thể gửi email welcome ở đây
+  }
+  next();
+});
+
+// ── POST DELETE HOOK — Cleanup data liên quan ──
+userSchema.post('findOneAndDelete', async function (doc) {
+  if (!doc) return;
+  // Xóa tất cả posts của user này
+  await mongoose.model('Post').deleteMany({ author: doc._id });
+  console.log(`🗑️ Đã xóa posts của user: ${doc.email}`);
+});</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>12.7 Aggregation Pipeline — Phân Tích Dữ Liệu</h2>
+
+      <p>
+        Aggregation pipeline cho phép xử lý và biến đổi data trực tiếp trong MongoDB,
+        rất mạnh cho báo cáo và thống kê. Dữ liệu đi qua các <strong>stages</strong> theo thứ tự.
+      </p>
+
+      <div class="svg-diagram">
+        <svg viewBox="0 0 700 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-12b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <!-- Stages -->
+          <rect x="10" y="40" width="100" height="50" rx="8" fill="#1a3a14" stroke="#00ed64" stroke-width="1.5"/>
+          <text x="60" y="62" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600" font-family="monospace">$match</text>
+          <text x="60" y="78" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="monospace">filter docs</text>
+
+          <line x1="110" y1="65" x2="140" y2="65" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-12b)"/>
+
+          <rect x="140" y="40" width="100" height="50" rx="8" fill="#1a3a14" stroke="#00ed64" stroke-width="1.5"/>
+          <text x="190" y="62" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600" font-family="monospace">$group</text>
+          <text x="190" y="78" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="monospace">aggregate</text>
+
+          <line x1="240" y1="65" x2="270" y2="65" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-12b)"/>
+
+          <rect x="270" y="40" width="100" height="50" rx="8" fill="#1a3a14" stroke="#00ed64" stroke-width="1.5"/>
+          <text x="320" y="62" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600" font-family="monospace">$sort</text>
+          <text x="320" y="78" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="monospace">order</text>
+
+          <line x1="370" y1="65" x2="400" y2="65" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-12b)"/>
+
+          <rect x="400" y="40" width="100" height="50" rx="8" fill="#1a3a14" stroke="#00ed64" stroke-width="1.5"/>
+          <text x="450" y="62" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600" font-family="monospace">$limit</text>
+          <text x="450" y="78" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="monospace">paginate</text>
+
+          <line x1="500" y1="65" x2="530" y2="65" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-12b)"/>
+
+          <rect x="530" y="40" width="100" height="50" rx="8" fill="#1a3a14" stroke="#00ed64" stroke-width="1.5"/>
+          <text x="580" y="62" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600" font-family="monospace">$project</text>
+          <text x="580" y="78" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="monospace">reshape</text>
+
+          <line x1="630" y1="65" x2="660" y2="65" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-12b)"/>
+
+          <text x="670" y="70" fill="#86efac" font-size="13" font-weight="600" font-family="monospace">→</text>
+
+          <!-- Label -->
+          <text x="350" y="115" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Documents đi qua từng stage, output của stage này là input của stage tiếp theo</text>
+        </svg>
+      </div>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Aggregation examples</span><button class="copy-btn">Copy</button></div><code>const Post = require('./models/Post');
+
+// ── Thống kê bài viết theo tháng ──
+const monthlyStats = await Post.aggregate([
+  // Stage 1: Chỉ lấy bài đã publish trong năm 2024
+  { $match: {
+    isPublished: true,
+    createdAt: { $gte: new Date('2024-01-01'), $lt: new Date('2025-01-01') }
+  }},
+
+  // Stage 2: Group theo năm-tháng
+  { $group: {
+    _id: {
+      year: { $year: '$createdAt' },
+      month: { $month: '$createdAt' },
+    },
+    count: { $sum: 1 },
+    totalViews: { $sum: '$viewCount' },
+    avgViews: { $avg: '$viewCount' },
+  }},
+
+  // Stage 3: Sort từ mới nhất
+  { $sort: { '_id.year': -1, '_id.month': -1 } },
+
+  // Stage 4: Format lại output
+  { $project: {
+    _id: 0,
+    period: { $concat: [
+      { $toString: '$_id.year' }, '-',
+      { $cond: [{ $lt: ['$_id.month', 10] }, '0', ''] },
+      { $toString: '$_id.month' },
+    ]},
+    count: 1,
+    totalViews: 1,
+    avgViews: { $round: ['$avgViews', 0] },
+  }},
+]);
+
+// ── Top 5 tags phổ biến nhất ──
+const topTags = await Post.aggregate([
+  { $match: { isPublished: true } },
+  { $unwind: '$tags' },  // Tách mỗi tag thành 1 document riêng
+  { $group: { _id: '$tags', count: { $sum: 1 } }},
+  { $sort: { count: -1 } },
+  { $limit: 5 },
+  { $project: { _id: 0, tag: '$_id', count: 1 } },
+]);
+
+// ── $lookup — JOIN giữa 2 collections ──
+const postsWithAuthorDetails = await Post.aggregate([
+  { $match: { isPublished: true } },
+  {
+    $lookup: {
+      from: 'users',          // Tên collection (lowercase, plural)
+      localField: 'author',   // Field trong Post
+      foreignField: '_id',    // Field trong User
+      as: 'authorInfo',       // Tên field kết quả
+    }
+  },
+  { $unwind: '$authorInfo' },
+  { $project: {
+    title: 1, viewCount: 1, createdAt: 1,
+    'author.name': '$authorInfo.name',
+    'author.avatar': '$authorInfo.avatar',
+  }},
+  { $limit: 10 },
+]);</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>12.8 Indexes — Tăng Tốc Truy Vấn</h2>
+
+      <p>
+        Không có index, MongoDB phải quét toàn bộ collection mỗi query.
+        Index như mục lục sách — giúp tìm nhanh mà không cần đọc từng trang.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Tạo indexes</span><button class="copy-btn">Copy</button></div><code>const postSchema = new mongoose.Schema({ /* ... */ });
+
+// Index đơn
+postSchema.index({ createdAt: -1 });           // Sort theo thời gian tạo
+postSchema.index({ isPublished: 1 });           // Filter theo trạng thái
+
+// Compound index — phù hợp với query có nhiều điều kiện
+postSchema.index({ isPublished: 1, createdAt: -1 });  // Lọc published rồi sort
+
+// Text index — cho full-text search
+postSchema.index({ title: 'text', content: 'text' }, {
+  weights: { title: 10, content: 1 },  // title quan trọng hơn content (10x)
+  name: 'post_search_index',
+});
+
+// Unique index
+postSchema.index({ slug: 1 }, { unique: true });
+
+// Sparse index — chỉ index documents có field này
+postSchema.index({ githubId: 1 }, { sparse: true });
+
+// TTL index — tự xóa document sau một thời gian
+const sessionSchema = new mongoose.Schema({
+  token: String,
+  createdAt: { type: Date, expires: '7d' },  // Tự xóa sau 7 ngày
+});</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Full-text search</span><button class="copy-btn">Copy</button></div><code>// Search với text index (phải có text index trước)
+const results = await Post.find({
+  $text: { $search: 'nodejs async programming' },
+  isPublished: true,
+}, {
+  score: { $meta: 'textScore' },  // Thêm relevance score
+})
+.sort({ score: { $meta: 'textScore' } })  // Sort theo relevance
+.limit(10)
+.lean();
+
+// Kiểm tra query plan (explain)
+const plan = await Post.find({ isPublished: true })
+  .sort({ createdAt: -1 })
+  .explain('executionStats');
+
+console.log('Index used:', plan.queryPlanner.winningPlan.inputStage.indexName);
+console.log('Docs scanned:', plan.executionStats.totalDocsExamined);
+console.log('Docs returned:', plan.executionStats.nReturned);</code></pre>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Index không phải lúc nào cũng tốt</div>
+        <p>
+          Mỗi index chiếm dung lượng RAM và làm chậm Write operations (vì phải cập nhật index).
+          Chỉ tạo index cho các fields thực sự hay được dùng trong query.
+          Dùng <code>explain()</code> để kiểm tra query có dùng index không.
+        </p>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="summary">
+        <div class="summary-title">📋 Tóm tắt Chương 12</div>
+        <ul>
+          <li><strong>MongoDB</strong> lưu data dạng BSON documents, linh hoạt hơn SQL về schema</li>
+          <li><strong>Mongoose</strong> thêm validation, type checking và hooks lên MongoDB</li>
+          <li><strong>Schema + Model</strong>: blueprint định nghĩa cấu trúc, validators, và behavior của documents</li>
+          <li><strong>CRUD</strong>: create/insertMany, find/findById, findByIdAndUpdate, findByIdAndDelete</li>
+          <li><strong>Population</strong>: thay ObjectId bằng document thực tế (tương tự JOIN)</li>
+          <li><strong>Middleware hooks</strong>: pre/post save, find, delete — tự động hóa logic</li>
+          <li><strong>Aggregation pipeline</strong>: $match, $group, $sort, $lookup cho phân tích phức tạp</li>
+          <li><strong>Indexes</strong>: tạo cho fields hay query, text index cho full-text search</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">🏋️ Bài Tập Thực Hành</div>
+
+        <div class="exercise-item">
+          <div class="exercise-badge badge-easy">Dễ</div>
+          <div class="exercise-content">
+            <h4>Bài 1: Mở rộng User Schema</h4>
+            <p>
+              Thêm fields <code>bio</code> (String, max 200 ký tự) và <code>website</code>
+              (String, phải là URL hợp lệ) vào User schema. Viết route
+              <code>PUT /users/:id/profile</code> chỉ cho phép update 2 fields này
+              (không cho phép thay đổi email, role, password qua route này).
+              Trả về user đã update (không có password).
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <div class="exercise-badge badge-medium">Trung bình</div>
+          <div class="exercise-content">
+            <h4>Bài 2: Comment System hoàn chỉnh</h4>
+            <p>
+              Xây dựng Comment system: tạo <code>Comment</code> schema với các fields
+              <code>post</code> (ref Post), <code>author</code> (ref User),
+              <code>content</code>, <code>likes</code> (array of User ref).
+              Viết 5 routes: <code>GET /posts/:postId/comments</code> (với pagination + populate author),
+              <code>POST /posts/:postId/comments</code>, <code>PUT /comments/:id</code>,
+              <code>DELETE /comments/:id</code>, và <code>POST /comments/:id/like</code>
+              (toggle like dùng $addToSet và $pull).
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <div class="exercise-badge badge-hard">Khó</div>
+          <div class="exercise-content">
+            <h4>Bài 3: Full-Text Search có pagination</h4>
+            <p>
+              Implement endpoint <code>GET /api/search?q=nodejs&amp;page=1&amp;limit=10</code>
+              dùng MongoDB text index. Kết quả phải: (1) Sort theo relevance score,
+              (2) Có pagination đầy đủ, (3) Highlight matched text trong field
+              <code>title</code> và <code>excerpt</code> (bọc từ khớp trong
+              <code>&lt;mark&gt;</code> tag bằng JavaScript string processing sau khi query),
+              (4) Trả về author name qua populate. Xử lý edge case: query rỗng, không có kết quả.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="chapter-nav">
+        <a href="../part3/chapter11.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Chương trước</span>
+          <span class="chapter-nav-title">Templating Engine và SSR</span>
+        </a>
+        <a href="chapter13.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp →</span>
+          <span class="chapter-nav-title">SQL với PostgreSQL và Prisma</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

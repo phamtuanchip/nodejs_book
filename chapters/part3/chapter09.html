@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 9: Middleware và Error Handling | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet &amp; Web</a>
+        <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS &amp; Môi trường</a>
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="chapter09.html" class="nav-link active"><span class="chapter-num">09</span> Middleware</a>
+        <a href="chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth &amp; Session</a>
+        <a href="chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating &amp; SSR</a>
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB &amp; Mongoose</a>
+        <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL &amp; Prisma</a>
+        <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching &amp; Redis</a>
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy &amp; DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless &amp; Cloud</a>
+      </div>
+    </nav>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span>
+        <span>Phần 3</span>
+        <span>›</span>
+        <span>Chương 9</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 3 — Web Application với Express</div>
+        <h1>Chương 9: Middleware và Error Handling</h1>
+        <p class="lead">
+          Middleware là trái tim của Express — mọi thứ từ authentication đến logging đến CORS đều là
+          middleware. Hiểu middleware giúp bạn xây dựng ứng dụng có kiến trúc sạch và mở rộng được.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ biết</div>
+        <ul>
+          <li>Middleware là gì và cơ chế <code>next()</code> hoạt động ra sao</li>
+          <li>Viết custom middleware: logger, request ID, authentication check</li>
+          <li>Dùng các middleware phổ biến: cors, helmet, morgan, express-rate-limit</li>
+          <li>Implement error handling middleware đúng chuẩn Express</li>
+          <li>Validate request body với Zod schema</li>
+          <li>Xử lý async errors an toàn với asyncHandler pattern</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>9.1 Middleware là gì?</h2>
+
+      <p>
+        Middleware là những function nằm giữa khi request đến và khi response được gửi về. Chúng tạo
+        thành một <strong>pipeline</strong> (ống dẫn) — request đi qua từng middleware theo thứ tự,
+        mỗi cái có thể đọc, sửa đổi request/response, hoặc dừng pipeline lại.
+      </p>
+
+      <p>
+        Mọi middleware trong Express đều có cùng chữ ký:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">Cấu trúc middleware</span><button class="copy-btn">Copy</button></div><code>// Middleware function signature
+function myMiddleware(req, res, next) {
+  // req  — request object (có thể đọc và sửa đổi)
+  // res  — response object (có thể gửi response và dừng chain)
+  // next — function để chuyển sang middleware tiếp theo
+
+  // 3 lựa chọn:
+
+  // 1. Gọi next() — chuyển sang middleware/handler tiếp theo
+  next();
+
+  // 2. Gửi response — kết thúc request-response cycle
+  // res.json({ ... });
+
+  // 3. Gọi next(error) — chuyển sang error handler
+  // next(new Error('Something went wrong'));
+}</code></pre>
+
+      <!-- SVG Diagram: Middleware Pipeline -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-mw1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-mw1r" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-err" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+            </marker>
+          </defs>
+          <rect width="760" height="200" fill="#0d1117" rx="10"/>
+
+          <!-- Request -->
+          <rect x="10" y="75" width="80" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="50" y="97" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="600" font-family="Inter,sans-serif">Request</text>
+          <text x="50" y="113" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">Client</text>
+
+          <!-- Arrow 1 -->
+          <line x1="90" y1="100" x2="108" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-mw1)"/>
+          <text x="99" y="93" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="Inter,sans-serif">next()</text>
+
+          <!-- Logger MW -->
+          <rect x="109" y="65" width="105" height="70" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="161" y="89" text-anchor="middle" fill="#c7d2fe" font-size="11" font-weight="600" font-family="Inter,sans-serif">Logger</text>
+          <text x="161" y="104" text-anchor="middle" fill="#a5b4fc" font-size="9" font-family="Inter,sans-serif">Ghi log</text>
+          <text x="161" y="118" text-anchor="middle" fill="#a5b4fc" font-size="9" font-family="Inter,sans-serif">request</text>
+
+          <!-- Arrow 2 -->
+          <line x1="214" y1="100" x2="232" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-mw1)"/>
+          <text x="223" y="93" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="Inter,sans-serif">next()</text>
+
+          <!-- Auth MW -->
+          <rect x="233" y="65" width="105" height="70" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="285" y="89" text-anchor="middle" fill="#c7d2fe" font-size="11" font-weight="600" font-family="Inter,sans-serif">Auth</text>
+          <text x="285" y="104" text-anchor="middle" fill="#a5b4fc" font-size="9" font-family="Inter,sans-serif">Kiểm tra</text>
+          <text x="285" y="118" text-anchor="middle" fill="#a5b4fc" font-size="9" font-family="Inter,sans-serif">token</text>
+
+          <!-- Arrow 3 -->
+          <line x1="338" y1="100" x2="356" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-mw1)"/>
+          <text x="347" y="93" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="Inter,sans-serif">next()</text>
+
+          <!-- Validate MW -->
+          <rect x="357" y="65" width="105" height="70" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="409" y="89" text-anchor="middle" fill="#c7d2fe" font-size="11" font-weight="600" font-family="Inter,sans-serif">Validate</text>
+          <text x="409" y="104" text-anchor="middle" fill="#a5b4fc" font-size="9" font-family="Inter,sans-serif">Kiểm tra</text>
+          <text x="409" y="118" text-anchor="middle" fill="#a5b4fc" font-size="9" font-family="Inter,sans-serif">body/params</text>
+
+          <!-- Arrow 4 -->
+          <line x1="462" y1="100" x2="480" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-mw1)"/>
+          <text x="471" y="93" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="Inter,sans-serif">next()</text>
+
+          <!-- Route Handler -->
+          <rect x="481" y="65" width="110" height="70" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="536" y="89" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600" font-family="Inter,sans-serif">Route</text>
+          <text x="536" y="104" text-anchor="middle" fill="#4ade80" font-size="9" font-family="Inter,sans-serif">Handler</text>
+          <text x="536" y="118" text-anchor="middle" fill="#4ade80" font-size="9" font-family="Inter,sans-serif">Xử lý logic</text>
+
+          <!-- Arrow response -->
+          <line x1="481" y1="120" x2="463" y2="155" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-mw1r)"/>
+
+          <!-- Error path (from Auth MW to Error Handler) -->
+          <line x1="285" y1="135" x2="285" y2="165" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-err)"/>
+          <text x="230" y="162" fill="#f87171" font-size="9" font-family="Inter,sans-serif">next(err) nếu lỗi</text>
+
+          <!-- Error Handler -->
+          <rect x="590" y="65" width="155" height="70" rx="8" fill="#3a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="667" y="89" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="600" font-family="Inter,sans-serif">Error Handler</text>
+          <text x="667" y="104" text-anchor="middle" fill="#f87171" font-size="9" font-family="Inter,sans-serif">(err, req, res, next)</text>
+          <text x="667" y="118" text-anchor="middle" fill="#f87171" font-size="9" font-family="Inter,sans-serif">4 tham số bắt buộc</text>
+
+          <!-- Error path connector from validate -->
+          <line x1="409" y1="135" x2="667" y2="136" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="667" y1="136" x2="667" y2="135" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-err)"/>
+
+          <!-- Labels at bottom -->
+          <text x="200" y="185" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">── Mỗi mũi tên là lời gọi next() ──</text>
+          <text x="640" y="185" text-anchor="middle" fill="#f87171" font-size="10" font-family="Inter,sans-serif">── next(err) → bỏ qua mọi MW thường ──</text>
+        </svg>
+      </div>
+
+      <div class="callout callout-note">
+        <div class="callout-title">📌 Quy tắc vàng của middleware</div>
+        Mỗi middleware <strong>phải làm 1 trong 3 việc</strong>: gọi <code>next()</code>, gọi
+        <code>next(error)</code>, hoặc gửi response (<code>res.json()</code>, <code>res.send()</code>...).
+        Nếu không làm gì trong 3 cái này, request sẽ bị treo mãi mãi và client timeout.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>9.2 Phân loại Middleware trong Express</h2>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">types-of-middleware.js</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const app = express();
+const router = express.Router();
+
+// ── 1. Application-level Middleware ──────────────────────────
+// Áp dụng cho MỌI request đến app
+// app.use() không có path → áp dụng tất cả
+app.use((req, res, next) => {
+  console.log(`[APP] ${req.method} ${req.url}`);
+  next();
+});
+
+// app.use() có path → chỉ áp dụng cho routes bắt đầu bằng path đó
+app.use('/api', (req, res, next) => {
+  console.log('[API] Request đến API');
+  next();
+});
+
+// ── 2. Router-level Middleware ───────────────────────────────
+// Chỉ áp dụng cho routes trong router này
+router.use((req, res, next) => {
+  console.log('[ROUTER] Middleware của router');
+  next();
+});
+
+router.get('/items', (req, res) => {
+  res.json({ items: [] });
+});
+
+app.use('/shop', router);
+
+// ── 3. Error-handling Middleware ─────────────────────────────
+// Đặc biệt: PHẢI có đúng 4 tham số (err, req, res, next)
+// Đặt SAU TẤT CẢ routes và middleware khác
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  res.status(err.statusCode || 500).json({
+    success: false,
+    error: err.message
+  });
+});
+
+// ── 4. Built-in Middleware ───────────────────────────────────
+app.use(express.json());          // Parse JSON body
+app.use(express.urlencoded({ extended: true })); // Parse form data
+app.use(express.static('public')); // Serve static files
+
+// ── 5. Third-party Middleware (cài từ npm) ───────────────────
+// const cors = require('cors');
+// const helmet = require('helmet');
+// const morgan = require('morgan');
+// app.use(cors());
+// app.use(helmet());
+// app.use(morgan('dev'));</code></pre>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Thứ tự khai báo middleware</div>
+        Middleware được thực thi theo đúng thứ tự bạn khai báo bằng <code>app.use()</code>.
+        Quy tắc thực tế cho một app production:
+        <ol style="margin-top:8px;padding-left:20px">
+          <li>Security middleware (helmet, cors, rate-limit)</li>
+          <li>Logging (morgan)</li>
+          <li>Body parsing (express.json)</li>
+          <li>Route handlers</li>
+          <li>404 handler</li>
+          <li>Error handler (luôn cuối cùng)</li>
+        </ol>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>9.3 Viết Custom Middleware</h2>
+
+      <p>
+        Custom middleware là nơi bạn đặt logic tái sử dụng. Dưới đây là 3 middleware thực tế và hữu ích:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/requestLogger.js</span><button class="copy-btn">Copy</button></div><code>/**
+ * Middleware 1: Request Logger
+ * Ghi log thời gian, method, path, và status code của mỗi request
+ */
+function requestLogger(req, res, next) {
+  const start = Date.now();
+  const timestamp = new Date().toISOString();
+
+  // Ghi log khi request đến
+  console.log(`→ [${timestamp}] ${req.method} ${req.url}`);
+
+  // Hook vào sự kiện 'finish' của response để ghi log khi xong
+  // res.on('finish') được gọi sau khi response đã được gửi
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const statusEmoji = res.statusCode < 400 ? '✅' : '❌';
+
+    console.log(
+      `← ${statusEmoji} [${res.statusCode}] ${req.method} ${req.url} ` +
+      `(${duration}ms)`
+    );
+  });
+
+  next(); // Chuyển sang middleware tiếp theo
+}
+
+module.exports = requestLogger;
+
+// Cách dùng:
+// const requestLogger = require('./middleware/requestLogger');
+// app.use(requestLogger);</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/addRequestId.js</span><button class="copy-btn">Copy</button></div><code>const { randomUUID } = require('crypto');
+
+/**
+ * Middleware 2: Add Request ID
+ * Tạo unique ID cho mỗi request — giúp tracing log khi debug
+ */
+function addRequestId(req, res, next) {
+  // Dùng request-id từ client nếu có (useful cho distributed tracing)
+  // Nếu không thì tự tạo mới
+  req.id = req.get('X-Request-Id') || randomUUID();
+
+  // Gắn ID vào response header để client biết
+  res.set('X-Request-Id', req.id);
+
+  next();
+}
+
+module.exports = addRequestId;
+
+// Bây giờ trong mọi route, bạn có thể dùng req.id
+// app.get('/test', (req, res) => {
+//   console.log(`Request ${req.id}: processing...`);
+//   res.json({ requestId: req.id });
+// });</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/checkApiKey.js</span><button class="copy-btn">Copy</button></div><code>/**
+ * Middleware 3: API Key Authentication
+ * Kiểm tra API key trong header trước khi cho phép truy cập
+ */
+
+// Giả sử danh sách API keys hợp lệ (trong thực tế lưu trong DB hoặc env)
+const VALID_API_KEYS = new Set([
+  process.env.API_KEY_1 || 'dev-key-abc123',
+  process.env.API_KEY_2 || 'dev-key-xyz789',
+]);
+
+function checkApiKey(req, res, next) {
+  // Đọc API key từ header X-API-Key
+  const apiKey = req.get('X-API-Key');
+
+  if (!apiKey) {
+    return res.status(401).json({
+      success: false,
+      error: 'Thiếu API key. Cung cấp qua header X-API-Key.'
+    });
+  }
+
+  if (!VALID_API_KEYS.has(apiKey)) {
+    return res.status(403).json({
+      success: false,
+      error: 'API key không hợp lệ hoặc đã hết hạn.'
+    });
+  }
+
+  // API key hợp lệ — cho phép tiếp tục
+  next();
+}
+
+module.exports = checkApiKey;
+
+// Áp dụng cho toàn bộ app:
+// app.use(checkApiKey);
+
+// Hoặc chỉ áp dụng cho một route cụ thể:
+// app.get('/api/sensitive-data', checkApiKey, (req, res) => { ... });
+
+// Hoặc áp dụng cho một nhóm routes:
+// app.use('/api/admin', checkApiKey);</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/measureTime.js</span><button class="copy-btn">Copy</button></div><code>/**
+ * Middleware 4: Measure Processing Time
+ * Gắn thời gian xử lý vào response header
+ */
+function measureTime(req, res, next) {
+  const startHrTime = process.hrtime.bigint(); // Độ chính xác nanosecond
+
+  res.on('finish', () => {
+    const endHrTime = process.hrtime.bigint();
+    const durationMs = Number(endHrTime - startHrTime) / 1_000_000; // Convert to ms
+
+    // Ghi vào console
+    console.log(`⏱️  ${req.method} ${req.path}: ${durationMs.toFixed(3)}ms`);
+
+    // Gắn vào header để frontend có thể thấy (chỉ dùng khi dev)
+    // res.set('X-Response-Time', `${durationMs.toFixed(2)}ms`);
+    // Lưu ý: set header sau khi response đã gửi sẽ bị lỗi
+    // Nên set header TRƯỚC khi gửi response
+  });
+
+  // Set header TRƯỚC khi response gửi
+  const origJson = res.json.bind(res);
+  res.json = function(body) {
+    const endHrTime = process.hrtime.bigint();
+    const durationMs = Number(endHrTime - startHrTime) / 1_000_000;
+    res.set('X-Response-Time', `${durationMs.toFixed(2)}ms`);
+    return origJson(body);
+  };
+
+  next();
+}</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>9.4 Middleware phổ biến từ npm</h2>
+
+      <p>
+        Hầu hết các tính năng phổ biến đã có middleware sẵn trên npm, không cần tự viết lại từ đầu:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>npm install cors helmet morgan express-rate-limit</code></pre>
+
+      <h3>cors — Cross-Origin Resource Sharing</h3>
+
+      <p>
+        Mặc định, trình duyệt chặn request từ domain A đến API ở domain B (bảo mật same-origin policy).
+        CORS là cách server "cho phép" các domain khác gọi API của mình.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">cors-config.js</span><button class="copy-btn">Copy</button></div><code>const cors = require('cors');
+
+// ── Option 1: Cho phép TẤT CẢ origins (không an toàn cho production)
+app.use(cors());
+
+// ── Option 2: Chỉ cho phép domain cụ thể
+app.use(cors({
+  origin: 'https://myapp.com'
+}));
+
+// ── Option 3: Config đầy đủ cho production
+const corsOptions = {
+  // Danh sách origins được phép
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'https://myapp.com',
+      'https://www.myapp.com',
+      'http://localhost:3000',  // Development
+      'http://localhost:5173',  // Vite dev server
+    ];
+
+    // Cho phép request không có origin (vd: Postman, curl, mobile app)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: Origin ${origin} không được phép`));
+    }
+  },
+
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+  exposedHeaders: ['X-Request-Id', 'X-Rate-Limit-Remaining'],
+  credentials: true,   // Cho phép gửi cookies và Authorization header
+  maxAge: 86400,       // Cache preflight request 24 giờ (giảm OPTIONS requests)
+};
+
+app.use(cors(corsOptions));
+
+// ── Áp dụng CORS cho route cụ thể ──
+app.get('/public-api', cors(), (req, res) => {
+  // Chỉ route này cho phép tất cả origins
+  res.json({ public: true });
+});</code></pre>
+
+      <h3>helmet — Security Headers</h3>
+
+      <p>
+        Helmet tự động thêm hơn 15 HTTP security headers vào mọi response, bảo vệ app khỏi
+        các lỗ hổng phổ biến như XSS, clickjacking, MIME sniffing...
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">helmet-config.js</span><button class="copy-btn">Copy</button></div><code>const helmet = require('helmet');
+
+// Cách đơn giản nhất — dùng mặc định (đủ tốt cho hầu hết app)
+app.use(helmet());
+
+// Headers helmet thêm vào:
+// Content-Security-Policy        — Kiểm soát tài nguyên được load
+// X-Frame-Options: SAMEORIGIN   — Chống clickjacking (iframe embedding)
+// X-Content-Type-Options: nosniff — Chống MIME sniffing
+// Strict-Transport-Security      — Bắt buộc dùng HTTPS (HSTS)
+// X-XSS-Protection               — Bật XSS filter của browser
+// Referrer-Policy                — Kiểm soát thông tin referrer
+// ... và nhiều header khác
+
+// Config nâng cao nếu cần
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'cdn.example.com'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      fontSrc: ["'self'", 'fonts.gstatic.com'],
+    }
+  },
+  // Tắt một header cụ thể nếu gây conflict:
+  // xFrameOptions: false,
+  crossOriginEmbedderPolicy: false, // Tắt nếu dùng CDN resources
+}));</code></pre>
+
+      <h3>morgan — HTTP Request Logging</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">morgan-config.js</span><button class="copy-btn">Copy</button></div><code>const morgan = require('morgan');
+const fs = require('fs');
+const path = require('path');
+
+// ── Format sẵn có ──
+// 'combined' — Apache combined log format (dùng cho production)
+// 'common'   — Apache common log format
+// 'dev'      — Màu sắc, ngắn gọn (dùng khi development)
+// 'tiny'     — Rất ngắn
+// 'short'    — Ngắn gọn, có response time
+
+// Development: log ra console với màu sắc
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+  // Output: GET /api/products 200 15.234 ms - 234
+}
+
+// Production: log ra file
+if (process.env.NODE_ENV === 'production') {
+  // Tạo thư mục logs nếu chưa có
+  const logsDir = path.join(__dirname, 'logs');
+  if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+
+  // Stream ghi ra file
+  const accessLogStream = fs.createWriteStream(
+    path.join(logsDir, 'access.log'),
+    { flags: 'a' } // append mode
+  );
+
+  app.use(morgan('combined', { stream: accessLogStream }));
+}
+
+// ── Custom Token ── Thêm thông tin custom vào log
+morgan.token('request-id', (req) => req.id || '-');
+morgan.token('body-size', (req) => {
+  const body = JSON.stringify(req.body);
+  return body ? `${body.length}B` : '-';
+});
+
+// Format custom
+app.use(morgan('[:date[clf]] ":method :url" :status :response-time ms - :request-id'));
+
+// ── Bỏ qua log health check (giảm noise) ──
+app.use(morgan('dev', {
+  skip: (req) => req.path === '/health' || req.path === '/favicon.ico'
+}));</code></pre>
+
+      <h3>express-rate-limit — Giới hạn số request</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">rate-limit-config.js</span><button class="copy-btn">Copy</button></div><code>const rateLimit = require('express-rate-limit');
+
+// ── Rate limit tổng quát cho toàn app ──
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  max: 200,                  // Tối đa 200 requests / 15 phút / IP
+  standardHeaders: true,     // Thêm RateLimit-* headers vào response
+  legacyHeaders: false,      // Tắt X-RateLimit-* headers cũ
+  message: {
+    success: false,
+    error: 'Quá nhiều request từ IP này. Thử lại sau 15 phút.',
+  }
+});
+
+app.use(globalLimiter); // Áp dụng cho tất cả
+
+// ── Rate limit chặt hơn cho endpoint nhạy cảm ──
+const loginLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 giờ
+  max: 5,                    // Chỉ 5 lần login thất bại / giờ / IP
+  skipSuccessfulRequests: true, // Không đếm request thành công (chỉ đếm lỗi)
+  message: {
+    success: false,
+    error: 'Quá nhiều lần đăng nhập thất bại. Tài khoản bị tạm khóa 1 giờ.',
+  }
+});
+
+app.post('/api/auth/login', loginLimiter, authController.login);
+
+// ── Rate limit cho API (dùng API key) ──
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,  // 1 phút
+  max: 60,              // 60 requests/phút (1 request/giây)
+  keyGenerator: (req) => {
+    // Rate limit theo API key thay vì IP
+    return req.get('X-API-Key') || req.ip;
+  },
+});</code></pre>
+
+      <h3>Setup đầy đủ cho production app</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js — Production setup</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+
+const requestLogger = require('./middleware/requestLogger');
+const addRequestId = require('./middleware/addRequestId');
+
+const app = express();
+
+// ── BƯỚC 1: Security (đặt đầu tiên) ──────────────────────────
+app.use(helmet());
+
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+  credentials: true,
+}));
+
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: { success: false, error: 'Quá nhiều request, thử lại sau.' }
+}));
+
+// ── BƯỚC 2: Request tracing ───────────────────────────────────
+app.use(addRequestId);  // Tạo X-Request-Id
+
+// ── BƯỚC 3: Logging ───────────────────────────────────────────
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+// app.use(requestLogger); // Hoặc dùng custom logger của mình
+
+// ── BƯỚC 4: Body parsing ──────────────────────────────────────
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+
+// ── BƯỚC 5: Static files ──────────────────────────────────────
+app.use(express.static('public'));
+
+// ── BƯỚC 6: Routes ────────────────────────────────────────────
+const postRoutes = require('./routes/posts');
+const userRoutes = require('./routes/users');
+
+app.use('/api/posts', postRoutes);
+app.use('/api/users', userRoutes);
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', uptime: Math.floor(process.uptime()), requestId: req.id });
+});
+
+// ── BƯỚC 7: 404 Handler ───────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Không tìm thấy: ${req.method} ${req.path}`
+  });
+});
+
+// ── BƯỚC 8: Error Handler (luôn cuối cùng) ───────────────────
+app.use((err, req, res, next) => {
+  console.error(`[${req.id}] Error:`, err.stack);
+  res.status(err.statusCode || 500).json({
+    success: false,
+    error: err.message || 'Lỗi server nội bộ',
+    requestId: req.id,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server: http://localhost:${PORT}`));</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>9.5 Error Handling Middleware</h2>
+
+      <p>
+        Error handling là một trong những phần quan trọng nhất — ứng dụng production phải xử lý lỗi
+        một cách có kiểm soát, không để lộ thông tin nhạy cảm, và luôn trả về response có cấu trúc nhất quán.
+      </p>
+
+      <!-- SVG: Error flow -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-ef1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-ef2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+            </marker>
+            <marker id="arr-ef3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#22c55e"/>
+            </marker>
+          </defs>
+          <rect width="760" height="220" fill="#0d1117" rx="10"/>
+
+          <!-- Route Handler -->
+          <rect x="20" y="80" width="145" height="60" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="92" y="106" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Route Handler</text>
+          <text x="92" y="124" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">throw / next(err)</text>
+
+          <!-- Arrow: error path -->
+          <line x1="165" y1="110" x2="205" y2="110" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-ef2)"/>
+          <text x="185" y="102" text-anchor="middle" fill="#f87171" font-size="9" font-family="Inter,sans-serif">next(err)</text>
+
+          <!-- Skip box (other routes) -->
+          <rect x="206" y="65" width="120" height="90" rx="8" fill="#1a1a1a" stroke="#374151" stroke-width="1" stroke-dasharray="5,3"/>
+          <text x="266" y="100" text-anchor="middle" fill="#6b7280" font-size="11" font-weight="600" font-family="Inter,sans-serif">Other MW</text>
+          <text x="266" y="116" text-anchor="middle" fill="#4b5563" font-size="9" font-family="Inter,sans-serif">(bị bỏ qua)</text>
+          <text x="266" y="130" text-anchor="middle" fill="#4b5563" font-size="9" font-family="Inter,sans-serif">khi có lỗi</text>
+
+          <!-- Arrow: skip others -->
+          <line x1="206" y1="110" x2="207" y2="110" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <line x1="326" y1="110" x2="360" y2="110" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-ef2)"/>
+
+          <!-- Error Handler -->
+          <rect x="361" y="65" width="175" height="90" rx="8" fill="#3a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="448" y="92" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="600" font-family="Inter,sans-serif">Error Handler</text>
+          <text x="448" y="110" text-anchor="middle" fill="#f87171" font-size="10" font-family="JetBrains Mono,monospace">(err, req, res, next)</text>
+          <text x="448" y="128" text-anchor="middle" fill="#f87171" font-size="9" font-family="Inter,sans-serif">4 params — bắt buộc!</text>
+          <text x="448" y="144" text-anchor="middle" fill="#f87171" font-size="9" font-family="Inter,sans-serif">Đặt SAU tất cả routes</text>
+
+          <!-- Arrow: send error response -->
+          <line x1="536" y1="110" x2="578" y2="110" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-ef3)"/>
+
+          <!-- Error Response -->
+          <rect x="579" y="65" width="160" height="90" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="659" y="92" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">JSON Error</text>
+          <text x="659" y="110" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="JetBrains Mono,monospace">{ success: false,</text>
+          <text x="659" y="125" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="JetBrains Mono,monospace">  error: "...",</text>
+          <text x="659" y="140" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="JetBrains Mono,monospace">  statusCode: 4xx }</text>
+
+          <!-- Label -->
+          <text x="380" y="195" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Lỗi đỏ (—) bỏ qua middleware thường và đến thẳng error handler</text>
+        </svg>
+      </div>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">errors/AppError.js</span><button class="copy-btn">Copy</button></div><code>/**
+ * Custom Error class cho ứng dụng
+ * Mở rộng Error mặc định với statusCode và các thông tin thêm
+ */
+class AppError extends Error {
+  constructor(message, statusCode = 500, details = null) {
+    super(message);          // Gọi Error constructor với message
+    this.name = 'AppError';  // Tên lỗi
+    this.statusCode = statusCode;
+    this.details = details;  // Thông tin thêm (vd: validation errors)
+    this.isOperational = true; // Lỗi có chủ ý (ko phải bug bất ngờ)
+
+    // Ghi lại stack trace
+    Error.captureStackTrace(this, this.constructor);
+  }
+
+  // Factory methods tiện lợi
+  static badRequest(message, details) {
+    return new AppError(message, 400, details);
+  }
+
+  static unauthorized(message = 'Chưa đăng nhập hoặc token hết hạn') {
+    return new AppError(message, 401);
+  }
+
+  static forbidden(message = 'Không có quyền truy cập') {
+    return new AppError(message, 403);
+  }
+
+  static notFound(resource = 'Tài nguyên') {
+    return new AppError(`${resource} không tìm thấy`, 404);
+  }
+
+  static conflict(message) {
+    return new AppError(message, 409);
+  }
+
+  static tooManyRequests(message = 'Quá nhiều request') {
+    return new AppError(message, 429);
+  }
+}
+
+module.exports = AppError;</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/errorHandler.js</span><button class="copy-btn">Copy</button></div><code>const AppError = require('../errors/AppError');
+
+/**
+ * Global Error Handler Middleware
+ * PHẢI có đúng 4 tham số (err, req, res, next)
+ * PHẢI đặt SAU TẤT CẢ route handlers và middleware khác
+ */
+function errorHandler(err, req, res, next) {
+  // Log lỗi ra console (trong production nên dùng logging service)
+  if (process.env.NODE_ENV === 'development') {
+    console.error('🔴 Error:', err);
+  } else {
+    // Production: chỉ log lỗi không mong đợi
+    if (!err.isOperational) {
+      console.error('🔴 Unexpected error:', err);
+    }
+  }
+
+  // Xử lý các loại lỗi phổ biến từ thư viện bên ngoài
+  let error = err;
+
+  // Mongoose: CastError (ID không đúng format)
+  if (err.name === 'CastError') {
+    error = AppError.badRequest(`Giá trị "${err.value}" không hợp lệ cho field ${err.path}`);
+  }
+
+  // Mongoose: Duplicate key (E11000)
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue)[0];
+    error = AppError.conflict(`${field} "${err.keyValue[field]}" đã tồn tại`);
+  }
+
+  // Zod: Validation error
+  if (err.name === 'ZodError') {
+    const errors = err.errors.map(e => ({
+      field: e.path.join('.'),
+      message: e.message
+    }));
+    error = AppError.badRequest('Dữ liệu không hợp lệ', errors);
+  }
+
+  // JWT: Token lỗi
+  if (err.name === 'JsonWebTokenError') {
+    error = AppError.unauthorized('Token không hợp lệ');
+  }
+  if (err.name === 'TokenExpiredError') {
+    error = AppError.unauthorized('Token đã hết hạn, vui lòng đăng nhập lại');
+  }
+
+  // Express: Body too large
+  if (err.type === 'entity.too.large') {
+    error = AppError.badRequest('Request body quá lớn');
+  }
+
+  // Chuẩn bị response
+  const statusCode = error.statusCode || 500;
+  const response = {
+    success: false,
+    error: {
+      message: error.message || 'Lỗi server nội bộ',
+      ...(error.details && { details: error.details }),
+    },
+    requestId: req.id, // Từ addRequestId middleware
+  };
+
+  // Trong development: thêm stack trace
+  if (process.env.NODE_ENV === 'development') {
+    response.error.stack = err.stack;
+  }
+
+  res.status(statusCode).json(response);
+}
+
+module.exports = errorHandler;
+
+// ── Cách dùng AppError trong routes ──
+// const AppError = require('../errors/AppError');
+//
+// app.get('/users/:id', async (req, res, next) => {
+//   try {
+//     const user = await User.findById(req.params.id);
+//     if (!user) throw AppError.notFound('User');
+//     res.json({ success: true, data: user });
+//   } catch (err) {
+//     next(err); // Chuyển lỗi đến errorHandler
+//   }
+// });</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>9.6 Request Validation với Zod</h2>
+
+      <p>
+        Validate dữ liệu từ client là bắt buộc — không bao giờ tin tưởng dữ liệu từ bên ngoài.
+        Zod là thư viện validation hiện đại, type-safe, và có thông báo lỗi rõ ràng:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>npm install zod</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">schemas/userSchema.js</span><button class="copy-btn">Copy</button></div><code>const { z } = require('zod');
+
+// Schema đăng ký người dùng
+const registerSchema = z.object({
+  name: z.string({
+    required_error: 'Tên là bắt buộc',
+    invalid_type_error: 'Tên phải là chuỗi ký tự',
+  })
+    .min(2, { message: 'Tên phải có ít nhất 2 ký tự' })
+    .max(100, { message: 'Tên không được quá 100 ký tự' })
+    .trim(),
+
+  email: z.string({
+    required_error: 'Email là bắt buộc',
+  })
+    .email({ message: 'Email không đúng định dạng' })
+    .toLowerCase(),
+
+  password: z.string({
+    required_error: 'Mật khẩu là bắt buộc',
+  })
+    .min(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })
+    .regex(/[A-Z]/, { message: 'Mật khẩu phải có ít nhất 1 chữ hoa' })
+    .regex(/[0-9]/, { message: 'Mật khẩu phải có ít nhất 1 chữ số' }),
+
+  confirmPassword: z.string({
+    required_error: 'Xác nhận mật khẩu là bắt buộc',
+  }),
+
+  role: z.enum(['user', 'admin'], {
+    errorMap: () => ({ message: 'Role phải là user hoặc admin' }),
+  }).default('user'),
+
+  age: z.number()
+    .int({ message: 'Tuổi phải là số nguyên' })
+    .min(13, { message: 'Phải ít nhất 13 tuổi' })
+    .max(120, { message: 'Tuổi không hợp lệ' })
+    .optional(),
+
+}).refine(
+  // Cross-field validation: password phải khớp confirmPassword
+  (data) => data.password === data.confirmPassword,
+  {
+    message: 'Mật khẩu xác nhận không khớp',
+    path: ['confirmPassword'], // Lỗi gắn vào field nào
+  }
+);
+
+// Schema tạo bài viết
+const createPostSchema = z.object({
+  title: z.string({ required_error: 'Tiêu đề là bắt buộc' })
+    .min(5, { message: 'Tiêu đề phải có ít nhất 5 ký tự' })
+    .max(200, { message: 'Tiêu đề không được quá 200 ký tự' })
+    .trim(),
+
+  content: z.string({ required_error: 'Nội dung là bắt buộc' })
+    .min(20, { message: 'Nội dung phải có ít nhất 20 ký tự' })
+    .trim(),
+
+  tags: z.array(z.string().toLowerCase().trim())
+    .min(1, { message: 'Cần ít nhất 1 tag' })
+    .max(10, { message: 'Tối đa 10 tags' })
+    .default([]),
+
+  status: z.enum(['draft', 'published']).default('draft'),
+
+  // URL thumbnail (optional)
+  thumbnail: z.string().url({ message: 'thumbnail phải là URL hợp lệ' }).optional(),
+});
+
+// Schema query params (pagination)
+const paginationSchema = z.object({
+  page: z.string().transform(Number).pipe(
+    z.number().int().min(1, { message: 'page phải >= 1' })
+  ).default('1'),
+
+  limit: z.string().transform(Number).pipe(
+    z.number().int().min(1).max(100, { message: 'limit tối đa 100' })
+  ).default('10'),
+
+  sort: z.enum(['newest', 'oldest', 'popular']).default('newest'),
+});
+
+module.exports = { registerSchema, createPostSchema, paginationSchema };</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/validate.js</span><button class="copy-btn">Copy</button></div><code>/**
+ * Middleware factory: validate request với Zod schema
+ *
+ * @param {Object} schemas - { body?, query?, params? }
+ * @returns Express middleware
+ *
+ * Cách dùng:
+ *   router.post('/', validate({ body: createPostSchema }), handler)
+ *   router.get('/', validate({ query: paginationSchema }), handler)
+ */
+function validate(schemas) {
+  return (req, res, next) => {
+    const errors = [];
+
+    try {
+      // Validate từng phần của request
+      if (schemas.body) {
+        const result = schemas.body.safeParse(req.body);
+        if (!result.success) {
+          result.error.errors.forEach(e => {
+            errors.push({ location: 'body', field: e.path.join('.'), message: e.message });
+          });
+        } else {
+          req.body = result.data; // Replace với data đã được transform
+        }
+      }
+
+      if (schemas.query) {
+        const result = schemas.query.safeParse(req.query);
+        if (!result.success) {
+          result.error.errors.forEach(e => {
+            errors.push({ location: 'query', field: e.path.join('.'), message: e.message });
+          });
+        } else {
+          req.query = result.data;
+        }
+      }
+
+      if (schemas.params) {
+        const result = schemas.params.safeParse(req.params);
+        if (!result.success) {
+          result.error.errors.forEach(e => {
+            errors.push({ location: 'params', field: e.path.join('.'), message: e.message });
+          });
+        } else {
+          req.params = result.data;
+        }
+      }
+
+      if (errors.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Dữ liệu không hợp lệ',
+          details: errors,
+        });
+      }
+
+      next();
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+module.exports = validate;
+
+// ── Ví dụ sử dụng ──
+// const validate = require('../middleware/validate');
+// const { createPostSchema, paginationSchema } = require('../schemas/postSchema');
+//
+// router.get('/', validate({ query: paginationSchema }), async (req, res) => {
+//   // req.query đã được validate và transform
+//   const { page, limit, sort } = req.query; // Đã là number, không phải string!
+//   ...
+// });
+//
+// router.post('/', validate({ body: createPostSchema }), async (req, res) => {
+//   // req.body đã được sanitize (trim, lowercase, etc.)
+//   const { title, content, tags } = req.body;
+//   ...
+// });</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>9.7 Async Middleware và Route Handlers</h2>
+
+      <p>
+        Đây là một lỗi rất phổ biến: khi dùng <code>async/await</code> trong route handler, nếu có
+        lỗi bị throw, nó KHÔNG tự động đi đến error handler. Bạn phải tự bắt lỗi:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">async-error-problem.js</span><button class="copy-btn">Copy</button></div><code>// ❌ SAI: Lỗi không đến error handler, app bị crash!
+app.get('/users/:id', async (req, res) => {
+  const user = await User.findById(req.params.id); // Lỗi DB → crash!
+  res.json(user);
+});
+
+// ✅ CÁCH 1: try/catch thủ công (an toàn nhưng verbose)
+app.get('/users/:id', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'Not found' });
+    res.json(user);
+  } catch (err) {
+    next(err); // Chuyển lỗi đến error handler
+  }
+});
+
+// ✅ CÁCH 2: asyncHandler wrapper (sạch hơn, recommend)
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+  // Nếu fn throw hoặc promise reject → next(err) được gọi tự động
+};
+
+// Dùng:
+app.get('/users/:id', asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id); // Lỗi → next(err) tự động!
+  if (!user) throw AppError.notFound('User');
+  res.json({ success: true, data: user });
+}));
+
+// ✅ CÁCH 3: Dùng package 'express-async-errors' (zero config)
+// npm install express-async-errors
+// require('express-async-errors'); // Đặt ở đầu app.js, TRƯỚC khi import express
+// Sau đó tất cả async handlers tự động catch lỗi</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">utils/asyncHandler.js — Implementation đầy đủ</span><button class="copy-btn">Copy</button></div><code>/**
+ * asyncHandler — Wrap async function để tự động catch lỗi
+ * và chuyển đến Express error handler
+ *
+ * Không cần try/catch trong mọi route handler nữa!
+ */
+const asyncHandler = (fn) => {
+  return function asyncHandlerWrapper(req, res, next) {
+    return Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
+
+module.exports = asyncHandler;
+
+// ── Ví dụ sử dụng đầy đủ ──
+const asyncHandler = require('../utils/asyncHandler');
+const AppError = require('../errors/AppError');
+
+// Giả sử có UserService
+const UserService = {
+  findById: async (id) => {
+    if (id === '0') throw new Error('Database connection failed');
+    if (id === '999') return null;
+    return { id, name: 'Test User', email: 'test@example.com' };
+  },
+  create: async (data) => ({ id: Math.random(), ...data }),
+  update: async (id, data) => ({ id, ...data }),
+  delete: async (id) => true,
+};
+
+// GET /users/:id — không cần try/catch!
+router.get('/:id', asyncHandler(async (req, res) => {
+  const user = await UserService.findById(req.params.id);
+  if (!user) throw AppError.notFound('User');
+  res.json({ success: true, data: user });
+}));
+
+// POST /users — validation + async
+router.post('/', validate({ body: createUserSchema }), asyncHandler(async (req, res) => {
+  const user = await UserService.create(req.body);
+  res.status(201).json({ success: true, data: user });
+}));
+
+// PUT /users/:id
+router.put('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const existing = await UserService.findById(id);
+  if (!existing) throw AppError.notFound('User');
+
+  const updated = await UserService.update(id, req.body);
+  res.json({ success: true, data: updated });
+}));
+
+// DELETE /users/:id
+router.delete('/:id', asyncHandler(async (req, res) => {
+  const user = await UserService.findById(req.params.id);
+  if (!user) throw AppError.notFound('User');
+  await UserService.delete(req.params.id);
+  res.json({ success: true, message: 'Xóa thành công' });
+}));</code></pre>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Tóm tắt quy trình lỗi chuẩn</div>
+        <ol style="margin-top:8px;padding-left:20px;line-height:2">
+          <li>Dùng <code>asyncHandler</code> bọc tất cả async route handlers</li>
+          <li>Dùng <code>throw AppError.notFound()</code> thay vì <code>res.status(404)...</code></li>
+          <li>Error tự động đến global <code>errorHandler</code> middleware</li>
+          <li>Error handler chuẩn hóa response và log lỗi</li>
+          <li>Client luôn nhận JSON với cấu trúc nhất quán</li>
+        </ol>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- Putting it all together -->
+      <h2>9.8 Kết hợp tất cả: Middleware stack hoàn chỉnh</h2>
+
+      <p>
+        Đây là ví dụ hoàn chỉnh kết hợp tất cả những gì đã học trong chương này:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js — Middleware stack đầy đủ</span><button class="copy-btn">Copy</button></div><code>require('dotenv').config(); // Load .env file
+
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+
+// Custom middleware
+const addRequestId = require('./middleware/addRequestId');
+const errorHandler = require('./middleware/errorHandler');
+
+// Routes
+const postRoutes = require('./routes/posts');
+const userRoutes = require('./routes/users');
+
+const app = express();
+
+// ═══════════════════════════════════════════════════
+// MIDDLEWARE STACK (thứ tự quan trọng!)
+// ═══════════════════════════════════════════════════
+
+// 1. Security — đặt đầu tiên
+app.use(helmet());
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+  credentials: true,
+}));
+
+// 2. Rate limiting
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
+app.use(limiter);
+
+// 3. Request ID (tracing)
+app.use(addRequestId);
+
+// 4. Logging
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// 5. Body parsing
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// 6. Static files
+app.use(express.static('public'));
+
+// ═══════════════════════════════════════════════════
+// ROUTES
+// ═══════════════════════════════════════════════════
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    uptime: Math.floor(process.uptime()),
+    requestId: req.id,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.use('/api/posts', postRoutes);
+app.use('/api/users', userRoutes);
+
+// ═══════════════════════════════════════════════════
+// ERROR HANDLING (luôn cuối cùng)
+// ═══════════════════════════════════════════════════
+
+// 404: Route không tồn tại
+app.use((req, res, next) => {
+  const err = new Error(`Route không tồn tại: ${req.method} ${req.path}`);
+  err.statusCode = 404;
+  next(err);
+});
+
+// Global error handler
+app.use(errorHandler);
+
+// ═══════════════════════════════════════════════════
+// START SERVER
+// ═══════════════════════════════════════════════════
+
+const PORT = process.env.PORT || 3000;
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Server: http://localhost:${PORT}`);
+  console.log(`📍 Môi trường: ${process.env.NODE_ENV || 'development'}`);
+});
+
+// Graceful shutdown — tắt server sạch khi nhận SIGTERM/SIGINT
+process.on('SIGTERM', () => {
+  console.log('SIGTERM nhận được. Đang đóng server...');
+  server.close(() => {
+    console.log('Server đã đóng.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('\nSIGINT nhận được. Đang đóng server...');
+  server.close(() => process.exit(0));
+});
+
+// Catch unhandled promise rejections (safety net)
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection tại:', promise, 'Lý do:', reason);
+  // Trong production: log và gracefully shutdown
+});
+
+module.exports = app; // Export để dùng trong tests</code></pre>
+
+      <!-- ============================================================ -->
+      <!-- SUMMARY -->
+      <div class="summary">
+        <div class="summary-title">📋 Tóm tắt chương 9</div>
+        <ul>
+          <li>Middleware là function <code>(req, res, next)</code> — phải gọi <code>next()</code>, gửi response, hoặc <code>next(err)</code></li>
+          <li>Thứ tự đặt middleware quan trọng: security → logging → parsing → routes → 404 → error</li>
+          <li>Error handling middleware có 4 tham số <code>(err, req, res, next)</code> — đặt cuối cùng</li>
+          <li><code>next(err)</code> từ bất kỳ đâu đều nhảy đến error handler, bỏ qua mọi middleware thường</li>
+          <li>cors, helmet, morgan, express-rate-limit — bộ tứ middleware cơ bản cho production</li>
+          <li>Zod giúp validate request body với schema rõ ràng và thông báo lỗi tiếng Việt</li>
+          <li><code>asyncHandler</code> wrapper giải quyết vấn đề async errors không tự đến error handler</li>
+          <li><code>AppError</code> class chuẩn hóa việc throw errors với status code và message phù hợp</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">🏋️ Bài tập thực hành</div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>9.1 Middleware đo thời gian xử lý</h4>
+            <p>
+              Viết middleware <code>measureTime</code> ghi ra console thời gian xử lý của mỗi request
+              theo format: <code>[METHOD] /path → Xms (STATUS)</code>. Middleware phải dùng
+              <code>process.hrtime.bigint()</code> để đo chính xác đến millisecond. Gắn thêm header
+              <code>X-Response-Time</code> vào response. Test với ít nhất 3 routes khác nhau.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-medium">Trung bình</span>
+          <div class="exercise-content">
+            <h4>9.2 Cache middleware với TTL</h4>
+            <p>
+              Viết middleware factory <code>cacheResponse(seconds)</code> — lưu response vào
+              <code>Map</code> với key là URL. Nếu request đến và cache còn hạn, trả về cached
+              version kèm header <code>X-Cache: HIT</code>. Nếu hết hạn hoặc chưa có, xử lý bình
+              thường và cache kết quả với header <code>X-Cache: MISS</code>. Lưu ý: chỉ cache
+              GET requests và status 200. Test: <code>app.get('/api/products', cacheResponse(30), handler)</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-hard">Khó</span>
+          <div class="exercise-content">
+            <h4>9.3 Request Sanitizer Middleware</h4>
+            <p>
+              Xây dựng middleware <code>requestSanitizer(options)</code> tự động:
+            </p>
+            <ul style="margin-top:8px;margin-bottom:0">
+              <li><strong>Trim strings</strong>: xóa whitespace đầu/cuối tất cả string values trong <code>req.body</code></li>
+              <li><strong>Chặn XSS</strong>: xóa HTML tags (thay <code>&lt;script&gt;</code>, <code>&lt;img&gt;</code>... bằng chuỗi rỗng) dùng regex</li>
+              <li><strong>Validate content-length</strong>: reject nếu body lớn hơn <code>options.maxSize</code> bytes</li>
+              <li><strong>Field whitelist</strong>: reject request nếu body chứa fields không nằm trong <code>options.allowedFields</code></li>
+            </ul>
+            <p style="margin-top:8px">
+              Middleware phải hoạt động đệ quy với nested objects và arrays. Viết test cases cho từng tính năng.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER NAV -->
+      <div class="chapter-nav">
+        <a href="chapter08.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Chương trước</span>
+          <span class="chapter-nav-title">Express.js cơ bản</span>
+        </a>
+        <a href="chapter10.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp theo →</span>
+          <span class="chapter-nav-title">Cookie, Session và Authentication</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

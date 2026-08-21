@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 15: REST API Best Practices và API Design | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body class="layout">
+
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">NodeJS Book</div>
+      <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-part-label">Phần 1 — Nền tảng</div>
+      <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet &amp; Web</a>
+      <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+      <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS &amp; Môi trường</a>
+      <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+      <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+      <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+      <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+      <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+      <div class="nav-part-label">Phần 3 — Express</div>
+      <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+      <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+      <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth &amp; Session</a>
+      <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating &amp; SSR</a>
+      <div class="nav-part-label">Phần 4 — Database</div>
+      <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB &amp; Mongoose</a>
+      <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL &amp; Prisma</a>
+      <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching &amp; Redis</a>
+      <div class="nav-part-label">Phần 5 — Nâng cao</div>
+      <a href="chapter15.html" class="nav-link active"><span class="chapter-num">15</span> REST API Best Practices</a>
+      <a href="chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+      <a href="chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy &amp; DevOps</a>
+      <a href="chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless &amp; Cloud</a>
+    </div>
+  </nav>
+
+  <div class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">Trang chủ</a>
+      <span>›</span>
+      <span>Phần 5</span>
+      <span>›</span>
+      <span>Chương 15</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon theme-toggle">🌙 Tối</button>
+    </div>
+  </div>
+
+  <main class="main">
+
+    <div class="chapter-header">
+      <div class="part-badge">Phần 5 — Nâng Cao và Cloud</div>
+      <h1>Chương 15: REST API Best Practices và API Design</h1>
+      <p class="lead">Viết API chạy được chỉ mất vài phút. Viết API mà người khác (và tương lai bạn) thực sự muốn dùng đòi hỏi kiến thức về thiết kế. Chương này dạy các quy ước và patterns được cả thế giới dùng.</p>
+    </div>
+
+    <div class="objectives">
+      <div class="objectives-title">🎯 Sau chương này bạn sẽ hiểu được</div>
+      <ul>
+        <li>Đặt tên resources đúng REST conventions</li>
+        <li>Dùng HTTP status codes đúng ngữ cảnh</li>
+        <li>Implement pagination, filtering, sorting chuẩn</li>
+        <li>Versioning API đúng cách</li>
+        <li>Document API với Swagger/OpenAPI</li>
+        <li>Upload file với Multer</li>
+      </ul>
+    </div>
+
+    <!-- ==================== SECTION 15.1 ==================== -->
+    <h2 id="s15-1">15.1 REST Conventions — Đặt tên đúng</h2>
+
+    <p>
+      REST (Representational State Transfer) không phải là một chuẩn kỹ thuật cứng nhắc — đây là một tập hợp các quy ước
+      được cộng đồng lập trình thế giới đồng thuận và áp dụng rộng rãi. Khi bạn đặt tên URL theo đúng REST conventions,
+      mọi developer khác đều có thể đoán ra ý nghĩa của endpoint mà không cần đọc tài liệu.
+    </p>
+
+    <h3>Resources là danh từ số nhiều</h3>
+    <p>
+      Nguyên tắc cốt lõi nhất của REST: URL biểu diễn <strong>resource</strong> (tài nguyên), không phải
+      <strong>action</strong> (hành động). Hành động được biểu diễn bằng HTTP method (GET, POST, PUT, DELETE).
+      Vì vậy URL chỉ chứa danh từ, không chứa động từ.
+    </p>
+    <p>
+      Tại sao dùng số nhiều? Vì resource collection (tập hợp) về mặt khái niệm luôn ở dạng số nhiều.
+      <code>/users</code> là tập hợp tất cả users, <code>/users/5</code> là user số 5 trong tập hợp đó.
+      Nhất quán với số nhiều giúp URL dễ đoán hơn.
+    </p>
+
+    <h3>So sánh SAI vs ĐÚNG</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>SAI ❌ (có động từ)</th>
+          <th>ĐÚNG ✅ (REST convention)</th>
+          <th>Giải thích</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>GET /getUsers</code></td>
+          <td><code>GET /users</code></td>
+          <td>GET đã nói lên "lấy", không cần "get" trong URL</td>
+        </tr>
+        <tr>
+          <td><code>POST /createUser</code></td>
+          <td><code>POST /users</code></td>
+          <td>POST đã nói lên "tạo mới", resource là /users</td>
+        </tr>
+        <tr>
+          <td><code>PUT /updateUser/5</code></td>
+          <td><code>PUT /users/5</code></td>
+          <td>PUT đã nói lên "cập nhật", :id xác định resource cụ thể</td>
+        </tr>
+        <tr>
+          <td><code>DELETE /deleteUser/5</code></td>
+          <td><code>DELETE /users/5</code></td>
+          <td>DELETE đã nói lên "xóa", không cần thêm động từ</td>
+        </tr>
+        <tr>
+          <td><code>GET /getUserPosts/5</code></td>
+          <td><code>GET /users/5/posts</code></td>
+          <td>Nested resource thể hiện quan hệ cha-con rõ ràng</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Nested Resources — Biểu diễn quan hệ cha-con</h3>
+    <p>
+      Khi một resource thuộc về một resource khác, dùng URL lồng nhau để thể hiện quan hệ đó.
+      Tuy nhiên không nên lồng quá 2-3 cấp vì URL sẽ trở nên dài và khó đọc.
+    </p>
+    <p>
+      Ví dụ: <code>/users/42/posts/7/comments</code> — đây là comments của bài post số 7,
+      thuộc user số 42. Nếu cần đi sâu hơn, hãy cân nhắc tạo endpoint phẳng hơn thay vì lồng thêm.
+    </p>
+
+    <div class="svg-diagram">
+      <svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+        <defs>
+          <marker id="arr-15a" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+          </marker>
+        </defs>
+        <!-- Root: /users -->
+        <rect x="270" y="20" width="160" height="60" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+        <text x="350" y="47" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">/users</text>
+        <text x="350" y="65" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">GET — Lấy tất cả users</text>
+
+        <!-- /users/:id -->
+        <rect x="50" y="140" width="180" height="65" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+        <text x="140" y="163" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">/users/:id</text>
+        <text x="140" y="181" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">GET · PUT · PATCH</text>
+        <text x="140" y="196" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">DELETE</text>
+
+        <!-- /users/:id/posts -->
+        <rect x="270" y="140" width="180" height="65" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+        <text x="360" y="163" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">/users/:id/posts</text>
+        <text x="360" y="181" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">GET — Tất cả posts</text>
+        <text x="360" y="196" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">POST — Tạo post mới</text>
+
+        <!-- /users/:id/posts/:postId -->
+        <rect x="460" y="140" width="210" height="65" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+        <text x="565" y="163" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">/users/:id/posts/:postId</text>
+        <text x="565" y="181" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">GET — Post cụ thể</text>
+        <text x="565" y="196" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">PUT · DELETE</text>
+
+        <!-- POST /users -->
+        <rect x="160" y="240" width="180" height="55" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="250" y="263" text-anchor="middle" fill="#86efac" font-size="13" font-weight="600" font-family="Inter,sans-serif">POST /users</text>
+        <text x="250" y="281" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">Tạo user mới</text>
+
+        <!-- Arrow: /users -> /users/:id -->
+        <line x1="310" y1="80" x2="210" y2="140" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-15a)"/>
+        <!-- Arrow: /users -> /users/:id/posts -->
+        <line x1="350" y1="80" x2="355" y2="140" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-15a)"/>
+        <!-- Arrow: /users -> /users/:id/posts/:postId -->
+        <line x1="390" y1="80" x2="510" y2="140" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-15a)"/>
+        <!-- Arrow: /users -> POST /users -->
+        <line x1="350" y1="80" x2="270" y2="240" stroke="#64748b" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-15a)"/>
+
+        <text x="350" y="308" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter,sans-serif">REST Resource Hierarchy — URL thể hiện quan hệ cha-con giữa các resources</text>
+      </svg>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Mẹo</div>
+      Khi bạn không chắc một action có phù hợp với REST không (ví dụ: "activate account", "send email"),
+      hãy nghĩ về nó như một resource. <code>POST /users/:id/activation</code> hoặc
+      <code>POST /emails/send</code> — biến action thành resource phụ là cách phổ biến nhất.
+    </div>
+
+    <div class="callout callout-note">
+      <div class="callout-title">📌 Ghi nhớ</div>
+      Dùng <strong>kebab-case</strong> cho URL nhiều từ: <code>/blog-posts</code> thay vì
+      <code>/blogPosts</code> hay <code>/blog_posts</code>. Hầu hết các API lớn (GitHub, Stripe,
+      Twilio) đều dùng kebab-case cho URL và camelCase cho JSON body/response.
+    </div>
+
+    <!-- ==================== SECTION 15.2 ==================== -->
+    <h2 id="s15-2">15.2 HTTP Status Codes — Dùng đúng ngữ cảnh</h2>
+
+    <p>
+      HTTP status codes là ngôn ngữ chung giữa server và client. Khi bạn trả về đúng status code,
+      client (trình duyệt, mobile app, hay service khác) biết chính xác điều gì đã xảy ra mà không cần
+      parse response body. Nhiều developer hay dùng 200 OK cho mọi thứ rồi nhét error vào body —
+      đây là anti-pattern nghiêm trọng.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Tên</th>
+          <th>Dùng khi nào</th>
+          <th>Ví dụ thực tế</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>200</strong></td>
+          <td>OK</td>
+          <td>Request thành công, có data trả về</td>
+          <td>GET /users trả danh sách users</td>
+        </tr>
+        <tr>
+          <td><strong>201</strong></td>
+          <td>Created</td>
+          <td>Tạo resource mới thành công</td>
+          <td>POST /users tạo user mới; body chứa user vừa tạo</td>
+        </tr>
+        <tr>
+          <td><strong>204</strong></td>
+          <td>No Content</td>
+          <td>Thành công nhưng không có data trả về</td>
+          <td>DELETE /users/5 xóa thành công, không cần body</td>
+        </tr>
+        <tr>
+          <td><strong>301</strong></td>
+          <td>Moved Permanently</td>
+          <td>Resource đã đổi URL vĩnh viễn</td>
+          <td>API v1 bị deprecated, chuyển hướng sang v2</td>
+        </tr>
+        <tr>
+          <td><strong>302</strong></td>
+          <td>Found</td>
+          <td>Chuyển hướng tạm thời</td>
+          <td>Sau login, chuyển về trang dashboard</td>
+        </tr>
+        <tr>
+          <td><strong>400</strong></td>
+          <td>Bad Request</td>
+          <td>Request sai cú pháp / thiếu field bắt buộc</td>
+          <td>POST /users thiếu field email trong body</td>
+        </tr>
+        <tr>
+          <td><strong>401</strong></td>
+          <td>Unauthorized</td>
+          <td>Chưa xác thực (chưa đăng nhập)</td>
+          <td>Gọi API không kèm token hoặc token sai</td>
+        </tr>
+        <tr>
+          <td><strong>403</strong></td>
+          <td>Forbidden</td>
+          <td>Đã xác thực nhưng không có quyền</td>
+          <td>User thường cố xóa tài khoản của admin</td>
+        </tr>
+        <tr>
+          <td><strong>404</strong></td>
+          <td>Not Found</td>
+          <td>Resource không tồn tại</td>
+          <td>GET /users/9999 — user ID 9999 không có trong DB</td>
+        </tr>
+        <tr>
+          <td><strong>409</strong></td>
+          <td>Conflict</td>
+          <td>Conflict với trạng thái hiện tại của resource</td>
+          <td>POST /users với email đã tồn tại trong hệ thống</td>
+        </tr>
+        <tr>
+          <td><strong>422</strong></td>
+          <td>Unprocessable Entity</td>
+          <td>Cú pháp đúng nhưng dữ liệu không hợp lệ (validation fail)</td>
+          <td>Email đúng format nhưng domain không tồn tại</td>
+        </tr>
+        <tr>
+          <td><strong>429</strong></td>
+          <td>Too Many Requests</td>
+          <td>Client gửi quá nhiều request (rate limiting)</td>
+          <td>Gọi API quá 100 lần/phút vượt giới hạn cho phép</td>
+        </tr>
+        <tr>
+          <td><strong>500</strong></td>
+          <td>Internal Server Error</td>
+          <td>Lỗi không xác định phía server</td>
+          <td>Unhandled exception, DB connection drop đột ngột</td>
+        </tr>
+        <tr>
+          <td><strong>503</strong></td>
+          <td>Service Unavailable</td>
+          <td>Server tạm thời không phục vụ được</td>
+          <td>Đang bảo trì, quá tải, hoặc dependency service sập</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠️ Cảnh báo</div>
+      Phân biệt rõ <strong>401 vs 403</strong>: 401 có nghĩa "tôi không biết bạn là ai —
+      hãy đăng nhập". 403 có nghĩa "tôi biết bạn là ai nhưng bạn không có quyền làm việc này".
+      Nhầm lẫn hai mã này là lỗi phổ biến nhất khi implement auth middleware.
+    </div>
+
+    <p>
+      Một nguyên tắc hữu ích: nhóm theo chữ số đầu tiên.
+      <strong>2xx</strong> — thành công. <strong>3xx</strong> — chuyển hướng.
+      <strong>4xx</strong> — lỗi do client (client phải sửa request).
+      <strong>5xx</strong> — lỗi do server (client không làm gì được, chờ server fix).
+      Khi client nhận 4xx, họ biết cần sửa code của họ. Khi nhận 5xx, họ biết cần báo cáo lỗi.
+    </p>
+
+    <!-- ==================== SECTION 15.3 ==================== -->
+    <h2 id="s15-3">15.3 Response Format Nhất Quán</h2>
+
+    <p>
+      Một trong những điều gây khó chịu nhất khi dùng API là mỗi endpoint lại có cấu trúc response
+      khác nhau. Endpoint này trả <code>{ user: {...} }</code>, endpoint kia trả thẳng object,
+      endpoint nọ lại trả <code>{ result: true, payload: {...} }</code>.
+      Client phải handle từng trường hợp riêng — đây là design tệ.
+    </p>
+
+    <p>
+      Giải pháp: định nghĩa một response format nhất quán và dùng nó cho <strong>tất cả</strong>
+      endpoints. Dưới đây là ví dụ về 3 loại response phổ biến nhất.
+    </p>
+
+    <h3>Success — Single Resource</h3>
+    <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">response-success.json</span><button class="copy-btn">Copy</button></div><code>{
+  "success": true,
+  "message": "Lấy thông tin user thành công",
+  "data": {
+    "id": "64a1b2c3d4e5f6789012345",
+    "name": "Nguyễn Văn An",
+    "email": "an@example.com",
+    "role": "user",
+    "createdAt": "2024-01-15T08:30:00.000Z"
+  }
+}</code></pre>
+
+    <h3>Error Response</h3>
+    <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">response-error.json</span><button class="copy-btn">Copy</button></div><code>{
+  "success": false,
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "Không tìm thấy user với ID đã cung cấp"
+  }
+}</code></pre>
+
+    <h3>List + Pagination</h3>
+    <pre><div class="code-header"><span class="code-lang">JSON</span><span class="code-filename">response-list.json</span><button class="copy-btn">Copy</button></div><code>{
+  "success": true,
+  "data": [
+    { "id": "1", "name": "An", "email": "an@example.com" },
+    { "id": "2", "name": "Bình", "email": "binh@example.com" }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 87,
+    "totalPages": 9,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}</code></pre>
+
+    <p>
+      Để đảm bảo tính nhất quán, tạo một module helper chứa tất cả các hàm format response.
+      Mọi route handler chỉ gọi hàm từ module này thay vì tự viết <code>res.json()</code>.
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">helpers/apiResponse.js</span><button class="copy-btn">Copy</button></div><code>// helpers/apiResponse.js
+const success = (res, data, message = 'Thành công', statusCode = 200) => {
+  return res.status(statusCode).json({ success: true, data, message });
+};
+
+const created = (res, data, message = 'Tạo thành công') => {
+  return res.status(201).json({ success: true, data, message });
+};
+
+const paginated = (res, data, pagination) => {
+  return res.status(200).json({ success: true, data, pagination });
+};
+
+const error = (res, message, code, statusCode = 400) => {
+  return res.status(statusCode).json({ success: false, error: { code, message } });
+};
+
+module.exports = { success, created, paginated, error };</code></pre>
+
+    <p>
+      Và cách dùng trong các route handler:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/users.js</span><button class="copy-btn">Copy</button></div><code>const apiResponse = require('../helpers/apiResponse');
+
+// GET /users/:id
+router.get('/:id', asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id).lean();
+  if (!user) {
+    return apiResponse.error(res, 'Không tìm thấy user', 'USER_NOT_FOUND', 404);
+  }
+  return apiResponse.success(res, user, 'Lấy thông tin user thành công');
+}));
+
+// POST /users
+router.post('/', asyncHandler(async (req, res) => {
+  const existing = await User.findOne({ email: req.body.email });
+  if (existing) {
+    return apiResponse.error(res, 'Email đã tồn tại', 'EMAIL_CONFLICT', 409);
+  }
+  const user = await User.create(req.body);
+  return apiResponse.created(res, user, 'Tạo user thành công');
+}));</code></pre>
+
+    <div class="callout callout-note">
+      <div class="callout-title">📌 Ghi nhớ</div>
+      Trường <code>error.code</code> là machine-readable string (ví dụ: <code>USER_NOT_FOUND</code>,
+      <code>EMAIL_CONFLICT</code>). Client có thể switch-case trên đây để hiển thị thông báo lỗi
+      phù hợp với ngôn ngữ của user mà không cần parse message (vốn có thể thay đổi).
+    </div>
+
+    <!-- ==================== SECTION 15.4 ==================== -->
+    <h2 id="s15-4">15.4 Pagination — Phân trang</h2>
+
+    <p>
+      Không bao giờ trả về toàn bộ collection trong một request. Nếu database có 1 triệu records,
+      trả về tất cả trong một lần sẽ làm sập server và timeout client.
+      Có hai chiến lược phân trang phổ biến: <strong>offset pagination</strong> và <strong>cursor pagination</strong>.
+    </p>
+
+    <h3>Offset Pagination (Trang theo số thứ tự)</h3>
+    <p>
+      Đây là cách đơn giản nhất và quen thuộc nhất: user yêu cầu "trang số N, mỗi trang M items".
+      Phù hợp khi người dùng cần nhảy tới một trang cụ thể (ví dụ: "đi tới trang 5").
+      Nhược điểm: hiệu suất kém khi offset lớn vì DB phải scan và bỏ qua nhiều rows.
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/paginate.js</span><button class="copy-btn">Copy</button></div><code>// middleware/paginate.js
+const paginate = (req) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
+  const skip = (page - 1) * limit;
+  return { page, limit, skip };
+};
+
+// Usage in route
+router.get('/posts', asyncHandler(async (req, res) => {
+  const { page, limit, skip } = paginate(req);
+  const [data, total] = await Promise.all([
+    Post.find().skip(skip).limit(limit).lean(),
+    Post.countDocuments()
+  ]);
+  const totalPages = Math.ceil(total / limit);
+  apiResponse.paginated(res, data, {
+    page, limit, total, totalPages,
+    hasNext: page &lt; totalPages,
+    hasPrev: page &gt; 1
+  });
+}));</code></pre>
+
+    <p>
+      Chú ý <code>Math.min(100, ...)</code> — giới hạn tối đa 100 items/page để tránh client
+      yêu cầu <code>?limit=999999</code> gây quá tải server. Luôn có giới hạn trên cho limit.
+    </p>
+
+    <h3>Cursor Pagination (Phân trang theo con trỏ)</h3>
+    <p>
+      Cursor pagination không dùng số trang mà dùng một "con trỏ" (thường là ID của item cuối cùng)
+      để xác định điểm bắt đầu của trang tiếp theo. Đây là cách tiếp cận của Facebook, Twitter, Instagram —
+      những nơi có feed vô hạn (infinite scroll). Hiệu suất tốt hơn offset rất nhiều vì DB
+      có thể dùng index để tìm điểm bắt đầu.
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/posts.js</span><button class="copy-btn">Copy</button></div><code>router.get('/posts/cursor', asyncHandler(async (req, res) => {
+  const { cursor, limit = 10 } = req.query;
+  const query = cursor ? { _id: { $lt: cursor } } : {};
+  const posts = await Post.find(query)
+    .sort({ _id: -1 })
+    .limit(parseInt(limit) + 1)
+    .lean();
+  const hasMore = posts.length &gt; limit;
+  if (hasMore) posts.pop();
+  res.json({
+    success: true,
+    data: posts,
+    nextCursor: hasMore ? posts[posts.length - 1]._id : null,
+    hasMore
+  });
+}));</code></pre>
+
+    <p>
+      Trick quan trọng: query <code>limit + 1</code> items. Nếu trả về đúng <code>limit + 1</code>
+      items, nghĩa là vẫn còn data (hasMore = true) và item cuối cùng bị pop ra làm nextCursor.
+      Nếu trả về ít hơn hoặc bằng <code>limit</code> items, là trang cuối (hasMore = false).
+    </p>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Mẹo</div>
+      Chọn loại pagination nào? Nếu UI cần "Trang 1, 2, 3..." hoặc "Nhảy đến trang 50"
+      → dùng offset. Nếu UI là infinite scroll (TikTok, Instagram feed, chat messages)
+      → dùng cursor. Cursor nhanh hơn và không bị vấn đề "item bị skip hoặc lặp"
+      khi có data mới insert trong lúc user đang phân trang.
+    </div>
+
+    <!-- ==================== SECTION 15.5 ==================== -->
+    <h2 id="s15-5">15.5 Filtering, Sorting và Search</h2>
+
+    <p>
+      Sau khi đã implement pagination, bước tiếp theo là cho phép client lọc và sắp xếp data.
+      Tất cả filtering parameters được truyền qua query string. Ví dụ:
+    </p>
+    <ul>
+      <li><code>GET /products?category=electronics&amp;minPrice=100&amp;maxPrice=500</code> — lọc theo category và giá</li>
+      <li><code>GET /products?sort=price&amp;order=asc</code> — sắp xếp theo giá tăng dần</li>
+      <li><code>GET /products?q=macbook</code> — full-text search theo từ khóa</li>
+      <li><code>GET /products?fields=id,name,price</code> — chỉ lấy các fields cần thiết (field selection)</li>
+    </ul>
+
+    <p>
+      Thay vì viết logic lặp đi lặp lại ở mỗi route, hãy tách ra thành một helper function:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">helpers/buildMongoQuery.js</span><button class="copy-btn">Copy</button></div><code>// helpers/buildMongoQuery.js
+const buildMongoQuery = (queryParams) => {
+  const { q, category, minPrice, maxPrice, inStock, sort, order, fields } = queryParams;
+  const filter = {};
+
+  if (q) filter.$text = { $search: q };
+  if (category) filter.category = category;
+  if (minPrice || maxPrice) {
+    filter.price = {};
+    if (minPrice) filter.price.$gte = Number(minPrice);
+    if (maxPrice) filter.price.$lte = Number(maxPrice);
+  }
+  if (inStock !== undefined) filter.inStock = inStock === 'true';
+
+  // Sort: ?sort=price&amp;order=asc hoặc ?sort=-price
+  let sortObj = { createdAt: -1 };
+  if (sort) {
+    const sortField = sort.startsWith('-') ? sort.slice(1) : sort;
+    const sortDir = sort.startsWith('-') ? -1 : (order === 'desc' ? -1 : 1);
+    sortObj = { [sortField]: sortDir };
+  }
+
+  // Field selection: ?fields=id,name,email
+  let projection = null;
+  if (fields) {
+    projection = fields.split(',').reduce((acc, f) => ({ ...acc, [f.trim()]: 1 }), {});
+  }
+
+  return { filter, sortObj, projection };
+};
+
+module.exports = buildMongoQuery;</code></pre>
+
+    <p>
+      Và cách dùng helper trong route:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/products.js</span><button class="copy-btn">Copy</button></div><code>const buildMongoQuery = require('../helpers/buildMongoQuery');
+const { paginate } = require('../middleware/paginate');
+
+router.get('/', asyncHandler(async (req, res) => {
+  const { filter, sortObj, projection } = buildMongoQuery(req.query);
+  const { page, limit, skip } = paginate(req);
+
+  let query = Product.find(filter).sort(sortObj).skip(skip).limit(limit);
+  if (projection) query = query.select(projection);
+
+  const [data, total] = await Promise.all([
+    query.lean(),
+    Product.countDocuments(filter)
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+  apiResponse.paginated(res, data, {
+    page, limit, total, totalPages,
+    hasNext: page &lt; totalPages,
+    hasPrev: page &gt; 1
+  });
+}));</code></pre>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠️ Cảnh báo</div>
+      <strong>Luôn whitelist các fields được phép filter/sort</strong>. Nếu client có thể sort
+      theo bất kỳ field nào, họ có thể sort theo field không có index, gây full table scan và
+      làm chậm toàn bộ hệ thống. Hãy kiểm tra <code>sort</code> chỉ nằm trong danh sách
+      <code>['price', 'name', 'createdAt', 'rating']</code> trước khi áp dụng.
+    </div>
+
+    <div class="callout callout-note">
+      <div class="callout-title">📌 Ghi nhớ</div>
+      Để dùng full-text search với <code>$text</code>, MongoDB cần có text index trên các fields muốn search.
+      Thêm vào Mongoose schema: <code>ProductSchema.index({ name: 'text', description: 'text' });</code>
+      Nếu không có index, query sẽ báo lỗi "text index required".
+    </div>
+
+    <!-- ==================== SECTION 15.6 ==================== -->
+    <h2 id="s15-6">15.6 API Versioning</h2>
+
+    <p>
+      Khi API của bạn đã có người dùng (internal teams, mobile apps, third-party clients),
+      bạn không thể đột ngột thay đổi response format hay xóa fields —
+      điều đó sẽ break ứng dụng của họ. Đây là lúc cần API versioning.
+    </p>
+
+    <h3>Ba chiến lược versioning phổ biến</h3>
+    <ul>
+      <li><strong>URL versioning</strong>: <code>/api/v1/users</code>, <code>/api/v2/users</code> — rõ ràng nhất, dễ test, được dùng nhiều nhất</li>
+      <li><strong>Header versioning</strong>: <code>Accept: application/vnd.myapi.v2+json</code> — "sạch" hơn về mặt REST nhưng khó test với browser</li>
+      <li><strong>Query param versioning</strong>: <code>/api/users?version=2</code> — linh hoạt nhưng dễ bị quên, ít phổ biến</li>
+    </ul>
+
+    <p>
+      Với Express, URL versioning được implement bằng cách mount các router riêng biệt:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js</span><button class="copy-btn">Copy</button></div><code>// app.js
+app.use('/api/v1', require('./routes/v1'));
+app.use('/api/v2', require('./routes/v2'));</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/v1/users.js</span><button class="copy-btn">Copy</button></div><code>// routes/v1/users.js
+const express = require('express');
+const router = express.Router();
+const User = require('../../models/User');
+
+// V1: chỉ trả về name và email
+router.get('/', async (req, res) => {
+  const users = await User.find().select('name email').lean();
+  res.json({ success: true, data: users });
+});
+
+module.exports = router;</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/v2/users.js</span><button class="copy-btn">Copy</button></div><code>// routes/v2/users.js
+const express = require('express');
+const router = express.Router();
+const User = require('../../models/User');
+
+// V2: thêm phone, avatar, createdAt và metadata
+router.get('/', async (req, res) => {
+  const users = await User.find().select('name email phone avatar createdAt').lean();
+  res.json({
+    success: true,
+    data: users,
+    _meta: { version: '2.0', deprecation: null }
+  });
+});
+
+module.exports = router;</code></pre>
+
+    <h3>Deprecation Policy — Thông báo version cũ sắp bị xóa</h3>
+    <p>
+      Khi bạn ra v2, không nên xóa v1 ngay lập tức. Hãy thêm header <code>Deprecation</code>
+      vào tất cả response của v1 để thông báo cho client biết họ cần migrate:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/deprecation.js</span><button class="copy-btn">Copy</button></div><code>// middleware/deprecation.js — thêm vào tất cả v1 routes
+const deprecationWarning = (req, res, next) => {
+  res.set('Deprecation', 'true');
+  res.set('Sunset', 'Sat, 01 Jan 2026 00:00:00 GMT');
+  res.set('Link', '&lt;https://api.example.com/v2&gt;; rel="successor-version"');
+  next();
+};
+
+module.exports = deprecationWarning;
+
+// app.js
+app.use('/api/v1', deprecationWarning, require('./routes/v1'));</code></pre>
+
+    <h3>Request Lifecycle Diagram</h3>
+    <p>
+      Mỗi request qua API đều đi qua một vòng đời chuẩn. Hiểu rõ vòng đời này giúp bạn
+      đặt middleware đúng chỗ và debug hiệu quả hơn:
+    </p>
+
+    <div class="svg-diagram">
+      <svg viewBox="0 0 800 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+        <defs>
+          <marker id="arr-15b" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+          </marker>
+        </defs>
+        <!-- Client -->
+        <rect x="10" y="50" width="90" height="60" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="55" y="76" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter,sans-serif">Client</text>
+        <text x="55" y="94" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Browser/</text>
+        <text x="55" y="106" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Mobile App</text>
+        <!-- Arrow -->
+        <line x1="100" y1="80" x2="125" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-15b)"/>
+        <!-- Validation -->
+        <rect x="125" y="50" width="100" height="60" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="175" y="76" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Validation</text>
+        <text x="175" y="94" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Schema check</text>
+        <text x="175" y="106" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Sanitize input</text>
+        <!-- Arrow -->
+        <line x1="225" y1="80" x2="250" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-15b)"/>
+        <!-- Auth -->
+        <rect x="250" y="50" width="100" height="60" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="300" y="76" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Auth</text>
+        <text x="300" y="94" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Verify JWT</text>
+        <text x="300" y="106" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Check roles</text>
+        <!-- Arrow -->
+        <line x1="350" y1="80" x2="375" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-15b)"/>
+        <!-- Route Handler -->
+        <rect x="375" y="50" width="105" height="60" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="427" y="76" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Handler</text>
+        <text x="427" y="94" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Business</text>
+        <text x="427" y="106" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">logic</text>
+        <!-- Arrow -->
+        <line x1="480" y1="80" x2="505" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-15b)"/>
+        <!-- Database -->
+        <rect x="505" y="50" width="95" height="60" rx="8" fill="#3a2a14" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="552" y="76" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="600" font-family="Inter,sans-serif">Database</text>
+        <text x="552" y="94" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Query /</text>
+        <text x="552" y="106" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Mutate</text>
+        <!-- Arrow -->
+        <line x1="600" y1="80" x2="625" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-15b)"/>
+        <!-- Format Response -->
+        <rect x="625" y="50" width="90" height="60" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="670" y="73" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Format</text>
+        <text x="670" y="88" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Response</text>
+        <text x="670" y="106" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">apiResponse.*</text>
+        <!-- Return arrow -->
+        <path d="M 715 115 Q 740 140 400 140 Q 60 140 55 115" stroke="#64748b" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arr-15b)"/>
+        <text x="400" y="155" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Response trả về client</text>
+      </svg>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Mẹo</div>
+      Nên dùng URL versioning (<code>/api/v1/</code>, <code>/api/v2/</code>) cho các public API
+      hoặc API có nhiều client độc lập. Với internal microservices trong cùng team,
+      header versioning hoặc contract testing (xem chương 16) là lựa chọn tốt hơn.
+    </div>
+
+    <!-- ==================== SECTION 15.7 ==================== -->
+    <h2 id="s15-7">15.7 File Upload với Multer</h2>
+
+    <p>
+      Multer là middleware phổ biến nhất để handle <code>multipart/form-data</code> trong Express —
+      đây là content type được dùng khi upload file. Multer parse request, lưu file vào disk
+      (hoặc memory), và gắn thông tin file vào <code>req.file</code> / <code>req.files</code>.
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>npm install multer</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/upload.js</span><button class="copy-btn">Copy</button></div><code>// middleware/upload.js
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/avatars/');
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `avatar-${req.user.id}-${Date.now()}${ext}`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Chỉ chấp nhận file JPEG, PNG hoặc WebP'), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter
+});
+
+module.exports = upload;</code></pre>
+
+    <p>
+      Sau khi có middleware, kết nối vào route. Lưu ý middleware <code>upload.single('avatar')</code>
+      phải được đặt trước route handler:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/users.js</span><button class="copy-btn">Copy</button></div><code>// routes/users.js
+const upload = require('../middleware/upload');
+const apiResponse = require('../helpers/apiResponse');
+
+router.post('/:id/avatar',
+  authenticate,
+  upload.single('avatar'),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return apiResponse.error(res, 'Vui lòng chọn file', 'FILE_REQUIRED', 400);
+    }
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { avatar: `/uploads/avatars/${req.file.filename}` },
+      { new: true }
+    );
+    apiResponse.success(res, { avatar: user.avatar }, 'Upload avatar thành công');
+  })
+);</code></pre>
+
+    <h3>Upload nhiều file cùng lúc</h3>
+    <p>
+      Multer cũng hỗ trợ upload nhiều file. Dùng <code>upload.array('images', 5)</code> để nhận
+      tối đa 5 file từ field tên "images", hoặc <code>upload.fields([...])</code> cho nhiều field
+      khác tên:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/posts.js</span><button class="copy-btn">Copy</button></div><code>// Upload nhiều ảnh cho một bài post
+router.post('/:id/images',
+  authenticate,
+  upload.array('images', 5),
+  asyncHandler(async (req, res) => {
+    if (!req.files || req.files.length === 0) {
+      return apiResponse.error(res, 'Vui lòng chọn ít nhất một ảnh', 'FILES_REQUIRED', 400);
+    }
+    const imageUrls = req.files.map(f => `/uploads/posts/${f.filename}`);
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      { $push: { images: { $each: imageUrls } } },
+      { new: true }
+    );
+    apiResponse.success(res, { images: post.images }, `Upload ${req.files.length} ảnh thành công`);
+  })
+);
+
+// Upload nhiều loại file khác nhau
+router.post('/submit',
+  authenticate,
+  upload.fields([
+    { name: 'resume', maxCount: 1 },
+    { name: 'portfolio', maxCount: 3 }
+  ]),
+  asyncHandler(async (req, res) => {
+    const resume = req.files['resume']?.[0];
+    const portfolios = req.files['portfolio'] || [];
+    // xử lý tiếp...
+    apiResponse.success(res, { received: true }, 'Nộp hồ sơ thành công');
+  })
+);</code></pre>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠️ Cảnh báo</div>
+      Không lưu file trực tiếp trên server production vì file sẽ mất khi deploy lại hoặc
+      server restart. Dùng cloud storage: <strong>AWS S3</strong>, <strong>Google Cloud Storage</strong>,
+      hoặc <strong>Cloudinary</strong> (tiện nhất cho ảnh vì tự động resize/optimize).
+      Package <code>multer-s3</code> cho phép stream file thẳng lên S3 mà không cần lưu tạm.
+    </div>
+
+    <h3>Handle lỗi từ Multer</h3>
+    <p>
+      Multer throw lỗi riêng có type là <code>MulterError</code>. Cần bắt riêng để trả
+      về thông báo lỗi có nghĩa cho client:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/errorHandler.js</span><button class="copy-btn">Copy</button></div><code>const multer = require('multer');
+
+const handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'FILE_TOO_LARGE', message: 'File không được vượt quá 5MB' }
+      });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'TOO_MANY_FILES', message: 'Tối đa 5 file mỗi lần upload' }
+      });
+    }
+  }
+  // Lỗi từ fileFilter
+  if (err.message === 'Chỉ chấp nhận file JPEG, PNG hoặc WebP') {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'INVALID_FILE_TYPE', message: err.message }
+    });
+  }
+  next(err);
+};
+
+module.exports = handleMulterError;</code></pre>
+
+    <!-- ==================== SECTION 15.8 ==================== -->
+    <h2 id="s15-8">15.8 OpenAPI/Swagger Documentation</h2>
+
+    <p>
+      API documentation không phải là luxury — đây là yêu cầu cơ bản. Không có documentation,
+      không ai biết cách dùng API của bạn (kể cả bạn sau 3 tháng). Swagger/OpenAPI là chuẩn
+      công nghiệp để document REST API: viết một lần, tự động generate interactive UI, client SDK,
+      và test cases.
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>npm install swagger-jsdoc swagger-ui-express</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">config/swagger.js</span><button class="copy-btn">Copy</button></div><code>// config/swagger.js
+const swaggerJsdoc = require('swagger-jsdoc');
+
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'My API',
+      version: '1.0.0',
+      description: 'API documentation cho NodeJS project'
+    },
+    servers: [{ url: 'http://localhost:3000/api/v1' }],
+    components: {
+      securitySchemes: {
+        bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
+      }
+    }
+  },
+  apis: ['./routes/**/*.js']
+};
+
+module.exports = swaggerJsdoc(options);</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js</span><button class="copy-btn">Copy</button></div><code>// app.js
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));</code></pre>
+
+    <p>
+      Sau khi mount, vào <code>http://localhost:3000/api/docs</code> để xem Swagger UI —
+      giao diện interactive cho phép test API trực tiếp từ browser mà không cần Postman.
+    </p>
+
+    <h3>Viết JSDoc Annotations cho Swagger</h3>
+    <p>
+      <code>swagger-jsdoc</code> đọc các comment JSDoc đặc biệt trong file routes để
+      tự động generate spec. Đây là cách tốt nhất vì documentation nằm ngay cạnh code:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/v1/users.js</span><button class="copy-btn">Copy</button></div><code>/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Lấy danh sách users
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Số trang
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Số items mỗi trang
+ *     responses:
+ *       200:
+ *         description: Danh sách users thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                 pagination:
+ *                   type: object
+ *       401:
+ *         description: Chưa xác thực
+ */
+router.get('/', authenticate, asyncHandler(async (req, res) => {
+  // implementation...
+}));
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Lấy thông tin một user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: MongoDB ObjectId của user
+ *     responses:
+ *       200:
+ *         description: Thông tin user
+ *       404:
+ *         description: Không tìm thấy user
+ */
+router.get('/:id', authenticate, asyncHandler(async (req, res) => {
+  // implementation...
+}));</code></pre>
+
+    <h3>Định nghĩa Schemas tái sử dụng</h3>
+    <p>
+      Thay vì lặp lại schema ở mỗi endpoint, định nghĩa một lần trong <code>components/schemas</code>
+      rồi tham chiếu bằng <code>$ref</code>:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">config/swagger.js</span><button class="copy-btn">Copy</button></div><code>// Thêm vào phần components trong swagger options
+components: {
+  schemas: {
+    User: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: '64a1b2c3d4e5f678' },
+        name: { type: 'string', example: 'Nguyễn Văn An' },
+        email: { type: 'string', format: 'email', example: 'an@example.com' },
+        role: { type: 'string', enum: ['user', 'admin'], example: 'user' },
+        createdAt: { type: 'string', format: 'date-time' }
+      }
+    },
+    ApiError: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        error: {
+          type: 'object',
+          properties: {
+            code: { type: 'string', example: 'USER_NOT_FOUND' },
+            message: { type: 'string', example: 'Không tìm thấy user' }
+          }
+        }
+      }
+    }
+  },
+  securitySchemes: {
+    bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
+  }
+}</code></pre>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Mẹo</div>
+      Ngoài <code>swagger-jsdoc</code>, có thể dùng <strong>Postman</strong> để generate OpenAPI spec
+      từ collection đã có, hoặc dùng <strong>Insomnia</strong> với plugin OpenAPI export.
+      Một lựa chọn khác là viết spec YAML trước (design-first), rồi dùng spec để generate route stubs.
+      Approach này đặc biệt tốt khi làm việc nhóm: backend và frontend đồng ý spec trước,
+      rồi làm song song.
+    </div>
+
+    <h3>Bảo vệ Swagger UI trong môi trường production</h3>
+    <p>
+      Không nên để Swagger UI public trên production vì nó expose toàn bộ cấu trúc API.
+      Cách đơn giản nhất là chỉ bật Swagger trong development:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js</span><button class="copy-btn">Copy</button></div><code>// Chỉ mount Swagger UI trong môi trường development
+if (process.env.NODE_ENV !== 'production') {
+  const swaggerUi = require('swagger-ui-express');
+  const swaggerSpec = require('./config/swagger');
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  console.log('📖 Swagger UI: http://localhost:3000/api/docs');
+}</code></pre>
+
+    <!-- ==================== SECTION 15.9 - Rate Limiting ==================== -->
+    <h2 id="s15-9">15.9 Rate Limiting — Bảo vệ API khỏi bị lạm dụng</h2>
+
+    <p>
+      Một API không có rate limiting là API không an toàn. Không có giới hạn, client có thể gửi
+      hàng nghìn request mỗi giây, làm sập server hoặc tốn chi phí database/cloud của bạn.
+      Package <code>express-rate-limit</code> là giải pháp đơn giản và hiệu quả nhất:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>npm install express-rate-limit</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/rateLimiter.js</span><button class="copy-btn">Copy</button></div><code>const rateLimit = require('express-rate-limit');
+
+// General rate limiter: 100 requests per 15 minutes
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  max: 100,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Quá nhiều request. Vui lòng thử lại sau 15 phút.'
+    }
+  },
+  standardHeaders: true,  // Thêm RateLimit-* headers
+  legacyHeaders: false
+});
+
+// Strict limiter cho auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 giờ
+  max: 10, // Chỉ 10 lần login thất bại mỗi giờ
+  message: {
+    success: false,
+    error: {
+      code: 'AUTH_RATE_LIMIT',
+      message: 'Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 1 giờ.'
+    }
+  }
+});
+
+module.exports = { generalLimiter, authLimiter };
+
+// app.js
+const { generalLimiter, authLimiter } = require('./middleware/rateLimiter');
+app.use('/api/', generalLimiter);
+app.use('/api/v1/auth', authLimiter);</code></pre>
+
+    <p>
+      Khi request bị block, server trả về status <strong>429 Too Many Requests</strong>
+      cùng với headers <code>RateLimit-Limit</code>, <code>RateLimit-Remaining</code>,
+      và <code>RateLimit-Reset</code> để client biết khi nào được gửi request tiếp.
+    </p>
+
+    <div class="callout callout-note">
+      <div class="callout-title">📌 Ghi nhớ</div>
+      Mặc định <code>express-rate-limit</code> lưu trạng thái trong memory của process.
+      Khi deploy với nhiều instances (horizontal scaling), mỗi instance có counter riêng —
+      dẫn đến rate limit không hoạt động đúng. Dùng <code>rate-limit-redis</code> store
+      để chia sẻ counter qua Redis (đã học ở chương 14).
+    </div>
+
+    <!-- ==================== SECTION 15.10 - Input Validation ==================== -->
+    <h2 id="s15-10">15.10 Input Validation với Joi hoặc Zod</h2>
+
+    <p>
+      Validate input ở mọi endpoint là bắt buộc — không bao giờ tin dữ liệu từ client.
+      Có hai library phổ biến: <strong>Joi</strong> (mature, callback-style) và
+      <strong>Zod</strong> (TypeScript-first, schema tái dùng với inferred types).
+      Dưới đây là ví dụ với Joi:
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>npm install joi</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">validation/userSchemas.js</span><button class="copy-btn">Copy</button></div><code>const Joi = require('joi');
+
+const createUserSchema = Joi.object({
+  name: Joi.string().min(2).max(100).required()
+    .messages({ 'string.min': 'Tên phải có ít nhất 2 ký tự' }),
+  email: Joi.string().email().required()
+    .messages({ 'string.email': 'Email không hợp lệ' }),
+  password: Joi.string().min(8).pattern(/^(?=.*[A-Z])(?=.*[0-9])/).required()
+    .messages({
+      'string.min': 'Mật khẩu phải có ít nhất 8 ký tự',
+      'string.pattern.base': 'Mật khẩu phải có ít nhất 1 chữ hoa và 1 số'
+    }),
+  role: Joi.string().valid('user', 'admin').default('user')
+});
+
+const updateUserSchema = Joi.object({
+  name: Joi.string().min(2).max(100),
+  email: Joi.string().email(),
+  phone: Joi.string().pattern(/^[0-9]{10,11}$/)
+}).min(1); // Phải có ít nhất 1 field
+
+module.exports = { createUserSchema, updateUserSchema };</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">middleware/validate.js</span><button class="copy-btn">Copy</button></div><code>// Middleware factory: validate(schema) trả về middleware function
+const validate = (schema, source = 'body') => {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req[source], {
+      abortEarly: false,  // Gom tất cả lỗi, không dừng ở lỗi đầu tiên
+      stripUnknown: true  // Xóa các fields không có trong schema
+    });
+    if (error) {
+      const details = error.details.map(d => ({
+        field: d.path.join('.'),
+        message: d.message
+      }));
+      return res.status(422).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Dữ liệu không hợp lệ',
+          details
+        }
+      });
+    }
+    req[source] = value; // Thay thế bằng data đã được validate và sanitize
+    next();
+  };
+};
+
+module.exports = validate;
+
+// Dùng trong route:
+// router.post('/', validate(createUserSchema), asyncHandler(handler));</code></pre>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Mẹo</div>
+      Dùng <code>abortEarly: false</code> để Joi thu thập tất cả lỗi validation trong một lần,
+      thay vì dừng ở lỗi đầu tiên. Client nhận được toàn bộ danh sách lỗi trong một request,
+      giúp họ sửa form nhanh hơn mà không phải submit nhiều lần.
+    </div>
+
+    <!-- ==================== EXERCISES ==================== -->
+    <h2 id="exercises">Bài tập thực hành</h2>
+
+    <p>
+      Các bài tập dưới đây yêu cầu bạn tự triển khai các tính năng đã học.
+      Khởi tạo một Express project mới với Mongoose và áp dụng từng pattern theo thứ tự.
+    </p>
+
+    <div class="exercise-item">
+      <span class="exercise-badge badge-easy">Dễ</span>
+      <div class="exercise-content">
+        <h4>15.1 Field Selection Middleware</h4>
+        <p>
+          Thêm field selection vào <code>GET /users</code>: query param <code>?fields=id,name,email</code>
+          chỉ trả về các fields được chỉ định thay vì toàn bộ document.
+          Gợi ý: dùng <code>.select()</code> của Mongoose với danh sách fields từ query string.
+          Đảm bảo whitelist các fields được phép chọn (không cho phép chọn <code>password</code> hay <code>__v</code>).
+        </p>
+      </div>
+    </div>
+
+    <div class="exercise-item">
+      <span class="exercise-badge badge-medium">Trung bình</span>
+      <div class="exercise-content">
+        <h4>15.2 Cursor Pagination</h4>
+        <p>
+          Implement cursor-based pagination thay cho offset pagination cho <code>GET /posts</code>
+          (sort by <code>_id</code> giảm dần). Đảm bảo response có <code>nextCursor</code>
+          và <code>hasMore</code>. Test với Postman: lấy trang đầu, copy <code>nextCursor</code>
+          vào request tiếp theo, xác nhận không có item bị lặp hoặc bị skip.
+          Xử lý edge case: cursor không hợp lệ hoặc đã là trang cuối.
+        </p>
+      </div>
+    </div>
+
+    <div class="exercise-item">
+      <span class="exercise-badge badge-hard">Khó</span>
+      <div class="exercise-content">
+        <h4>15.3 API Versioning Demo</h4>
+        <p>
+          Build demo versioning hoàn chỉnh: <code>v1</code> trả <code>{ name, email }</code>,
+          <code>v2</code> thêm <code>{ phone, avatar, joinedAt }</code>.
+          Thêm header <code>X-API-Version</code> vào mọi response để client biết đang dùng version nào.
+          Thêm <code>Deprecation: true</code> và <code>Sunset: &lt;date&gt;</code> header cho tất cả
+          endpoints của v1. Document cả hai version với Swagger (hai server trong
+          <code>servers</code> array của swagger config). Test với curl và verify headers.
+        </p>
+      </div>
+    </div>
+
+    <!-- ==================== SUMMARY ==================== -->
+    <h2 id="summary">Tổng kết chương 15</h2>
+
+    <p>
+      Chúng ta đã đi qua toàn bộ các best practices cốt lõi để thiết kế REST API chuyên nghiệp.
+      Đây là bản tóm tắt nhanh những điểm quan trọng nhất:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Chủ đề</th>
+          <th>Best Practice</th>
+          <th>Anti-pattern cần tránh</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>URL Design</td>
+          <td>Danh từ số nhiều, không có động từ</td>
+          <td><code>/getUsers</code>, <code>/createPost</code></td>
+        </tr>
+        <tr>
+          <td>Status Codes</td>
+          <td>Dùng đúng code theo ngữ cảnh</td>
+          <td>Trả 200 cho mọi thứ kể cả lỗi</td>
+        </tr>
+        <tr>
+          <td>Response Format</td>
+          <td>Nhất quán, có <code>success</code> flag và <code>error.code</code></td>
+          <td>Mỗi endpoint một kiểu format khác nhau</td>
+        </tr>
+        <tr>
+          <td>Pagination</td>
+          <td>Luôn phân trang, giới hạn max limit</td>
+          <td>Trả toàn bộ collection, không giới hạn</td>
+        </tr>
+        <tr>
+          <td>Versioning</td>
+          <td>URL versioning rõ ràng, có deprecation policy</td>
+          <td>Break changes mà không báo trước</td>
+        </tr>
+        <tr>
+          <td>File Upload</td>
+          <td>Validate mimetype, giới hạn size, lưu cloud</td>
+          <td>Accept mọi file, lưu thẳng trên local disk production</td>
+        </tr>
+        <tr>
+          <td>Documentation</td>
+          <td>Swagger/OpenAPI, annotations ngay trong code</td>
+          <td>Không có docs hoặc docs lỗi thời</td>
+        </tr>
+        <tr>
+          <td>Rate Limiting</td>
+          <td>Giới hạn request, trả 429 với thông tin rõ ràng</td>
+          <td>Không có giới hạn, để API bị abuse</td>
+        </tr>
+        <tr>
+          <td>Validation</td>
+          <td>Validate mọi input, trả về tất cả lỗi cùng lúc</td>
+          <td>Tin dữ liệu từ client, chỉ validate ở frontend</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-note">
+      <div class="callout-title">📌 Ghi nhớ</div>
+      Các nguyên tắc trong chương này không phải "nice to have" — đây là những gì phân biệt
+      một junior developer với một senior developer trong mắt team lead và technical interviewer.
+      Khi bạn apply vào các công ty công nghệ, họ sẽ review thiết kế API của bạn theo chính
+      những tiêu chuẩn này.
+    </div>
+
+    <div class="chapter-nav">
+      <a href="../part4/chapter14.html" class="chapter-nav-btn">
+        <span class="chapter-nav-direction">← Chương trước</span>
+        <span class="chapter-nav-title">Caching với Redis</span>
+      </a>
+      <a href="chapter16.html" class="chapter-nav-btn next">
+        <span class="chapter-nav-direction">Chương tiếp theo →</span>
+        <span class="chapter-nav-title">Testing và Code Quality</span>
+      </a>
+    </div>
+
+  </main>
+
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

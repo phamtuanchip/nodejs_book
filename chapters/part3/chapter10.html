@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 10: Cookie, Session và Authentication | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet &amp; Web</a>
+        <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS &amp; Môi trường</a>
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+        <a href="chapter10.html" class="nav-link active"><span class="chapter-num">10</span> Auth &amp; Session</a>
+        <a href="chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating &amp; SSR</a>
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB &amp; Mongoose</a>
+        <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL &amp; Prisma</a>
+        <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching &amp; Redis</a>
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy &amp; DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless &amp; Cloud</a>
+      </div>
+    </nav>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span>
+        <span>Phần 3</span>
+        <span>›</span>
+        <span>Chương 10</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 3 — Web Application với Express</div>
+        <h1>Chương 10: Cookie, Session và Authentication</h1>
+        <p class="lead">
+          Mọi ứng dụng đều cần biết "ai đang đăng nhập". Chương này xây dựng hệ thống
+          authentication hoàn chỉnh từ đăng ký, đăng nhập, bảo vệ routes, đến refresh token —
+          hiểu rõ tại sao mỗi kỹ thuật tồn tại trước khi dùng nó.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ hiểu được</div>
+        <ul>
+          <li>Set và đọc cookie với Express, các options bảo mật quan trọng</li>
+          <li>Implement server session với express-session</li>
+          <li>Hash password an toàn với bcrypt — tại sao không dùng MD5/SHA</li>
+          <li>Tạo và verify JWT token</li>
+          <li>Viết auth middleware bảo vệ routes</li>
+          <li>Hiểu và implement refresh token flow</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>10.1 Cookie với Express</h2>
+
+      <p>
+        Cookie là các cặp key-value nhỏ mà server <em>yêu cầu</em> browser lưu trữ và
+        <em>tự động gửi kèm</em> trong mọi request tiếp theo. Đây là nền tảng của trạng thái
+        trong HTTP — một giao thức vốn dĩ stateless.
+      </p>
+
+      <p>
+        Để làm việc với cookie trong Express, cài thêm <code>cookie-parser</code> — một middleware
+        tự động parse <code>Cookie</code> header thành object <code>req.cookies</code>.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Terminal</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>npm install express cookie-parser</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">app.js — Thiết lập cookie-parser</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const express = require('express');
+const cookieParser = require('cookie-parser');
+
+const app = express();
+
+// Đăng ký middleware cookie-parser
+// 'mySecretKey' dùng để ký signed cookies (tùy chọn)
+app.use(cookieParser('mySecretKey'));
+
+// SET COOKIE: lưu tùy chọn giao diện người dùng
+app.post('/preferences', (req, res) => {
+  const { theme, language } = req.body;
+
+  res.cookie('theme', theme, {
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 ngày (milliseconds)
+    httpOnly: false,                    // JS frontend có thể đọc
+    secure: process.env.NODE_ENV === 'production', // chỉ HTTPS khi production
+    sameSite: 'lax',                    // bảo vệ CSRF một phần
+  });
+
+  res.cookie('lang', language, {
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    httpOnly: false,
+    sameSite: 'lax',
+  });
+
+  res.json({ message: 'Đã lưu tùy chọn' });
+});
+
+// READ COOKIE: đọc tùy chọn đã lưu
+app.get('/preferences', (req, res) => {
+  const theme = req.cookies.theme || 'light';
+  const lang  = req.cookies.lang  || 'vi';
+
+  res.json({ theme, lang });
+});
+
+// CLEAR COOKIE: xóa một cookie cụ thể
+app.delete('/preferences', (req, res) => {
+  res.clearCookie('theme');
+  res.clearCookie('lang');
+  res.json({ message: 'Đã xóa tùy chọn' });
+});</code>
+      </pre>
+
+      <h3>Các options cookie quan trọng</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>Giá trị mẫu</th>
+            <th>Mục đích</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>httpOnly</code></td>
+            <td><code>true</code></td>
+            <td>JavaScript phía client không thể đọc cookie — ngăn XSS đánh cắp token</td>
+          </tr>
+          <tr>
+            <td><code>secure</code></td>
+            <td><code>true</code></td>
+            <td>Chỉ gửi cookie qua HTTPS — không gửi qua HTTP thường</td>
+          </tr>
+          <tr>
+            <td><code>sameSite</code></td>
+            <td><code>'strict'</code> / <code>'lax'</code> / <code>'none'</code></td>
+            <td>Kiểm soát khi nào cookie được gửi trong cross-site requests — bảo vệ CSRF</td>
+          </tr>
+          <tr>
+            <td><code>maxAge</code></td>
+            <td><code>86400000</code></td>
+            <td>Thời gian sống tính bằng milliseconds (86400000 = 1 ngày)</td>
+          </tr>
+          <tr>
+            <td><code>expires</code></td>
+            <td><code>new Date(...)</code></td>
+            <td>Ngày hết hạn tuyệt đối — dùng maxAge hoặc expires, không dùng cả hai</td>
+          </tr>
+          <tr>
+            <td><code>domain</code></td>
+            <td><code>'.example.com'</code></td>
+            <td>Cookie chia sẻ được giữa subdomains (app.example.com, api.example.com)</td>
+          </tr>
+          <tr>
+            <td><code>path</code></td>
+            <td><code>'/'</code></td>
+            <td>Cookie chỉ gửi khi URL bắt đầu bằng path này</td>
+          </tr>
+          <tr>
+            <td><code>signed</code></td>
+            <td><code>true</code></td>
+            <td>Ký cookie bằng secret — phát hiện nếu client tự ý sửa giá trị</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Diagram 10.1: Cookie flow -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-c1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-c1r" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="720" height="200" fill="#0d1117" rx="10"/>
+
+          <!-- Browser box -->
+          <rect x="16" y="20" width="150" height="160" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="91" y="44" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter,sans-serif">Browser</text>
+          <rect x="28" y="56" width="126" height="30" rx="5" fill="#0f2040" stroke="#3b82f6" stroke-width="1"/>
+          <text x="91" y="76" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">Cookie Store</text>
+          <text x="91" y="104" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">theme=dark</text>
+          <text x="91" y="118" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">lang=vi</text>
+          <text x="91" y="132" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">session_id=abc123</text>
+
+          <!-- Server box -->
+          <rect x="554" y="20" width="150" height="160" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="629" y="44" text-anchor="middle" fill="#86efac" font-size="13" font-weight="600" font-family="Inter,sans-serif">Express Server</text>
+          <text x="629" y="68" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">cookie-parser</text>
+          <text x="629" y="96" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">req.cookies.theme</text>
+          <text x="629" y="110" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">req.cookies.lang</text>
+          <text x="629" y="140" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">res.cookie(name,val)</text>
+          <text x="629" y="155" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">res.clearCookie(name)</text>
+
+          <!-- Step 1: POST /login -->
+          <line x1="166" y1="68" x2="552" y2="68" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-c1)"/>
+          <text x="359" y="60" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">1. POST /login</text>
+
+          <!-- Step 2: Set-Cookie response -->
+          <line x1="554" y1="88" x2="168" y2="88" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-c1r)"/>
+          <text x="359" y="105" text-anchor="middle" fill="#fcd34d" font-size="10" font-family="Inter,sans-serif">2. Set-Cookie: session_id=abc123; HttpOnly</text>
+
+          <!-- Step 3: subsequent request -->
+          <line x1="166" y1="130" x2="552" y2="130" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-c1)"/>
+          <text x="359" y="122" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">3. GET /profile</text>
+          <text x="359" y="148" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Cookie: session_id=abc123 (tự động gửi)</text>
+
+          <!-- Step 4: read and respond -->
+          <line x1="554" y1="168" x2="168" y2="168" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-c1r)"/>
+          <text x="359" y="185" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">4. 200 OK + user profile data</text>
+        </svg>
+      </div>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">Bảo mật cookie</div>
+        Luôn bật <code>httpOnly: true</code> cho cookie chứa session ID hoặc token xác thực.
+        Cookie không có <code>httpOnly</code> có thể bị đọc bởi script XSS, dẫn đến chiếm tài khoản.
+        Ngoài ra, <code>secure: true</code> phải bật trên production để chặn đánh cắp cookie qua
+        mạng không mã hóa.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>10.2 Server Session với express-session</h2>
+
+      <p>
+        Cookie lưu dữ liệu <em>trực tiếp</em> trong trình duyệt. Session thì khác: server chỉ
+        gửi cho browser một chuỗi ID ngẫu nhiên (session ID), còn dữ liệu thực sự được lưu
+        <em>trên server</em>. Browser chỉ biết cái ID, không biết nội dung.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Terminal</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>npm install express-session</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">app.js — Cấu hình express-session</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const session = require('express-session');
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+  resave: false,           // không lưu lại session nếu không thay đổi
+  saveUninitialized: false, // không tạo session cho request chưa đăng nhập
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000, // 1 ngày
+    sameSite: 'lax',
+  },
+}));
+
+// Dữ liệu người dùng giả (không cần DB)
+const users = [
+  { id: 1, email: 'alice@example.com', password: 'hashed_pw_1', name: 'Alice' },
+  { id: 2, email: 'bob@example.com',   password: 'hashed_pw_2', name: 'Bob'   },
+];
+
+// POST /login — đăng nhập bằng session
+app.post('/login', express.json(), (req, res) => {
+  const { email, password } = req.body;
+
+  // Tìm user (trong thực tế sẽ dùng bcrypt.compare)
+  const user = users.find(u => u.email === email);
+  if (!user || password !== 'secret123') {
+    return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
+  }
+
+  // Lưu thông tin vào session — object này tồn tại trên SERVER
+  req.session.userId   = user.id;
+  req.session.userName = user.name;
+  req.session.loginAt  = new Date().toISOString();
+
+  res.json({ message: `Chào mừng ${user.name}!` });
+});
+
+// GET /profile — lấy thông tin người dùng từ session
+app.get('/profile', (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Chưa đăng nhập' });
+  }
+
+  const user = users.find(u => u.id === req.session.userId);
+  res.json({
+    name:    user.name,
+    email:   user.email,
+    loginAt: req.session.loginAt,
+  });
+});
+
+// POST /logout — hủy session
+app.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) return res.status(500).json({ error: 'Không thể đăng xuất' });
+
+    res.clearCookie('connect.sid'); // tên mặc định của session cookie
+    res.json({ message: 'Đã đăng xuất thành công' });
+  });
+});</code>
+      </pre>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">MemoryStore — Chỉ dùng cho development</div>
+        Theo mặc định, <code>express-session</code> lưu session trong RAM (<code>MemoryStore</code>).
+        Điều này có nghĩa là: mỗi khi restart server, tất cả session bị xóa; và khi scale lên
+        nhiều server, mỗi server có session riêng — user đăng nhập ở server 1 sẽ bị logout khi
+        request tới server 2. Trong production, dùng <code>connect-redis</code> hoặc
+        <code>connect-mongo</code> để lưu session vào database dùng chung.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>10.3 Hash Password với bcrypt</h2>
+
+      <p>
+        Không bao giờ lưu mật khẩu dạng plain text. Nếu database bị tấn công, toàn bộ
+        mật khẩu của người dùng bị lộ. Nhưng tại sao không dùng MD5 hay SHA-256 thông thường?
+      </p>
+
+      <h3>Vấn đề với MD5 và SHA-256 cho password</h3>
+
+      <ul>
+        <li><strong>Quá nhanh:</strong> GPU hiện đại có thể hash hàng tỷ SHA-256 mỗi giây. Attacker có thể brute-force toàn bộ dictionary trong vài giờ.</li>
+        <li><strong>Rainbow table:</strong> Bảng hash đã tính sẵn của hàng triệu mật khẩu phổ biến. <code>md5('123456')</code> luôn cho cùng một kết quả.</li>
+        <li><strong>Không có salt:</strong> Hai người dùng cùng mật khẩu sẽ có cùng hash — lộ một lộ tất cả.</li>
+      </ul>
+
+      <p>
+        <strong>bcrypt</strong> giải quyết tất cả: nó cố tình chậm (có thể điều chỉnh), tự
+        sinh salt ngẫu nhiên, và salt được nhúng vào trong chuỗi hash kết quả.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Terminal</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code># bcryptjs = pure JavaScript, không cần build native addon
+# bcrypt   = native C++ binding, nhanh hơn nhưng cần build tools
+npm install bcryptjs</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">auth/password.js — Hash và verify password</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const bcrypt = require('bcryptjs');
+
+// ============ HASH PASSWORD ============
+// saltRounds = "cost factor" — số vòng lặp = 2^saltRounds
+// saltRounds 10 → ~100ms/hash; 12 → ~400ms/hash; 14 → ~1.5s/hash
+// Production khuyến nghị: 10-12
+
+const saltRounds = 12;
+
+async function hashPassword(plainPassword) {
+  // bcrypt.hash tự sinh salt, hash, và gộp thành một chuỗi:
+  // $2b$12$[22 ký tự salt][31 ký tự hash]
+  const hash = await bcrypt.hash(plainPassword, saltRounds);
+  return hash;
+}
+
+// ============ VERIFY PASSWORD ============
+async function verifyPassword(plainPassword, storedHash) {
+  // bcrypt.compare đọc salt từ storedHash, hash lại plainPassword,
+  // rồi so sánh — trả về true/false
+  const isMatch = await bcrypt.compare(plainPassword, storedHash);
+  return isMatch;
+}
+
+// ============ DEMO ============
+async function demo() {
+  const password = 'MySecurePassword123!';
+
+  console.log('Đang hash...');
+  const hash = await hashPassword(password);
+  console.log('Hash:', hash);
+  // Ví dụ: $2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/NekdBnj6q20UvE6Vy
+
+  console.log('\nKiểm tra mật khẩu đúng:');
+  console.log(await verifyPassword(password, hash));     // true
+
+  console.log('\nKiểm tra mật khẩu sai:');
+  console.log(await verifyPassword('sai_password', hash)); // false
+
+  // Mỗi lần hash cho kết quả KHÁC NHAU do salt ngẫu nhiên
+  const hash2 = await hashPassword(password);
+  console.log('\nHash lần 2 (salt khác):', hash !== hash2); // true
+}
+
+demo();</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">routes/auth.js — Đăng ký và đăng nhập với bcrypt</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const express = require('express');
+const bcrypt  = require('bcryptjs');
+const router  = express.Router();
+
+// In-memory store (thay bằng database trong thực tế)
+const users = new Map(); // key: email, value: { id, email, name, passwordHash }
+let nextId = 1;
+
+// POST /auth/register
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    // Validation cơ bản
+    if (!name || !email || !password)
+      return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin' });
+    if (password.length < 8)
+      return res.status(400).json({ error: 'Mật khẩu tối thiểu 8 ký tự' });
+    if (users.has(email))
+      return res.status(409).json({ error: 'Email đã được đăng ký' });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const user = { id: nextId++, name, email, passwordHash };
+    users.set(email, user);
+
+    // Không trả về passwordHash
+    res.status(201).json({ message: 'Đăng ký thành công', userId: user.id });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
+// POST /auth/login
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = users.get(email);
+    // Luôn gọi bcrypt.compare kể cả khi user không tồn tại
+    // để tránh timing attack (so sánh thời gian phản hồi)
+    const fakeHash = '$2b$12$invalidhashfortimingprotection000000000000000000000000000';
+    const isMatch = user
+      ? await bcrypt.compare(password, user.passwordHash)
+      : await bcrypt.compare(password, fakeHash);
+
+    if (!user || !isMatch) {
+      return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
+    }
+
+    req.session.userId = user.id;
+    res.json({ message: `Chào mừng, ${user.name}!` });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
+module.exports = router;</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>10.4 JWT Authentication</h2>
+
+      <p>
+        JSON Web Token (JWT) là một cách khác để xác thực người dùng — không cần lưu session trên
+        server. Thay vào đó, server tạo một token có chứa thông tin user và chữ ký mật mã. Client
+        lưu token này và gửi kèm mỗi request.
+      </p>
+
+      <h3>Cấu trúc JWT</h3>
+
+      <p>JWT gồm 3 phần phân cách bằng dấu chấm: <code>Header.Payload.Signature</code></p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Text</span>
+          <span class="code-filename">Ví dụ JWT token</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9         ← Header (base64url)
+.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWxpY2VAZXhhbXBsZS5jb20iLCJpYXQiOjE2OTAwMDAwMDAsImV4cCI6MTY5MDYwNDgwMH0=  ← Payload (base64url)
+.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c        ← Signature (HMAC-SHA256)
+
+// Payload sau khi decode:
+{
+  "userId": 1,
+  "email": "alice@example.com",
+  "iat": 1690000000,   // issued at
+  "exp": 1690604800    // expiration
+}</code>
+      </pre>
+
+      <div class="callout callout-note">
+        <div class="callout-title">Payload không bí mật</div>
+        Phần Payload của JWT chỉ được encode bằng base64url — <strong>không phải mã hóa</strong>.
+        Bất kỳ ai cũng có thể đọc nội dung. Chỉ có Signature là được ký bằng secret key.
+        Đừng bao giờ đặt thông tin nhạy cảm (password, thẻ tín dụng) vào payload.
+      </div>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Terminal</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>npm install jsonwebtoken</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">utils/jwt.js — Tạo và xác minh JWT</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const jwt = require('jsonwebtoken');
+
+const ACCESS_TOKEN_SECRET  = process.env.JWT_ACCESS_SECRET  || 'access-secret-dev';
+const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh-secret-dev';
+
+// Tạo access token (ngắn hạn)
+function signAccessToken(payload) {
+  return jwt.sign(payload, ACCESS_TOKEN_SECRET, {
+    expiresIn: '15m', // 15 phút
+    algorithm: 'HS256',
+  });
+}
+
+// Tạo refresh token (dài hạn)
+function signRefreshToken(payload) {
+  return jwt.sign(payload, REFRESH_TOKEN_SECRET, {
+    expiresIn: '30d', // 30 ngày
+    algorithm: 'HS256',
+  });
+}
+
+// Xác minh access token
+function verifyAccessToken(token) {
+  try {
+    return jwt.verify(token, ACCESS_TOKEN_SECRET);
+    // Trả về payload nếu hợp lệ
+    // Throw JsonWebTokenError nếu chữ ký sai
+    // Throw TokenExpiredError nếu hết hạn
+  } catch (err) {
+    return null; // Token không hợp lệ
+  }
+}
+
+// Xác minh refresh token
+function verifyRefreshToken(token) {
+  try {
+    return jwt.verify(token, REFRESH_TOKEN_SECRET);
+  } catch (err) {
+    return null;
+  }
+}
+
+module.exports = {
+  signAccessToken,
+  signRefreshToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+};</code>
+      </pre>
+
+      <h3>Lưu JWT ở đâu — localStorage vs httpOnly cookie</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Cách lưu</th>
+            <th>Ưu điểm</th>
+            <th>Rủi ro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>localStorage</code></td>
+            <td>Dễ gửi kèm request, không bị giới hạn subdomain</td>
+            <td>Dễ bị đánh cắp bởi XSS — bất kỳ script nào cũng đọc được</td>
+          </tr>
+          <tr>
+            <td><code>sessionStorage</code></td>
+            <td>Tự xóa khi đóng tab</td>
+            <td>Vẫn dễ bị XSS; mất khi tab đóng — không tiện lợi</td>
+          </tr>
+          <tr>
+            <td><strong>httpOnly cookie</strong></td>
+            <td>JS không đọc được → XSS không lấy được token</td>
+            <td>Cần xử lý CSRF; không hoạt động với mobile app native</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Khuyến nghị: lưu access token trong memory (biến JS) và refresh token trong
+        <code>httpOnly</code> cookie. Khi trang tải lại, dùng refresh token để lấy access token mới.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>10.5 Auth Middleware</h2>
+
+      <p>
+        Middleware xác thực đọc token từ request, xác minh tính hợp lệ, và nếu hợp lệ thì
+        đính kèm thông tin user vào <code>req.user</code> để các handler sau sử dụng.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">middlewares/auth.js — Auth middleware đầy đủ</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const jwt = require('jsonwebtoken');
+
+const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret-dev';
+
+// ============ HELPER: asyncHandler ============
+// Bọc async function để tự động truyền lỗi sang next()
+const asyncHandler = fn => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+// ============ CLASS LỖI TÙY CHỈNH ============
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
+// ============ AUTH MIDDLEWARE (bắt buộc) ============
+const authMiddleware = asyncHandler(async (req, res, next) => {
+  // Đọc token từ Authorization header hoặc cookie
+  let token;
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.cookies?.access_token) {
+    token = req.cookies.access_token;
+  }
+
+  if (!token) {
+    throw new AppError('Chưa đăng nhập — vui lòng cung cấp token', 401);
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      throw new AppError('Token đã hết hạn — vui lòng refresh', 401);
+    }
+    throw new AppError('Token không hợp lệ', 401);
+  }
+
+  // Đính kèm user info vào request để dùng ở handler
+  req.user = decoded; // { userId, email, role, iat, exp }
+  next();
+});
+
+// ============ OPTIONAL AUTH MIDDLEWARE ============
+// Không fail nếu không có token; chỉ đính kèm user nếu token hợp lệ
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ')
+    ? authHeader.split(' ')[1]
+    : req.cookies?.access_token;
+
+  if (!token) return next(); // Tiếp tục mà không có user
+
+  try {
+    req.user = jwt.verify(token, ACCESS_TOKEN_SECRET);
+  } catch {
+    // Token không hợp lệ → bỏ qua, không fail
+  }
+  next();
+};
+
+// ============ ROLE-BASED MIDDLEWARE FACTORY ============
+// Dùng: router.get('/admin', authMiddleware, requireRole('admin'), handler)
+// Hoặc: router.get('/mod', authMiddleware, requireRole(['admin', 'moderator']), handler)
+const requireRole = (roles) => {
+  const allowed = Array.isArray(roles) ? roles : [roles];
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Chưa xác thực' });
+    }
+    if (!allowed.includes(req.user.role)) {
+      return res.status(403).json({
+        error: `Không có quyền — yêu cầu role: ${allowed.join(', ')}`,
+      });
+    }
+    next();
+  };
+};
+
+module.exports = { authMiddleware, optionalAuth, requireRole, AppError, asyncHandler };</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">routes/protected.js — Sử dụng auth middleware</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const express = require('express');
+const { authMiddleware, requireRole } = require('../middlewares/auth');
+const router = express.Router();
+
+// Áp dụng authMiddleware cho tất cả routes trong file này
+router.use(authMiddleware);
+
+// Route bình thường — chỉ cần đăng nhập
+router.get('/dashboard', (req, res) => {
+  res.json({
+    message: `Xin chào ${req.user.email}`,
+    userId:  req.user.userId,
+  });
+});
+
+// Route cần role admin
+router.get('/admin/users', requireRole('admin'), (req, res) => {
+  res.json({ users: [/* danh sách users */] });
+});
+
+// Route cho nhiều roles
+router.delete('/posts/:id', requireRole(['admin', 'moderator']), (req, res) => {
+  res.json({ message: `Đã xóa bài ${req.params.id}` });
+});
+
+module.exports = router;</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>10.6 Refresh Token Pattern</h2>
+
+      <p>
+        Access token có vòng đời ngắn (15 phút) để giảm rủi ro nếu bị đánh cắp. Refresh token
+        có vòng đời dài (30 ngày) và được lưu trong <code>httpOnly</code> cookie — client dùng
+        nó để lấy access token mới mà không cần đăng nhập lại.
+      </p>
+
+      <!-- Diagram 10.6: Refresh token flow -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-rt" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-rtr" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="760" height="340" fill="#0d1117" rx="10"/>
+
+          <!-- Headers -->
+          <rect x="16" y="12" width="150" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="91" y="31" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Client</text>
+
+          <rect x="594" y="12" width="150" height="28" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="669" y="31" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Server</text>
+
+          <!-- Step 1: Login -->
+          <text x="8" y="62" fill="#6272a4" font-size="10" font-weight="600" font-family="Inter,sans-serif">1</text>
+          <line x1="166" y1="58" x2="592" y2="58" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-rt)"/>
+          <text x="379" y="52" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">POST /auth/login (email + password)</text>
+
+          <!-- Step 2: Tokens issued -->
+          <text x="8" y="90" fill="#6272a4" font-size="10" font-weight="600" font-family="Inter,sans-serif">2</text>
+          <line x1="594" y1="86" x2="168" y2="86" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-rtr)"/>
+          <text x="379" y="80" text-anchor="middle" fill="#fcd34d" font-size="10" font-family="Inter,sans-serif">200 + access_token (15m) + Set-Cookie: refresh_token (30d; HttpOnly)</text>
+
+          <!-- Step 3: Use access token -->
+          <text x="8" y="120" fill="#6272a4" font-size="10" font-weight="600" font-family="Inter,sans-serif">3</text>
+          <line x1="166" y1="116" x2="592" y2="116" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-rt)"/>
+          <text x="379" y="110" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">GET /api/data — Authorization: Bearer access_token</text>
+
+          <!-- Step 4: Success -->
+          <text x="8" y="148" fill="#6272a4" font-size="10" font-weight="600" font-family="Inter,sans-serif">4</text>
+          <line x1="594" y1="144" x2="168" y2="144" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-rtr)"/>
+          <text x="379" y="138" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">200 OK + data</text>
+
+          <!-- 15 minutes later label -->
+          <rect x="240" y="158" width="280" height="22" rx="4" fill="#2a1a3a" stroke="#a855f7" stroke-width="1"/>
+          <text x="380" y="173" text-anchor="middle" fill="#d8b4fe" font-size="10" font-family="Inter,sans-serif">... 15 phút sau, access token hết hạn ...</text>
+
+          <!-- Step 5: Expired token rejected -->
+          <text x="8" y="202" fill="#6272a4" font-size="10" font-weight="600" font-family="Inter,sans-serif">5</text>
+          <line x1="166" y1="198" x2="592" y2="198" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-rt)"/>
+          <text x="379" y="192" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">GET /api/data — Bearer expired_access_token</text>
+
+          <text x="8" y="228" fill="#6272a4" font-size="10" font-weight="600" font-family="Inter,sans-serif">6</text>
+          <line x1="594" y1="224" x2="168" y2="224" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-rtr)"/>
+          <text x="379" y="218" text-anchor="middle" fill="#fca5a5" font-size="10" font-family="Inter,sans-serif">401 Unauthorized — Token đã hết hạn</text>
+
+          <!-- Step 7: Refresh -->
+          <text x="8" y="258" fill="#6272a4" font-size="10" font-weight="600" font-family="Inter,sans-serif">7</text>
+          <line x1="166" y1="254" x2="592" y2="254" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arr-rt)"/>
+          <text x="379" y="248" text-anchor="middle" fill="#fcd34d" font-size="10" font-family="Inter,sans-serif">POST /auth/refresh — Cookie: refresh_token=... (tự động)</text>
+
+          <!-- Step 8: New access token -->
+          <text x="8" y="290" fill="#6272a4" font-size="10" font-weight="600" font-family="Inter,sans-serif">8</text>
+          <line x1="594" y1="286" x2="168" y2="286" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-rtr)"/>
+          <text x="379" y="280" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">200 + new_access_token (15m mới)</text>
+
+          <!-- Step 9: Retry -->
+          <text x="8" y="318" fill="#6272a4" font-size="10" font-weight="600" font-family="Inter,sans-serif">9</text>
+          <line x1="166" y1="314" x2="592" y2="314" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-rt)"/>
+          <text x="379" y="308" text-anchor="middle" fill="#86efac" font-size="10" font-family="Inter,sans-serif">Retry GET /api/data — Bearer new_access_token</text>
+        </svg>
+      </div>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">routes/auth.js — Refresh token endpoint</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const { signAccessToken, verifyRefreshToken } = require('../utils/jwt');
+
+// POST /auth/refresh
+router.post('/refresh', (req, res) => {
+  const refreshToken = req.cookies.refresh_token;
+
+  if (!refreshToken) {
+    return res.status(401).json({ error: 'Không có refresh token' });
+  }
+
+  const decoded = verifyRefreshToken(refreshToken);
+  if (!decoded) {
+    // Xóa cookie không hợp lệ
+    res.clearCookie('refresh_token');
+    return res.status(401).json({ error: 'Refresh token không hợp lệ hoặc đã hết hạn' });
+  }
+
+  // Tạo access token mới
+  const newAccessToken = signAccessToken({
+    userId: decoded.userId,
+    email:  decoded.email,
+    role:   decoded.role,
+  });
+
+  res.json({ accessToken: newAccessToken });
+});
+
+// POST /auth/logout — Xóa refresh token cookie
+router.post('/logout', (req, res) => {
+  res.clearCookie('refresh_token', {
+    httpOnly: true,
+    secure:   process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+  res.json({ message: 'Đăng xuất thành công' });
+});</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <h2>10.7 Dự án: Hệ thống Authentication Hoàn chỉnh</h2>
+
+      <p>
+        Tổng hợp tất cả kiến thức trên để xây dựng một auth system đầy đủ: đăng ký, đăng nhập,
+        refresh token, bảo vệ routes, và thông tin user hiện tại. Dùng in-memory store, không
+        cần database.
+      </p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Text</span>
+          <span class="code-filename">Cấu trúc thư mục dự án</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>auth-project/
+├── app.js              ← Entry point
+├── utils/
+│   └── jwt.js          ← sign/verify helpers
+├── middlewares/
+│   └── auth.js         ← authMiddleware, optionalAuth, requireRole
+├── routes/
+│   └── auth.js         ← /auth/* endpoints
+├── store/
+│   └── users.js        ← In-memory user store
+└── package.json</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">store/users.js — In-memory user store</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// In-memory store — trong thực tế thay bằng MongoDB/PostgreSQL
+const users = new Map();
+let nextId = 1;
+
+module.exports = {
+  findByEmail: (email) => users.get(email),
+  findById:    (id)    => [...users.values()].find(u => u.id === id),
+  create: (userData) => {
+    const user = { id: nextId++, ...userData, createdAt: new Date() };
+    users.set(userData.email, user);
+    return user;
+  },
+  count: () => users.size,
+};</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">routes/auth.js — Tất cả auth routes</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const express  = require('express');
+const bcrypt   = require('bcryptjs');
+const router   = express.Router();
+const userStore = require('../store/users');
+const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../utils/jwt');
+const { authMiddleware } = require('../middlewares/auth');
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure:   process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge:   30 * 24 * 60 * 60 * 1000, // 30 ngày
+};
+
+// ────────────────────────────────────────────
+// POST /auth/register
+// ────────────────────────────────────────────
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name?.trim() || !email?.trim() || !password)
+      return res.status(400).json({ error: 'Vui lòng điền đầy đủ: tên, email, mật khẩu' });
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      return res.status(400).json({ error: 'Định dạng email không hợp lệ' });
+
+    if (password.length < 8)
+      return res.status(400).json({ error: 'Mật khẩu tối thiểu 8 ký tự' });
+
+    if (userStore.findByEmail(email))
+      return res.status(409).json({ error: 'Email đã được đăng ký' });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const user = userStore.create({ name: name.trim(), email: email.toLowerCase(), passwordHash, role: 'user' });
+
+    const accessToken  = signAccessToken({ userId: user.id, email: user.email, role: user.role });
+    const refreshToken = signRefreshToken({ userId: user.id, email: user.email, role: user.role });
+
+    res.cookie('refresh_token', refreshToken, COOKIE_OPTIONS);
+
+    res.status(201).json({
+      message:     'Đăng ký thành công',
+      accessToken,
+      user: { id: user.id, name: user.name, email: user.email },
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
+// ────────────────────────────────────────────
+// POST /auth/login
+// ────────────────────────────────────────────
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password)
+      return res.status(400).json({ error: 'Vui lòng nhập email và mật khẩu' });
+
+    const user = userStore.findByEmail(email.toLowerCase());
+    const fakeHash = '$2b$12$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+    const isMatch = user
+      ? await bcrypt.compare(password, user.passwordHash)
+      : (await bcrypt.compare(password, fakeHash), false);
+
+    if (!user || !isMatch)
+      return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
+
+    const accessToken  = signAccessToken({ userId: user.id, email: user.email, role: user.role });
+    const refreshToken = signRefreshToken({ userId: user.id, email: user.email, role: user.role });
+
+    res.cookie('refresh_token', refreshToken, COOKIE_OPTIONS);
+
+    res.json({
+      message:     'Đăng nhập thành công',
+      accessToken,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
+// ────────────────────────────────────────────
+// POST /auth/refresh
+// ────────────────────────────────────────────
+router.post('/refresh', (req, res) => {
+  const token = req.cookies.refresh_token;
+  if (!token) return res.status(401).json({ error: 'Không có refresh token' });
+
+  const decoded = verifyRefreshToken(token);
+  if (!decoded) {
+    res.clearCookie('refresh_token');
+    return res.status(401).json({ error: 'Refresh token không hợp lệ hoặc đã hết hạn' });
+  }
+
+  // Kiểm tra user vẫn còn tồn tại
+  const user = userStore.findById(decoded.userId);
+  if (!user) {
+    res.clearCookie('refresh_token');
+    return res.status(401).json({ error: 'Tài khoản không tồn tại' });
+  }
+
+  const accessToken = signAccessToken({ userId: user.id, email: user.email, role: user.role });
+  res.json({ accessToken });
+});
+
+// ────────────────────────────────────────────
+// POST /auth/logout
+// ────────────────────────────────────────────
+router.post('/logout', (req, res) => {
+  res.clearCookie('refresh_token', { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+  res.json({ message: 'Đã đăng xuất thành công' });
+});
+
+// ────────────────────────────────────────────
+// GET /auth/me — Thông tin user hiện tại (protected)
+// ────────────────────────────────────────────
+router.get('/me', authMiddleware, (req, res) => {
+  const user = userStore.findById(req.user.userId);
+  if (!user) return res.status(404).json({ error: 'Không tìm thấy user' });
+
+  res.json({
+    id:        user.id,
+    name:      user.name,
+    email:     user.email,
+    role:      user.role,
+    createdAt: user.createdAt,
+  });
+});
+
+module.exports = router;</code>
+      </pre>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">app.js — Entry point hoàn chỉnh</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>const express      = require('express');
+const cookieParser = require('cookie-parser');
+const authRoutes   = require('./routes/auth');
+const { authMiddleware } = require('./middlewares/auth');
+
+const app = express();
+
+app.use(express.json());
+app.use(cookieParser());
+app.use('/auth', authRoutes);
+
+// Route được bảo vệ — ví dụ
+app.get('/api/secret', authMiddleware, (req, res) => {
+  res.json({ secret: 'Dữ liệu bí mật chỉ user đăng nhập mới thấy', user: req.user });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  const status = err.statusCode || 500;
+  res.status(status).json({ error: err.message || 'Lỗi server' });
+});
+
+app.listen(3000, () => console.log('Auth server chạy tại http://localhost:3000'));
+
+// Test nhanh với curl:
+// curl -X POST http://localhost:3000/auth/register \
+//   -H "Content-Type: application/json" \
+//   -d '{"name":"Alice","email":"alice@test.com","password":"secret123"}'</code>
+      </pre>
+
+      <!-- ============================================================ -->
+      <div class="summary">
+        <div class="summary-title">Tóm tắt chương 10</div>
+        <ul>
+          <li><strong>Cookie</strong> lưu dữ liệu nhỏ ở browser; dùng <code>httpOnly + secure + sameSite</code> để bảo mật</li>
+          <li><strong>Session</strong> chỉ lưu ID ở browser, data ở server; <code>MemoryStore</code> chỉ dùng cho dev</li>
+          <li><strong>bcrypt</strong> hash password với salt ngẫu nhiên và cost factor — không thể reverse; không dùng MD5/SHA</li>
+          <li><strong>JWT</strong> là stateless token, payload có thể đọc được, signature bảo vệ tính toàn vẹn</li>
+          <li><strong>Auth middleware</strong> đọc token từ header hoặc cookie, verify, đính kèm <code>req.user</code></li>
+          <li><strong>Refresh token</strong> dài hạn trong httpOnly cookie, access token ngắn hạn trong memory</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">Bài tập thực hành</div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>10.1 optionalAuth middleware</h4>
+            <p>
+              Thêm middleware <code>optionalAuth</code> vào dự án — không trả về lỗi 401 nếu chưa
+              login, nhưng nếu có token hợp lệ thì đính kèm <code>req.user</code>. Dùng nó cho
+              route <code>GET /posts</code>: nếu đã login thì hiện thêm trường <code>isOwner: true</code>
+              cho những bài viết của user đó.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-medium">Trung bình</span>
+          <div class="exercise-content">
+            <h4>10.2 requireRole middleware factory</h4>
+            <p>
+              Implement <code>requireRole(roles)</code> nhận cả string lẫn array string.
+              Test với 3 roles: <code>'user'</code>, <code>'moderator'</code>, <code>'admin'</code>.
+              Route <code>DELETE /posts/:id</code> chỉ cho phép moderator và admin. Route
+              <code>GET /admin/stats</code> chỉ cho admin. Viết test case thủ công bằng curl.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-hard">Khó</span>
+          <div class="exercise-content">
+            <h4>10.3 JWT Blacklist khi đăng xuất</h4>
+            <p>
+              Implement token blacklist: khi user logout, thêm access token hiện tại vào một
+              <code>Set</code> in-memory (hoặc Map kèm expiry). Trong <code>authMiddleware</code>,
+              check token có trong blacklist không trước khi cho qua. Xử lý thêm: tự động dọn
+              token đã hết hạn ra khỏi blacklist để tránh memory leak (dùng cron hoặc lazy cleanup).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER NAV -->
+      <div class="chapter-nav">
+        <a href="chapter09.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Chương trước</span>
+          <span class="chapter-nav-title">Middleware và Error Handling</span>
+        </a>
+        <a href="chapter11.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp theo →</span>
+          <span class="chapter-nav-title">Templating Engine và SSR</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

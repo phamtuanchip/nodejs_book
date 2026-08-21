@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 8: Express.js — Framework Web Phổ Biến Nhất | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet &amp; Web</a>
+        <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS &amp; Môi trường</a>
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="chapter08.html" class="nav-link active"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+        <a href="chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth &amp; Session</a>
+        <a href="chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating &amp; SSR</a>
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB &amp; Mongoose</a>
+        <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL &amp; Prisma</a>
+        <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching &amp; Redis</a>
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy &amp; DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless &amp; Cloud</a>
+      </div>
+    </nav>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span>
+        <span>Phần 3</span>
+        <span>›</span>
+        <span>Chương 8</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 3 — Web Application với Express</div>
+        <h1>Chương 8: Express.js — Framework Web Phổ Biến Nhất</h1>
+        <p class="lead">
+          Express biến một HTTP server thuần cồng kềnh thành vài dòng code gọn gàng.
+          Chương này học cách xây dựng REST API hoàn chỉnh với Express — routing, params,
+          body, và tổ chức code chuẩn.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ biết</div>
+        <ul>
+          <li>Cài đặt và cấu hình Express app từ đầu</li>
+          <li>Định nghĩa routes với đầy đủ HTTP methods (GET, POST, PUT, PATCH, DELETE)</li>
+          <li>Đọc route params, query strings, và request body</li>
+          <li>Tổ chức routes gọn gàng với Express Router</li>
+          <li>Xây dựng REST API hoàn chỉnh với CRUD operations</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>8.1 Tại sao cần Express?</h2>
+
+      <p>
+        Ở chương 6, bạn đã viết HTTP server thuần bằng module <code>http</code> của Node. Nó hoạt động,
+        nhưng khi ứng dụng lớn hơn — nhiều routes, nhiều methods, parse body, validate data — code sẽ
+        nhanh chóng trở thành một mớ <code>if/else</code> lộn xộn.
+      </p>
+
+      <p>
+        Hãy xem cùng một tính năng "Lấy danh sách sản phẩm" được viết theo hai cách:
+      </p>
+
+      <!-- SVG Diagram: Raw HTTP vs Express -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="760" height="260" fill="#0d1117" rx="10"/>
+
+          <!-- LEFT SIDE: Raw HTTP -->
+          <text x="180" y="28" text-anchor="middle" fill="#f87171" font-size="13" font-weight="600" font-family="Inter,sans-serif">HTTP Server thuần</text>
+
+          <!-- Request box -->
+          <rect x="20" y="45" width="110" height="46" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="75" y="65" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Request</text>
+          <text x="75" y="81" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">GET /products</text>
+
+          <!-- Arrow -->
+          <line x1="130" y1="68" x2="155" y2="68" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-1)"/>
+
+          <!-- IF block -->
+          <rect x="156" y="40" width="200" height="170" rx="8" fill="#2a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="256" y="62" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="600" font-family="Inter,sans-serif">Thủ công &amp; lộn xộn</text>
+          <text x="170" y="82" fill="#f87171" font-size="10" font-family="JetBrains Mono,monospace">if (url==='/products'</text>
+          <text x="170" y="97" fill="#f87171" font-size="10" font-family="JetBrains Mono,monospace">  &amp;&amp; method==='GET') {</text>
+          <text x="170" y="112" fill="#94a3b8" font-size="10" font-family="JetBrains Mono,monospace">  // parse query string</text>
+          <text x="170" y="127" fill="#94a3b8" font-size="10" font-family="JetBrains Mono,monospace">  // set headers manually</text>
+          <text x="170" y="142" fill="#94a3b8" font-size="10" font-family="JetBrains Mono,monospace">  // JSON.stringify data</text>
+          <text x="170" y="157" fill="#94a3b8" font-size="10" font-family="JetBrains Mono,monospace">  // res.writeHead(200,...)</text>
+          <text x="170" y="172" fill="#94a3b8" font-size="10" font-family="JetBrains Mono,monospace">  // res.end(json)</text>
+          <text x="170" y="187" fill="#f87171" font-size="10" font-family="JetBrains Mono,monospace">} else if (...) { ... }</text>
+          <text x="170" y="202" fill="#64748b" font-size="10" font-family="JetBrains Mono,monospace">// Và còn nhiều nữa...</text>
+
+          <!-- RIGHT SIDE: Express -->
+          <text x="580" y="28" text-anchor="middle" fill="#86efac" font-size="13" font-weight="600" font-family="Inter,sans-serif">Express Framework</text>
+
+          <!-- Request box right -->
+          <rect x="400" y="45" width="110" height="46" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="455" y="65" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Request</text>
+          <text x="455" y="81" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">GET /products</text>
+
+          <!-- Arrow right -->
+          <line x1="510" y1="68" x2="535" y2="68" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-1)"/>
+
+          <!-- Express Router block -->
+          <rect x="536" y="40" width="200" height="110" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="636" y="62" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Gọn gàng &amp; rõ ràng</text>
+          <text x="550" y="82" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">app.get('/products',</text>
+          <text x="550" y="97" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">  (req, res) =&gt; {</text>
+          <text x="550" y="112" fill="#86efac" font-size="10" font-family="JetBrains Mono,monospace">    res.json(products);</text>
+          <text x="550" y="127" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">  }</text>
+          <text x="550" y="142" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">);</text>
+
+          <!-- VS label in middle -->
+          <circle cx="380" cy="120" r="22" fill="#1e1e2e" stroke="#4b5563" stroke-width="1.5"/>
+          <text x="380" y="125" text-anchor="middle" fill="#9ca3af" font-size="13" font-weight="700" font-family="Inter,sans-serif">VS</text>
+        </svg>
+      </div>
+
+      <p>
+        Express không phải là một framework "nặng" như Django hay Rails. Nó là một <strong>thin layer</strong>
+        (lớp mỏng) nằm trên module <code>http</code> của Node, cung cấp:
+      </p>
+
+      <ul>
+        <li><strong>Routing</strong> — khớp URL với handler function một cách thanh lịch</li>
+        <li><strong>Middleware</strong> — pipeline xử lý request/response</li>
+        <li><strong>Request/Response helpers</strong> — <code>req.params</code>, <code>req.body</code>, <code>res.json()</code>...</li>
+        <li><strong>Extensibility</strong> — hàng nghìn middleware từ npm</li>
+      </ul>
+
+      <div class="callout callout-note">
+        <div class="callout-title">📌 Express là số 1</div>
+        Express là framework Node.js được tải xuống nhiều nhất trên npm — trên 30 triệu lần/tuần.
+        Hầu hết các framework khác (NestJS, Fastify, Koa) đều lấy cảm hứng hoặc build on top của nó.
+        Hiểu Express = hiểu nền tảng của hầu hết Node.js web development.
+      </div>
+
+      <!-- So sánh code mẫu -->
+      <p>Đây là cùng một tính năng viết bằng hai cách — quan sát sự khác biệt:</p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">server-raw.js — HTTP thuần</span><button class="copy-btn">Copy</button></div><code>const http = require('http');
+const url = require('url');
+
+const products = [
+  { id: 1, name: 'Laptop', price: 25000000 },
+  { id: 2, name: 'Mouse', price: 350000 },
+];
+
+const server = http.createServer((req, res) => {
+  const parsed = url.parse(req.url, true);
+  const pathname = parsed.pathname;
+  const method = req.method;
+
+  // Phải tự xử lý từng route
+  if (pathname === '/products' && method === 'GET') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'X-Powered-By': 'Node.js'
+    });
+    res.end(JSON.stringify({ success: true, data: products }));
+
+  } else if (pathname.match(/^\/products\/\d+$/) && method === 'GET') {
+    const id = parseInt(pathname.split('/')[2]);
+    const product = products.find(p => p.id === id);
+    if (product) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, data: product }));
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: 'Not found' }));
+    }
+
+  } else {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Route not found' }));
+  }
+});
+
+server.listen(3000);</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">server-express.js — Với Express</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const app = express();
+
+const products = [
+  { id: 1, name: 'Laptop', price: 25000000 },
+  { id: 2, name: 'Mouse', price: 350000 },
+];
+
+// Express tự handle routing, parsing, và response helpers
+app.get('/products', (req, res) => {
+  res.json({ success: true, data: products });
+});
+
+app.get('/products/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const product = products.find(p => p.id === id);
+
+  if (!product) {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
+
+  res.json({ success: true, data: product });
+});
+
+app.listen(3000, () => console.log('Server chạy tại http://localhost:3000'));</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>8.2 Cài đặt và Hello World</h2>
+
+      <p>
+        Tạo project mới và cài Express:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>mkdir my-express-app
+cd my-express-app
+npm init -y
+npm install express</code></pre>
+
+      <p>Tạo file <code>app.js</code> với server Express đầu tiên:</p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+
+// Tạo Express application
+const app = express();
+
+// Cổng server lắng nghe
+const PORT = process.env.PORT || 3000;
+
+// Route đơn giản nhất
+app.get('/', (req, res) => {
+  res.send('Xin chào từ Express!');
+});
+
+app.get('/hello', (req, res) => {
+  res.json({
+    message: 'Hello, World!',
+    timestamp: new Date().toISOString(),
+    framework: 'Express.js'
+  });
+});
+
+// Khởi động server
+app.listen(PORT, () => {
+  console.log(`✅ Server đang chạy tại http://localhost:${PORT}`);
+  console.log(`📝 Môi trường: ${process.env.NODE_ENV || 'development'}`);
+});</code></pre>
+
+      <p>Chạy server:</p>
+
+      <pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code>node app.js
+# ✅ Server đang chạy tại http://localhost:3000
+
+# Thử với curl:
+curl http://localhost:3000/hello
+# {"message":"Hello, World!","timestamp":"...","framework":"Express.js"}</code></pre>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 nodemon cho development</div>
+        Cài <code>npm install -D nodemon</code> và thêm script <code>"dev": "nodemon app.js"</code> vào
+        <code>package.json</code>. Sau đó chạy <code>npm run dev</code> — server tự restart mỗi khi bạn
+        sửa code, tiết kiệm rất nhiều thời gian.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>8.3 Routing — Xử Lý Các HTTP Methods</h2>
+
+      <p>
+        Express cung cấp một method tương ứng với mỗi HTTP method. Quy tắc CRUD rất rõ ràng:
+      </p>
+
+      <ul>
+        <li><code>app.get(path, handler)</code> — Đọc dữ liệu (Read)</li>
+        <li><code>app.post(path, handler)</code> — Tạo mới (Create)</li>
+        <li><code>app.put(path, handler)</code> — Cập nhật toàn bộ (Replace)</li>
+        <li><code>app.patch(path, handler)</code> — Cập nhật một phần (Partial update)</li>
+        <li><code>app.delete(path, handler)</code> — Xóa (Delete)</li>
+        <li><code>app.all(path, handler)</code> — Khớp với mọi HTTP method</li>
+      </ul>
+
+      <p>
+        Ví dụ đầy đủ CRUD cho resource "products" dùng in-memory array (chưa dùng database):
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js — CRUD đầy đủ</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const app = express();
+
+// Middleware quan trọng: parse JSON request body
+app.use(express.json());
+
+// "Database" tạm thời trong bộ nhớ
+let products = [
+  { id: 1, name: 'Laptop Dell XPS 13', price: 28000000, category: 'electronics', stock: 15 },
+  { id: 2, name: 'Chuột Logitech MX Master', price: 1800000, category: 'electronics', stock: 50 },
+  { id: 3, name: 'Bàn phím Keychron K2', price: 2200000, category: 'electronics', stock: 30 },
+];
+let nextId = 4; // Auto-increment ID
+
+// ── GET /products ── Lấy danh sách (có thể filter)
+app.get('/products', (req, res) => {
+  let result = [...products];
+
+  // Filter theo category: GET /products?category=electronics
+  if (req.query.category) {
+    result = result.filter(p => p.category === req.query.category);
+  }
+
+  // Filter theo giá tối đa: GET /products?maxPrice=5000000
+  if (req.query.maxPrice) {
+    result = result.filter(p => p.price <= parseInt(req.query.maxPrice));
+  }
+
+  res.json({
+    success: true,
+    total: result.length,
+    data: result
+  });
+});
+
+// ── GET /products/:id ── Lấy 1 sản phẩm
+app.get('/products/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const product = products.find(p => p.id === id);
+
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      error: `Không tìm thấy sản phẩm với id=${id}`
+    });
+  }
+
+  res.json({ success: true, data: product });
+});
+
+// ── POST /products ── Tạo sản phẩm mới
+app.post('/products', (req, res) => {
+  const { name, price, category, stock } = req.body;
+
+  // Validate required fields
+  if (!name || price === undefined || !category) {
+    return res.status(400).json({
+      success: false,
+      error: 'Thiếu thông tin bắt buộc: name, price, category'
+    });
+  }
+
+  const newProduct = {
+    id: nextId++,
+    name,
+    price: Number(price),
+    category,
+    stock: stock ?? 0,
+    createdAt: new Date().toISOString()
+  };
+
+  products.push(newProduct);
+
+  // 201 Created
+  res.status(201).json({
+    success: true,
+    message: 'Tạo sản phẩm thành công',
+    data: newProduct
+  });
+});
+
+// ── PUT /products/:id ── Cập nhật toàn bộ (replace)
+app.put('/products/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = products.findIndex(p => p.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ success: false, error: 'Không tìm thấy sản phẩm' });
+  }
+
+  const { name, price, category, stock } = req.body;
+  if (!name || price === undefined || !category) {
+    return res.status(400).json({ success: false, error: 'PUT yêu cầu đầy đủ tất cả fields' });
+  }
+
+  products[index] = { id, name, price: Number(price), category, stock: stock ?? 0 };
+  res.json({ success: true, data: products[index] });
+});
+
+// ── PATCH /products/:id ── Cập nhật một phần
+app.patch('/products/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = products.findIndex(p => p.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ success: false, error: 'Không tìm thấy sản phẩm' });
+  }
+
+  // Merge dữ liệu cũ với dữ liệu mới
+  products[index] = { ...products[index], ...req.body };
+  res.json({ success: true, data: products[index] });
+});
+
+// ── DELETE /products/:id ── Xóa sản phẩm
+app.delete('/products/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = products.findIndex(p => p.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ success: false, error: 'Không tìm thấy sản phẩm' });
+  }
+
+  const deleted = products.splice(index, 1)[0];
+  res.json({
+    success: true,
+    message: `Đã xóa sản phẩm "${deleted.name}"`,
+    data: deleted
+  });
+});
+
+app.listen(3000, () => console.log('Server tại http://localhost:3000'));</code></pre>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Multiple callbacks trên 1 route</div>
+        Express cho phép bạn đặt nhiều handler function cho 1 route. Mỗi function phải gọi
+        <code>next()</code> để chuyển sang function tiếp theo — đây chính là cơ chế middleware (Chương 9):
+        <br><br>
+        <code>app.get('/products', checkAuth, logRequest, (req, res) => { ... })</code>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>8.4 Request Object — Đọc Dữ Liệu Từ Client</h2>
+
+      <p>
+        Object <code>req</code> (request) chứa tất cả thông tin mà client gửi lên. Đây là những
+        thuộc tính quan trọng nhất:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">request-info.js — Debug tool</span><button class="copy-btn">Copy</button></div><code>// Route debug: hiển thị mọi thứ trong request
+// Truy cập: GET /debug/info?page=2&limit=10
+app.get('/debug/info', (req, res) => {
+  res.json({
+    // ── Route Parameters ──────────────────────
+    // /users/:userId/posts/:postId → req.params
+    params: req.params,
+
+    // ── Query String ──────────────────────────
+    // /debug/info?page=2&limit=10&tag=nodejs
+    query: req.query,
+    // req.query.page → '2' (luôn là string!)
+    // Cần convert: parseInt(req.query.page)
+
+    // ── Request Body ─────────────────────────
+    // Cần middleware: app.use(express.json())
+    body: req.body,
+
+    // ── HTTP Headers ─────────────────────────
+    headers: {
+      contentType: req.get('Content-Type'),     // 'application/json'
+      authorization: req.get('Authorization'),  // 'Bearer abc123'
+      userAgent: req.get('User-Agent'),
+      accept: req.get('Accept'),
+    },
+
+    // ── Request Meta ─────────────────────────
+    method: req.method,       // 'GET'
+    url: req.url,             // '/debug/info?page=2&limit=10'
+    path: req.path,           // '/debug/info' (không có query string)
+    hostname: req.hostname,   // 'localhost'
+    ip: req.ip,               // '::1' hoặc '127.0.0.1'
+    protocol: req.protocol,   // 'http' hoặc 'https'
+    secure: req.secure,       // true nếu HTTPS
+
+    // ── Cookies ──────────────────────────────
+    // Cần middleware 'cookie-parser'
+    cookies: req.cookies,
+  });
+});
+
+// ── Ví dụ đọc route params ──
+// Route: /users/:userId/posts/:postId
+app.get('/users/:userId/posts/:postId', (req, res) => {
+  const { userId, postId } = req.params;
+  // req.params = { userId: '42', postId: '7' }
+  // Lưu ý: params luôn là STRING, cần parseInt nếu muốn số
+
+  res.json({
+    message: `Bài viết ${postId} của user ${userId}`,
+    userId: parseInt(userId),  // convert sang number
+    postId: parseInt(postId),
+  });
+});
+
+// ── Ví dụ đọc query string ──
+// GET /search?q=nodejs&page=2&limit=10&sort=newest
+app.get('/search', (req, res) => {
+  const {
+    q = '',           // từ khóa tìm kiếm
+    page = '1',       // trang hiện tại
+    limit = '10',     // số kết quả mỗi trang
+    sort = 'newest'   // cách sắp xếp
+  } = req.query;
+
+  res.json({
+    keyword: q,
+    page: parseInt(page),
+    limit: Math.min(parseInt(limit), 100), // Giới hạn tối đa 100
+    sort,
+    results: [] // Giả sử data ở đây
+  });
+});</code></pre>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Params và Query luôn là String</div>
+        <code>req.params.id</code> và <code>req.query.page</code> luôn trả về <strong>string</strong>,
+        ngay cả khi client gửi số. Bạn phải tự convert:
+        <code>parseInt(req.params.id)</code> hoặc <code>Number(req.query.limit)</code>.
+        Nếu không, so sánh như <code>product.id === req.params.id</code> sẽ luôn <code>false</code>
+        vì <code>1 !== '1'</code>.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>8.5 Response Object — Gửi Dữ Liệu Về Client</h2>
+
+      <p>
+        Object <code>res</code> cung cấp nhiều phương thức để gửi response. Quan trọng nhất:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">response-methods.js</span><button class="copy-btn">Copy</button></div><code>// ── res.json() ── Gửi JSON (phổ biến nhất)
+// Tự set Content-Type: application/json
+// Tự JSON.stringify
+app.get('/json-example', (req, res) => {
+  res.json({ name: 'Alice', age: 30 });
+});
+
+// ── res.status().json() ── Chaining với status code
+app.get('/not-found-example', (req, res) => {
+  res.status(404).json({ error: 'Không tìm thấy' });
+  // Hoặc:
+  // res.status(201).json({ message: 'Tạo thành công' })
+  // res.status(400).json({ error: 'Dữ liệu không hợp lệ' })
+  // res.status(500).json({ error: 'Lỗi server' })
+});
+
+// ── res.send() ── Gửi nhiều loại dữ liệu
+app.get('/send-example', (req, res) => {
+  res.send('Hello String');          // text/html
+  // res.send(Buffer.from('data'))   // application/octet-stream
+  // res.send({ key: 'value' })      // application/json (nhưng dùng res.json() rõ hơn)
+});
+
+// ── res.sendFile() ── Gửi file
+const path = require('path');
+app.get('/download', (req, res) => {
+  res.sendFile(path.join(__dirname, 'files', 'report.pdf'));
+});
+
+// ── res.redirect() ── Chuyển hướng
+app.get('/old-path', (req, res) => {
+  res.redirect('/new-path');              // 302 (mặc định)
+  // res.redirect(301, '/permanent');    // 301 Permanent Redirect
+});
+
+// ── res.set() ── Set custom header
+app.get('/custom-header', (req, res) => {
+  res.set('X-Custom-Header', 'my-value');
+  res.set({
+    'Cache-Control': 'no-cache',
+    'X-Rate-Limit': '100'
+  });
+  res.json({ ok: true });
+});
+
+// ── Cookie ──
+app.get('/set-cookie', (req, res) => {
+  res.cookie('token', 'abc123', {
+    httpOnly: true,    // Không thể đọc bởi JavaScript
+    secure: true,      // Chỉ gửi qua HTTPS
+    maxAge: 7 * 24 * 60 * 60 * 1000  // 7 ngày (milliseconds)
+  });
+  res.json({ message: 'Cookie đã được set' });
+});
+
+app.get('/clear-cookie', (req, res) => {
+  res.clearCookie('token');
+  res.json({ message: 'Cookie đã được xóa' });
+});</code></pre>
+
+      <p>
+        Trong thực tế, bạn nên tạo một helper function để trả response nhất quán trên toàn bộ API:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">helpers/apiResponse.js</span><button class="copy-btn">Copy</button></div><code>/**
+ * Helper tạo response API nhất quán
+ *
+ * Ví dụ dùng:
+ *   apiResponse(res, 200, { users }, 'Lấy danh sách thành công')
+ *   apiResponse(res, 404, null, 'Không tìm thấy', false)
+ */
+function apiResponse(res, statusCode, data = null, message = '', success = true) {
+  const response = {
+    success,
+    message,
+    ...(data !== null && { data })
+  };
+
+  return res.status(statusCode).json(response);
+}
+
+// Shortcuts hay dùng
+const ok = (res, data, message = 'Thành công') =>
+  apiResponse(res, 200, data, message);
+
+const created = (res, data, message = 'Tạo thành công') =>
+  apiResponse(res, 201, data, message);
+
+const notFound = (res, message = 'Không tìm thấy') =>
+  apiResponse(res, 404, null, message, false);
+
+const badRequest = (res, message = 'Dữ liệu không hợp lệ') =>
+  apiResponse(res, 400, null, message, false);
+
+const serverError = (res, message = 'Lỗi server nội bộ') =>
+  apiResponse(res, 500, null, message, false);
+
+module.exports = { apiResponse, ok, created, notFound, badRequest, serverError };
+
+// ── Cách dùng trong route ──
+// const { ok, notFound } = require('./helpers/apiResponse');
+// app.get('/users/:id', (req, res) => {
+//   const user = findUser(req.params.id);
+//   if (!user) return notFound(res, 'Không tìm thấy người dùng');
+//   return ok(res, user, 'Lấy thông tin thành công');
+// });</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>8.6 Express Router — Tổ Chức Code Theo Module</h2>
+
+      <p>
+        Khi ứng dụng lớn dần, không nên nhét tất cả routes vào một file <code>app.js</code>. Express
+        cung cấp <code>express.Router()</code> để tách routes thành các module riêng biệt.
+      </p>
+
+      <!-- SVG Diagram: Router architecture -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-r1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="760" height="300" fill="#0d1117" rx="10"/>
+
+          <!-- Client -->
+          <rect x="15" y="120" width="110" height="55" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="70" y="144" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter,sans-serif">Client</text>
+          <text x="70" y="162" text-anchor="middle" fill="#60a5fa" font-size="10" font-family="Inter,sans-serif">Browser / App</text>
+
+          <!-- Arrow to app.js -->
+          <line x1="125" y1="148" x2="160" y2="148" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-r1)"/>
+
+          <!-- app.js box -->
+          <rect x="161" y="100" width="140" height="95" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="231" y="125" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">app.js</text>
+          <text x="175" y="145" fill="#a5b4fc" font-size="10" font-family="JetBrains Mono,monospace">app.use('/api</text>
+          <text x="175" y="160" fill="#a5b4fc" font-size="10" font-family="JetBrains Mono,monospace">  /products',</text>
+          <text x="175" y="175" fill="#a5b4fc" font-size="10" font-family="JetBrains Mono,monospace">  productRouter)</text>
+
+          <!-- Arrow to productRouter -->
+          <line x1="301" y1="120" x2="360" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-r1)"/>
+          <text x="320" y="95" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">/products</text>
+
+          <!-- Arrow to userRouter -->
+          <line x1="301" y1="175" x2="360" y2="215" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-r1)"/>
+          <text x="315" y="210" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">/users</text>
+
+          <!-- productRouter box -->
+          <rect x="361" y="30" width="160" height="100" rx="8" fill="#2a1a3a" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="441" y="54" text-anchor="middle" fill="#d8b4fe" font-size="12" font-weight="600" font-family="Inter,sans-serif">productRouter</text>
+          <text x="375" y="72" fill="#c084fc" font-size="10" font-family="JetBrains Mono,monospace">GET  /</text>
+          <text x="375" y="87" fill="#c084fc" font-size="10" font-family="JetBrains Mono,monospace">GET  /:id</text>
+          <text x="375" y="102" fill="#c084fc" font-size="10" font-family="JetBrains Mono,monospace">POST /</text>
+          <text x="375" y="117" fill="#c084fc" font-size="10" font-family="JetBrains Mono,monospace">DELETE /:id</text>
+
+          <!-- userRouter box -->
+          <rect x="361" y="165" width="160" height="100" rx="8" fill="#2a1a3a" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="441" y="189" text-anchor="middle" fill="#d8b4fe" font-size="12" font-weight="600" font-family="Inter,sans-serif">userRouter</text>
+          <text x="375" y="207" fill="#c084fc" font-size="10" font-family="JetBrains Mono,monospace">GET  /</text>
+          <text x="375" y="222" fill="#c084fc" font-size="10" font-family="JetBrains Mono,monospace">GET  /:id</text>
+          <text x="375" y="237" fill="#c084fc" font-size="10" font-family="JetBrains Mono,monospace">POST /register</text>
+          <text x="375" y="252" fill="#c084fc" font-size="10" font-family="JetBrains Mono,monospace">POST /login</text>
+
+          <!-- Handlers -->
+          <!-- Arrow product to handlers -->
+          <line x1="521" y1="80" x2="570" y2="60" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-r1)"/>
+          <line x1="521" y1="80" x2="570" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-r1)"/>
+
+          <!-- Arrow user to handlers -->
+          <line x1="521" y1="215" x2="570" y2="195" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-r1)"/>
+          <line x1="521" y1="215" x2="570" y2="235" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-r1)"/>
+
+          <!-- Handler boxes -->
+          <rect x="571" y="30" width="170" height="55" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="656" y="54" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Product Handlers</text>
+          <text x="656" y="72" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">controllers/product.js</text>
+
+          <rect x="571" y="95" width="170" height="55" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="656" y="119" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Product Handlers</text>
+          <text x="656" y="137" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">getAllProducts, etc.</text>
+
+          <rect x="571" y="165" width="170" height="55" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="656" y="189" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">User Handlers</text>
+          <text x="656" y="207" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">controllers/user.js</text>
+
+          <rect x="571" y="230" width="170" height="55" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="656" y="254" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">User Handlers</text>
+          <text x="656" y="272" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">getUser, login, etc.</text>
+        </svg>
+      </div>
+
+      <p>Cấu trúc thư mục được đề xuất:</p>
+
+      <pre><div class="code-header"><span class="code-lang">Text</span><span class="code-filename">Cấu trúc project</span><button class="copy-btn">Copy</button></div><code>my-express-app/
+├── app.js              ← Entry point, mount routers
+├── routes/
+│   ├── products.js     ← Router cho /api/products
+│   └── users.js        ← Router cho /api/users
+├── package.json
+└── node_modules/</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/products.js</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const router = express.Router();
+
+// "Database" in-memory
+let products = [
+  { id: 1, name: 'Laptop', price: 28000000 },
+  { id: 2, name: 'Mouse', price: 350000 },
+];
+let nextId = 3;
+
+// Lưu ý: path ở đây là RELATIVE so với mount point
+// Khi mount tại '/api/products', thì:
+//   router.get('/')       → GET /api/products
+//   router.get('/:id')    → GET /api/products/:id
+
+router.get('/', (req, res) => {
+  res.json({ success: true, data: products });
+});
+
+router.get('/:id', (req, res) => {
+  const product = products.find(p => p.id === parseInt(req.params.id));
+  if (!product) return res.status(404).json({ success: false, error: 'Không tìm thấy' });
+  res.json({ success: true, data: product });
+});
+
+router.post('/', (req, res) => {
+  const { name, price } = req.body;
+  if (!name || price === undefined) {
+    return res.status(400).json({ success: false, error: 'Thiếu name hoặc price' });
+  }
+  const product = { id: nextId++, name, price: Number(price) };
+  products.push(product);
+  res.status(201).json({ success: true, data: product });
+});
+
+router.put('/:id', (req, res) => {
+  const idx = products.findIndex(p => p.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ success: false, error: 'Không tìm thấy' });
+  products[idx] = { ...products[idx], ...req.body };
+  res.json({ success: true, data: products[idx] });
+});
+
+router.delete('/:id', (req, res) => {
+  const idx = products.findIndex(p => p.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ success: false, error: 'Không tìm thấy' });
+  const [deleted] = products.splice(idx, 1);
+  res.json({ success: true, data: deleted });
+});
+
+module.exports = router;</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/users.js</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const router = express.Router();
+
+let users = [
+  { id: 1, name: 'Nguyễn Văn An', email: 'an@example.com', role: 'admin' },
+  { id: 2, name: 'Trần Thị Bình', email: 'binh@example.com', role: 'user' },
+];
+
+router.get('/', (req, res) => {
+  // Lọc theo role: GET /api/users?role=admin
+  const { role } = req.query;
+  const result = role ? users.filter(u => u.role === role) : users;
+  res.json({ success: true, data: result });
+});
+
+router.get('/:id', (req, res) => {
+  const user = users.find(u => u.id === parseInt(req.params.id));
+  if (!user) return res.status(404).json({ success: false, error: 'Không tìm thấy user' });
+  res.json({ success: true, data: user });
+});
+
+router.post('/register', (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ success: false, error: 'Cần name và email' });
+  }
+  const exists = users.find(u => u.email === email);
+  if (exists) {
+    return res.status(409).json({ success: false, error: 'Email đã tồn tại' });
+  }
+  const user = { id: users.length + 1, name, email, role: 'user' };
+  users.push(user);
+  res.status(201).json({ success: true, data: user });
+});
+
+module.exports = router;</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js — Entry point</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const app = express();
+
+// ── Global Middleware ──
+app.use(express.json());                       // Parse JSON body
+app.use(express.urlencoded({ extended: true })); // Parse form data
+app.use(express.static('public'));             // Serve static files từ thư mục public/
+
+// ── Import Routes ──
+const productRoutes = require('./routes/products');
+const userRoutes = require('./routes/users');
+
+// ── Mount Routes ──
+// productRoutes xử lý tất cả routes bắt đầu bằng /api/products
+app.use('/api/products', productRoutes);
+// userRoutes xử lý tất cả routes bắt đầu bằng /api/users
+app.use('/api/users', userRoutes);
+
+// ── Health Check ──
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', uptime: process.uptime() });
+});
+
+// ── 404 Handler (phải đặt SAU tất cả routes) ──
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Route ${req.method} ${req.path} không tồn tại`
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server tại http://localhost:${PORT}`);
+  console.log('Routes:');
+  console.log('  GET    /api/products');
+  console.log('  GET    /api/products/:id');
+  console.log('  POST   /api/products');
+  console.log('  PUT    /api/products/:id');
+  console.log('  DELETE /api/products/:id');
+  console.log('  GET    /api/users');
+  console.log('  POST   /api/users/register');
+});</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>8.7 Built-in Middleware</h2>
+
+      <p>
+        Express đi kèm một số middleware tích hợp sẵn. Thứ tự đặt middleware RẤT QUAN TRỌNG —
+        chúng phải được đặt TRƯỚC các routes cần dùng đến chúng:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js — Built-in middleware</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const app = express();
+
+// ── 1. express.json() ──────────────────────────────────────
+// Parse request body khi Content-Type: application/json
+// Không có middleware này, req.body sẽ là undefined với JSON request
+app.use(express.json({
+  limit: '10mb',     // Giới hạn kích thước body (mặc định 100kb)
+  strict: true       // Chỉ chấp nhận object và array (không chấp nhận primitive)
+}));
+
+// ── 2. express.urlencoded() ────────────────────────────────
+// Parse request body khi Content-Type: application/x-www-form-urlencoded
+// Dùng khi submit HTML form truyền thống
+app.use(express.urlencoded({
+  extended: true,  // true = dùng qs library (hỗ trợ nested objects)
+                   // false = dùng querystring library (đơn giản hơn)
+  limit: '10mb'
+}));
+
+// ── 3. express.static() ───────────────────────────────────
+// Serve static files (HTML, CSS, JS, images) từ thư mục chỉ định
+// Truy cập: GET /logo.png → đọc file public/logo.png
+app.use(express.static('public', {
+  maxAge: '1d',      // Cache 1 ngày trên client
+  etag: true,        // Bật ETag cho caching thông minh
+  index: 'index.html' // File mặc định khi truy cập thư mục
+}));
+
+// Serve từ nhiều thư mục:
+// app.use('/uploads', express.static('uploads'));
+// app.use('/assets', express.static('assets'));
+
+// Routes đặt SAU middleware
+app.get('/api/test', (req, res) => {
+  // req.body đã được parse, sẵn sàng dùng
+  res.json({ received: req.body });
+});
+
+app.listen(3000);</code></pre>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Thứ tự middleware quan trọng</div>
+        Middleware được thực thi theo thứ tự bạn khai báo. Đặt <code>express.json()</code> TRƯỚC
+        route handlers. Nếu đặt sau, <code>req.body</code> sẽ là <code>undefined</code> khi route
+        handler chạy, vì JSON chưa được parse.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>8.8 Dự án thực hành: API Blog đơn giản</h2>
+
+      <p>
+        Áp dụng tất cả kiến thức trong chương để xây dựng một Blog API hoàn chỉnh. API này dùng
+        in-memory storage (chưa có database) nhưng có đầy đủ các tính năng cơ bản.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">routes/posts.js — Blog API đầy đủ</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const router = express.Router();
+
+// ── Data Store (in-memory) ──
+let posts = [
+  {
+    id: 1,
+    title: 'Express.js là gì?',
+    content: 'Express là web framework cho Node.js...',
+    author: 'Alice',
+    tags: ['nodejs', 'express', 'backend'],
+    createdAt: '2024-01-15T08:00:00.000Z',
+    updatedAt: '2024-01-15T08:00:00.000Z',
+  },
+  {
+    id: 2,
+    title: 'REST API Best Practices',
+    content: 'Thiết kế REST API tốt cần chú ý đến...',
+    author: 'Bob',
+    tags: ['api', 'rest', 'backend'],
+    createdAt: '2024-01-20T10:30:00.000Z',
+    updatedAt: '2024-01-20T10:30:00.000Z',
+  },
+  {
+    id: 3,
+    title: 'JavaScript Async/Await',
+    content: 'Async/await giúp code bất đồng bộ trở nên...',
+    author: 'Alice',
+    tags: ['javascript', 'async'],
+    createdAt: '2024-02-01T14:00:00.000Z',
+    updatedAt: '2024-02-01T14:00:00.000Z',
+  },
+];
+
+let comments = [
+  { id: 1, postId: 1, author: 'Charlie', content: 'Bài viết rất hay!', createdAt: '2024-01-16T09:00:00.000Z' },
+  { id: 2, postId: 1, author: 'Diana', content: 'Cảm ơn, rất hữu ích.', createdAt: '2024-01-17T11:00:00.000Z' },
+  { id: 3, postId: 2, author: 'Eve', content: 'Tôi có câu hỏi về...', createdAt: '2024-01-21T15:00:00.000Z' },
+];
+
+let nextPostId = 4;
+let nextCommentId = 4;
+
+// ── GET /api/posts ── Lấy danh sách, hỗ trợ filter
+router.get('/', (req, res) => {
+  const { author, tag, page = '1', limit = '10' } = req.query;
+
+  let result = [...posts];
+
+  // Filter theo author
+  if (author) {
+    result = result.filter(p =>
+      p.author.toLowerCase() === author.toLowerCase()
+    );
+  }
+
+  // Filter theo tag
+  if (tag) {
+    result = result.filter(p => p.tags.includes(tag));
+  }
+
+  // Sắp xếp mới nhất trước
+  result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  // Pagination
+  const pageNum = Math.max(1, parseInt(page));
+  const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+  const startIdx = (pageNum - 1) * limitNum;
+  const paginatedResult = result.slice(startIdx, startIdx + limitNum);
+
+  res.json({
+    success: true,
+    data: paginatedResult,
+    pagination: {
+      total: result.length,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(result.length / limitNum),
+      hasNext: startIdx + limitNum < result.length,
+      hasPrev: pageNum > 1,
+    }
+  });
+});
+
+// ── GET /api/posts/search ── Tìm kiếm theo title hoặc content
+// Phải đặt TRƯỚC route /:id vì 'search' sẽ bị hiểu là :id
+router.get('/search', (req, res) => {
+  const { q } = req.query;
+  if (!q || q.trim() === '') {
+    return res.status(400).json({ success: false, error: 'Cần cung cấp từ khóa tìm kiếm ?q=' });
+  }
+
+  const keyword = q.toLowerCase().trim();
+  const results = posts.filter(p =>
+    p.title.toLowerCase().includes(keyword) ||
+    p.content.toLowerCase().includes(keyword) ||
+    p.tags.some(t => t.includes(keyword))
+  );
+
+  res.json({ success: true, total: results.length, keyword: q, data: results });
+});
+
+// ── GET /api/posts/stats ── Thống kê
+router.get('/stats', (req, res) => {
+  const postWithMostComments = posts.reduce((best, post) => {
+    const count = comments.filter(c => c.postId === post.id).length;
+    const bestCount = comments.filter(c => c.postId === best.id).length;
+    return count > bestCount ? post : best;
+  }, posts[0]);
+
+  const authorStats = posts.reduce((acc, post) => {
+    acc[post.author] = (acc[post.author] || 0) + 1;
+    return acc;
+  }, {});
+
+  res.json({
+    success: true,
+    data: {
+      totalPosts: posts.length,
+      totalComments: comments.length,
+      postWithMostComments: postWithMostComments
+        ? { ...postWithMostComments, commentCount: comments.filter(c => c.postId === postWithMostComments.id).length }
+        : null,
+      postsByAuthor: authorStats,
+      allTags: [...new Set(posts.flatMap(p => p.tags))].sort(),
+    }
+  });
+});
+
+// ── GET /api/posts/:id ── Chi tiết bài viết
+router.get('/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ success: false, error: 'ID phải là số' });
+  }
+
+  const post = posts.find(p => p.id === id);
+  if (!post) {
+    return res.status(404).json({ success: false, error: `Không tìm thấy bài viết id=${id}` });
+  }
+
+  const postComments = comments.filter(c => c.postId === id);
+
+  res.json({
+    success: true,
+    data: {
+      ...post,
+      commentCount: postComments.length
+    }
+  });
+});
+
+// ── POST /api/posts ── Tạo bài viết mới
+router.post('/', (req, res) => {
+  const { title, content, author, tags = [] } = req.body;
+
+  // Validate
+  const errors = [];
+  if (!title || title.trim() === '') errors.push('title là bắt buộc');
+  if (!content || content.trim() === '') errors.push('content là bắt buộc');
+  if (!author || author.trim() === '') errors.push('author là bắt buộc');
+  if (!Array.isArray(tags)) errors.push('tags phải là array');
+
+  if (errors.length > 0) {
+    return res.status(400).json({ success: false, errors });
+  }
+
+  const now = new Date().toISOString();
+  const newPost = {
+    id: nextPostId++,
+    title: title.trim(),
+    content: content.trim(),
+    author: author.trim(),
+    tags: tags.map(t => String(t).toLowerCase().trim()),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  posts.push(newPost);
+  res.status(201).json({ success: true, data: newPost });
+});
+
+// ── PUT /api/posts/:id ── Cập nhật toàn bộ bài viết
+router.put('/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const idx = posts.findIndex(p => p.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, error: 'Không tìm thấy' });
+
+  const { title, content, author, tags } = req.body;
+  if (!title || !content || !author) {
+    return res.status(400).json({ success: false, error: 'Cần đầy đủ title, content, author' });
+  }
+
+  posts[idx] = {
+    ...posts[idx],
+    title: title.trim(),
+    content: content.trim(),
+    author: author.trim(),
+    tags: Array.isArray(tags) ? tags : posts[idx].tags,
+    updatedAt: new Date().toISOString(),
+  };
+
+  res.json({ success: true, data: posts[idx] });
+});
+
+// ── DELETE /api/posts/:id ── Xóa bài viết
+router.delete('/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const idx = posts.findIndex(p => p.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, error: 'Không tìm thấy' });
+
+  const [deleted] = posts.splice(idx, 1);
+  // Xóa cả comments liên quan
+  const deletedComments = comments.filter(c => c.postId === id).length;
+  comments = comments.filter(c => c.postId !== id);
+
+  res.json({
+    success: true,
+    message: `Đã xóa bài viết và ${deletedComments} comments liên quan`,
+    data: deleted
+  });
+});
+
+// ── GET /api/posts/:id/comments ── Lấy comments của bài viết
+router.get('/:id/comments', (req, res) => {
+  const id = parseInt(req.params.id);
+  const post = posts.find(p => p.id === id);
+  if (!post) return res.status(404).json({ success: false, error: 'Bài viết không tồn tại' });
+
+  const postComments = comments.filter(c => c.postId === id);
+  res.json({ success: true, total: postComments.length, data: postComments });
+});
+
+// ── POST /api/posts/:id/comments ── Thêm comment
+router.post('/:id/comments', (req, res) => {
+  const id = parseInt(req.params.id);
+  const post = posts.find(p => p.id === id);
+  if (!post) return res.status(404).json({ success: false, error: 'Bài viết không tồn tại' });
+
+  const { author, content } = req.body;
+  if (!author || !content) {
+    return res.status(400).json({ success: false, error: 'Cần author và content' });
+  }
+
+  const comment = {
+    id: nextCommentId++,
+    postId: id,
+    author: author.trim(),
+    content: content.trim(),
+    createdAt: new Date().toISOString()
+  };
+  comments.push(comment);
+  res.status(201).json({ success: true, data: comment });
+});
+
+module.exports = router;</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">app.js — Blog API entry point</span><button class="copy-btn">Copy</button></div><code>const express = require('express');
+const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const postRoutes = require('./routes/posts');
+app.use('/api/posts', postRoutes);
+
+// Nếu đã làm routes/users.js:
+// const userRoutes = require('./routes/users');
+// app.use('/api/users', userRoutes);
+
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Blog API',
+    version: '1.0.0',
+    endpoints: {
+      posts: {
+        'GET /api/posts': 'Danh sách bài viết (có filter & pagination)',
+        'GET /api/posts/search?q=keyword': 'Tìm kiếm bài viết',
+        'GET /api/posts/stats': 'Thống kê blog',
+        'GET /api/posts/:id': 'Chi tiết bài viết',
+        'POST /api/posts': 'Tạo bài viết mới',
+        'PUT /api/posts/:id': 'Cập nhật bài viết',
+        'DELETE /api/posts/:id': 'Xóa bài viết',
+        'GET /api/posts/:id/comments': 'Comments của bài viết',
+        'POST /api/posts/:id/comments': 'Thêm comment',
+      }
+    }
+  });
+});
+
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: 'Route không tồn tại' });
+});
+
+app.listen(3000, () => console.log('Blog API tại http://localhost:3000'));</code></pre>
+
+      <p>Kiểm tra API bằng curl:</p>
+
+      <pre><div class="code-header"><span class="code-lang">Bash</span><span class="code-filename">Testing với curl</span><button class="copy-btn">Copy</button></div><code># Lấy tất cả bài viết
+curl http://localhost:3000/api/posts
+
+# Tạo bài viết mới
+curl -X POST http://localhost:3000/api/posts \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Bài mới","content":"Nội dung bài viết","author":"Alice","tags":["nodejs"]}'
+
+# Tìm kiếm
+curl "http://localhost:3000/api/posts/search?q=express"
+
+# Xem comments của bài viết 1
+curl http://localhost:3000/api/posts/1/comments
+
+# Thêm comment
+curl -X POST http://localhost:3000/api/posts/1/comments \
+  -H "Content-Type: application/json" \
+  -d '{"author":"Bob","content":"Rất hay!"}'
+
+# Thống kê
+curl http://localhost:3000/api/posts/stats</code></pre>
+
+      <!-- ============================================================ -->
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Test API nhanh hơn với REST Client</div>
+        Thay vì dùng curl, bạn có thể cài extension <strong>REST Client</strong> cho VS Code
+        và viết file <code>.http</code> để test API. Hoặc dùng <strong>Postman</strong> /
+        <strong>Insomnia</strong> — các công cụ GUI giúp test API trực quan hơn nhiều.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SUMMARY -->
+      <div class="summary">
+        <div class="summary-title">📋 Tóm tắt chương 8</div>
+        <ul>
+          <li>Express là thin layer trên Node <code>http</code> module — đơn giản hóa routing, request/response</li>
+          <li>Route handlers nhận <code>(req, res)</code> hoặc <code>(req, res, next)</code></li>
+          <li><code>req.params</code>, <code>req.query</code>, <code>req.body</code> — ba cách đọc dữ liệu từ client</li>
+          <li><code>res.json()</code>, <code>res.status()</code>, <code>res.send()</code> — gửi response</li>
+          <li><code>express.Router()</code> giúp tách routes thành module riêng, dễ quản lý</li>
+          <li>Built-in middleware: <code>express.json()</code>, <code>express.urlencoded()</code>, <code>express.static()</code></li>
+          <li>Đặt middleware TRƯỚC route handlers cần dùng đến chúng</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">🏋️ Bài tập thực hành</div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>8.1 Thêm route tìm kiếm</h4>
+            <p>
+              Thêm route <code>GET /api/posts/search?q=keyword</code> vào Blog API trên để tìm kiếm
+              bài viết theo title. So sánh không phân biệt chữ hoa/thường. Nếu không có kết quả,
+              trả về array rỗng (không phải 404). Nếu thiếu param <code>q</code>, trả về 400 Bad Request.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-medium">Trung bình</span>
+          <div class="exercise-content">
+            <h4>8.2 Route thống kê blog</h4>
+            <p>
+              Implement <code>GET /api/stats</code> trả về object chứa: <code>totalPosts</code>,
+              <code>totalComments</code>, <code>postWithMostComments</code> (object đầy đủ + commentCount),
+              <code>topAuthors</code> (array 3 author có nhiều bài nhất), <code>popularTags</code>
+              (5 tags xuất hiện nhiều nhất). Gợi ý: dùng <code>Array.reduce()</code> để đếm.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-hard">Khó</span>
+          <div class="exercise-content">
+            <h4>8.3 Pagination thực sự</h4>
+            <p>
+              Implement pagination hoàn chỉnh cho <code>GET /api/posts</code>. Query params:
+              <code>?page=1&amp;limit=10</code>. Response phải có:
+              <code>{ data, total, page, limit, totalPages, hasNext, hasPrev }</code>.
+              Thêm validation: page phải &gt;= 1, limit phải trong [1, 100], nếu page vượt quá
+              totalPages thì trả về data rỗng nhưng vẫn có thông tin pagination đúng.
+              Viết ít nhất 3 test case bằng curl để kiểm tra edge cases.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER NAV -->
+      <div class="chapter-nav">
+        <a href="../part2/chapter07.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Chương trước</span>
+          <span class="chapter-nav-title">npm Ecosystem</span>
+        </a>
+        <a href="chapter09.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp theo →</span>
+          <span class="chapter-nav-title">Middleware và Error Handling</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

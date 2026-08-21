@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 6: HTTP Server thuần | NodeJS Book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet &amp; Web</a>
+        <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS &amp; Môi trường</a>
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="chapter06.html" class="nav-link active"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+        <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth &amp; Session</a>
+        <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating &amp; SSR</a>
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB &amp; Mongoose</a>
+        <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL &amp; Prisma</a>
+        <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching &amp; Redis</a>
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy &amp; DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless &amp; Cloud</a>
+      </div>
+    </nav>
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span><span>Phần 2</span><span>›</span><span>Chương 6</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 2 — NodeJS Cơ Bản</div>
+        <h1>Chương 6: Tự Xây Dựng HTTP Server với NodeJS Thuần</h1>
+        <p class="lead">
+          Trước khi dùng Express, hãy hiểu những gì xảy ra bên dưới. Chương này xây dựng HTTP server
+          từ module <code>http</code> thuần — không framework, không package ngoài — giúp bạn thực sự
+          hiểu cách một web framework hoạt động như thế nào.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ</div>
+        <ul>
+          <li>Tạo HTTP server bằng module <code>http</code> thuần của NodeJS</li>
+          <li>Đọc method, URL, headers và body từ request</li>
+          <li>Gửi response với status code và headers đúng chuẩn HTTP</li>
+          <li>Implement routing thủ công không cần framework</li>
+          <li>Parse request body dạng JSON và form-urlencoded</li>
+          <li>Phục vụ static files từ filesystem</li>
+          <li>Hiểu tại sao cần framework như Express thay vì dùng thuần</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>6.1 Module http — Tạo Server Đầu Tiên</h2>
+
+      <p>
+        Module <code>http</code> là một trong những core modules quan trọng nhất của NodeJS.
+        Nó cho phép bạn tạo HTTP server mà không cần cài bất kỳ package nào từ npm.
+      </p>
+
+      <p>
+        Hàm chính là <code>http.createServer(requestListener)</code> — nhận một callback
+        được gọi mỗi khi có request đến. Callback này nhận 2 tham số:
+      </p>
+
+      <ul>
+        <li><strong><code>req</code></strong> (IncomingMessage) — đối tượng đại diện cho request đến, là một <strong>Readable Stream</strong></li>
+        <li><strong><code>res</code></strong> (ServerResponse) — đối tượng để gửi response về, là một <strong>Writable Stream</strong></li>
+      </ul>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">server-basic.js</span><button class="copy-btn">Copy</button></div><code>// Không cần npm install gì cả — http là built-in module
+const http = require('http');
+
+// Tạo server — callback gọi mỗi khi có HTTP request đến
+const server = http.createServer((req, res) => {
+  // Gửi response với status 200 và content type text/plain
+  res.writeHead(200, {
+    'Content-Type': 'text/plain; charset=utf-8'
+  });
+  res.end('Xin chào từ NodeJS HTTP Server!');
+});
+
+// Lắng nghe cổng 3000
+server.listen(3000, '127.0.0.1', () => {
+  console.log('Server đang chạy tại http://localhost:3000');
+  console.log('Nhấn Ctrl+C để dừng.');
+});
+
+// Xử lý lỗi server
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error('Cổng 3000 đang bị dùng bởi ứng dụng khác!');
+  } else {
+    console.error('Lỗi server:', err.message);
+  }
+  process.exit(1);
+});</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Chạy server</span><button class="copy-btn">Copy</button></div><code>node server-basic.js
+# Server đang chạy tại http://localhost:3000
+
+# Mở tab terminal khác và test với curl:
+curl http://localhost:3000
+# Xin chào từ NodeJS HTTP Server!
+
+# Hoặc mở trình duyệt → http://localhost:3000</code></pre>
+
+      <p>Hãy xem toàn bộ luồng từ browser đến server và ngược lại:</p>
+
+      <div class="svg-diagram">
+        <svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+
+          <!-- Browser box -->
+          <rect x="20" y="110" width="160" height="100" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="100" y="138" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter, sans-serif">Browser</text>
+          <text x="100" y="158" text-anchor="middle" fill="#93c5fd" font-size="11" font-family="JetBrains Mono, monospace">Chrome / Firefox</text>
+          <text x="100" y="176" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">http://localhost:3000</text>
+          <text x="100" y="194" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">GET / HTTP/1.1</text>
+
+          <!-- Arrow 1: TCP Connect -->
+          <line x1="180" y1="140" x2="285" y2="140" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-1)"/>
+          <text x="232" y="128" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter, sans-serif">① TCP Connect</text>
+          <text x="232" y="142" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">:3000</text>
+
+          <!-- Arrow 2: HTTP Request -->
+          <line x1="180" y1="172" x2="285" y2="172" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-1)"/>
+          <text x="232" y="188" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter, sans-serif">② HTTP Request</text>
+
+          <!-- Node.js Server box -->
+          <rect x="290" y="50" width="200" height="220" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="390" y="78" text-anchor="middle" fill="#86efac" font-size="13" font-weight="600" font-family="Inter, sans-serif">NodeJS Server</text>
+          <text x="390" y="98" text-anchor="middle" fill="#86efac" font-size="11" font-family="JetBrains Mono, monospace">http.createServer()</text>
+
+          <!-- Inner: req box -->
+          <rect x="310" y="115" width="160" height="50" rx="5" fill="#0f2a1a" stroke="#16a34a" stroke-width="1"/>
+          <text x="390" y="136" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace">req</text>
+          <text x="390" y="152" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">IncomingMessage</text>
+
+          <!-- Inner: handler box -->
+          <rect x="310" y="178" width="160" height="40" rx="5" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="390" y="203" text-anchor="middle" fill="#86efac" font-size="11" font-family="Inter, sans-serif">requestListener()</text>
+
+          <!-- Inner: res box -->
+          <rect x="310" y="230" width="160" height="28" rx="5" fill="#0f2a1a" stroke="#16a34a" stroke-width="1"/>
+          <text x="390" y="249" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace">res</text>
+
+          <!-- Arrow 3: HTTP Response -->
+          <line x1="490" y1="172" x2="580" y2="172" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-1)"/>
+          <text x="535" y="162" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter, sans-serif">③ HTTP Response</text>
+          <text x="535" y="185" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">200 OK</text>
+
+          <!-- Arrow 4: Render -->
+          <line x1="490" y1="210" x2="580" y2="210" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-1)"/>
+          <text x="535" y="226" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter, sans-serif">④ Render</text>
+
+          <!-- Browser Response box -->
+          <rect x="585" y="110" width="155" height="100" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="662" y="138" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter, sans-serif">Browser</text>
+          <text x="662" y="158" text-anchor="middle" fill="#93c5fd" font-size="11" font-family="Inter, sans-serif">Hiển thị trang</text>
+          <text x="662" y="176" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">"Xin chào từ</text>
+          <text x="662" y="190" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter, sans-serif">NodeJS Server!"</text>
+
+          <!-- Step labels at bottom -->
+          <text x="380" y="300" text-anchor="middle" fill="#475569" font-size="11" font-family="Inter, sans-serif">Luồng xử lý HTTP Request / Response</text>
+        </svg>
+      </div>
+
+      <div class="callout callout-note">
+        <div class="callout-title">📌 Lưu ý về server.listen()</div>
+        <p><code>server.listen(port)</code> là bất đồng bộ — callback chạy khi server đã sẵn sàng nhận kết nối.
+        Nếu không truyền <code>host</code>, server sẽ lắng nghe trên tất cả interfaces (<code>0.0.0.0</code>).
+        Truyền <code>'127.0.0.1'</code> nếu chỉ muốn truy cập từ máy local.</p>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>6.2 Request Object — Đọc Dữ Liệu Đến</h2>
+
+      <p>
+        Đối tượng <code>req</code> (kiểu <code>http.IncomingMessage</code>) chứa tất cả thông tin
+        về request đến. Đây là một <strong>Readable Stream</strong> nên bạn cần đọc dữ liệu theo cách stream.
+      </p>
+
+      <h3>Các thuộc tính cơ bản của req</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">read-request.js</span><button class="copy-btn">Copy</button></div><code>const http = require('http');
+
+const server = http.createServer((req, res) => {
+  // ── Method: GET, POST, PUT, DELETE, PATCH...
+  console.log('Method:', req.method);        // 'GET'
+
+  // ── URL đầy đủ bao gồm query string
+  console.log('URL:', req.url);              // '/users?page=2&limit=10'
+
+  // ── HTTP version
+  console.log('HTTP version:', req.httpVersion); // '1.1'
+
+  // ── Tất cả request headers (lowercase keys)
+  console.log('Headers:', req.headers);
+  console.log('Content-Type:', req.headers['content-type']);
+  console.log('User-Agent:', req.headers['user-agent']);
+  console.log('Authorization:', req.headers['authorization']);
+
+  // ── Remote IP
+  console.log('Client IP:', req.socket.remoteAddress);
+
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Đã nhận request');
+});
+
+server.listen(3000);</code></pre>
+
+      <h3>Parse URL và Query String</h3>
+
+      <p>
+        <code>req.url</code> trả về chuỗi đầy đủ như <code>/users?page=2&amp;name=nguyen</code>.
+        Để làm việc thuận tiện, dùng class <code>URL</code> built-in:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">parse-url.js</span><button class="copy-btn">Copy</button></div><code>const http = require('http');
+
+const server = http.createServer((req, res) => {
+  // Cách hiện đại: dùng class URL (Node 10+)
+  // Cần base URL để parse tương đối
+  const url = new URL(req.url, `http://${req.headers.host}`);
+
+  console.log('Pathname:', url.pathname);     // '/users'
+  console.log('Search:', url.search);         // '?page=2&name=nguyen'
+
+  // Đọc query params dễ dàng
+  const page = url.searchParams.get('page');         // '2'
+  const name = url.searchParams.get('name');         // 'nguyen'
+  const limit = url.searchParams.get('limit') ?? '10'; // '10' (default)
+
+  // searchParams tự động decode URL encoding
+  // ?q=xin+ch%C3%A0o → 'xin chào'
+
+  // Cách cũ (vẫn hoạt động):
+  // const qs = req.url.split('?')[1] || '';
+  // const params = new URLSearchParams(qs);
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ pathname: url.pathname, page, name, limit }));
+});
+
+server.listen(3000);</code></pre>
+
+      <h3>Đọc Request Body</h3>
+
+      <p>
+        Vì <code>req</code> là Readable Stream, body không có sẵn ngay lập tức.
+        Bạn phải "tích lũy" dữ liệu từ các <code>data</code> events và đợi <code>end</code> event:
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">read-body.js</span><button class="copy-btn">Copy</button></div><code>const http = require('http');
+
+/**
+ * Đọc toàn bộ body của request, trả về Promise<string>
+ * @param {http.IncomingMessage} req
+ * @param {number} [maxBytes=1048576] - giới hạn 1MB
+ */
+function readBody(req, maxBytes = 1_048_576) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let totalSize = 0;
+
+    req.on('data', (chunk) => {
+      totalSize += chunk.length;
+
+      // Bảo vệ: từ chối body quá lớn
+      if (totalSize > maxBytes) {
+        req.destroy(); // Hủy kết nối
+        reject(new Error('Request body quá lớn (tối đa 1MB)'));
+        return;
+      }
+      chunks.push(chunk);
+    });
+
+    req.on('end', () => {
+      // Ghép các Buffer thành một và chuyển sang string
+      resolve(Buffer.concat(chunks).toString('utf8'));
+    });
+
+    req.on('error', (err) => {
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Đọc và parse JSON body, trả về Promise<object>
+ */
+async function readJSONBody(req) {
+  const raw = await readBody(req);
+  if (!raw.trim()) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error('Request body không phải JSON hợp lệ');
+  }
+}
+
+/**
+ * Đọc và parse form body (application/x-www-form-urlencoded)
+ * Ví dụ: "name=nguyen&age=25" → { name: 'nguyen', age: '25' }
+ */
+async function readFormBody(req) {
+  const raw = await readBody(req);
+  return Object.fromEntries(new URLSearchParams(raw));
+}
+
+// ─── Sử dụng ───────────────────────────────────────────────────
+const server = http.createServer(async (req, res) => {
+  if (req.method === 'POST' && req.url === '/json') {
+    try {
+      const body = await readJSONBody(req);
+      console.log('Nhận được JSON:', body);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ received: body }));
+    } catch (err) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  res.writeHead(404);
+  res.end('Not found');
+});
+
+server.listen(3000, () => console.log('Server chạy tại :3000'));</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Test với curl</span><button class="copy-btn">Copy</button></div><code># Test POST JSON
+curl -X POST http://localhost:3000/json \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Nguyen","age":25}'
+
+# Kết quả: {"received":{"name":"Nguyen","age":25}}</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>6.3 Response Object — Gửi Dữ Liệu Về Client</h2>
+
+      <p>
+        Đối tượng <code>res</code> (kiểu <code>http.ServerResponse</code>) là Writable Stream
+        để gửi response về client. Có 3 bước cần làm: đặt status, đặt headers, gửi body.
+      </p>
+
+      <h3>Các phương thức của res</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">response-methods.js</span><button class="copy-btn">Copy</button></div><code>// ── Cách 1: set riêng lẻ
+res.statusCode = 201;
+res.setHeader('Content-Type', 'application/json');
+res.setHeader('X-Request-Id', 'abc-123');
+res.end(JSON.stringify({ id: 1, name: 'Nguyen' }));
+
+// ── Cách 2: writeHead — set status + nhiều headers cùng lúc (nhanh hơn)
+res.writeHead(201, {
+  'Content-Type': 'application/json',
+  'X-Request-Id': 'abc-123',
+  'Cache-Control': 'no-cache'
+});
+res.end(JSON.stringify({ id: 1 }));
+
+// ── Gửi body nhiều phần (streaming)
+res.writeHead(200, { 'Content-Type': 'text/plain' });
+res.write('Phần 1... ');   // ghi một phần
+res.write('Phần 2... ');   // ghi thêm
+res.end('Xong!');          // kết thúc
+
+// ── QUAN TRỌNG: res.end() PHẢI được gọi — nếu không client sẽ chờ mãi!</code></pre>
+
+      <h3>Helper Functions — Tái sử dụng trong mọi handler</h3>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">response-helpers.js</span><button class="copy-btn">Copy</button></div><code>'use strict';
+
+/**
+ * Gửi JSON response
+ * @param {http.ServerResponse} res
+ * @param {number} status - HTTP status code
+ * @param {any} data - Dữ liệu sẽ được JSON.stringify
+ */
+function sendJSON(res, status, data) {
+  const body = JSON.stringify(data, null, 0); // compact JSON
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Length': Buffer.byteLength(body),  // byte length, không phải char length
+  });
+  res.end(body);
+}
+
+/**
+ * Gửi error response chuẩn
+ */
+function sendError(res, status, message, details = null) {
+  sendJSON(res, status, {
+    error: {
+      status,
+      message,
+      ...(details && { details }),
+      timestamp: new Date().toISOString(),
+    }
+  });
+}
+
+/**
+ * Gửi HTML response
+ */
+function sendHTML(res, status, html) {
+  res.writeHead(status, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': Buffer.byteLength(html),
+  });
+  res.end(html);
+}
+
+/**
+ * Redirect về URL khác
+ */
+function redirect(res, url, permanent = false) {
+  res.writeHead(permanent ? 301 : 302, { Location: url });
+  res.end();
+}
+
+module.exports = { sendJSON, sendError, sendHTML, redirect };
+
+// ─── Ví dụ dùng ─────────────────────────────────────────────────
+// const { sendJSON, sendError } = require('./response-helpers');
+//
+// server.createServer((req, res) => {
+//   sendJSON(res, 200, { users: [], total: 0 });
+//   sendError(res, 404, 'User không tồn tại');
+// });</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>6.4 Routing Thủ Công</h2>
+
+      <p>
+        Routing là quá trình quyết định handler nào xử lý request dựa vào method và URL.
+        Không có framework, bạn phải tự so sánh:
+      </p>
+
+      <div class="svg-diagram">
+        <svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <defs>
+            <marker id="arr-2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+
+          <!-- Request In -->
+          <rect x="20" y="155" width="130" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="85" y="176" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter, sans-serif">Request</text>
+          <text x="85" y="194" text-anchor="middle" fill="#64748b" font-size="10" font-family="JetBrains Mono, monospace">POST /todos/5</text>
+
+          <!-- Arrow to Method check -->
+          <line x1="150" y1="180" x2="210" y2="180" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-2)"/>
+
+          <!-- Check Method -->
+          <rect x="215" y="155" width="130" height="50" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="280" y="176" text-anchor="middle" fill="#c7d2fe" font-size="12" font-weight="600" font-family="Inter, sans-serif">Check Method</text>
+          <text x="280" y="194" text-anchor="middle" fill="#818cf8" font-size="10" font-family="JetBrains Mono, monospace">req.method</text>
+
+          <!-- Arrow to Path check -->
+          <line x1="345" y1="180" x2="405" y2="180" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-2)"/>
+
+          <!-- Check Path -->
+          <rect x="410" y="155" width="130" height="50" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="475" y="176" text-anchor="middle" fill="#c7d2fe" font-size="12" font-weight="600" font-family="Inter, sans-serif">Check Path</text>
+          <text x="475" y="194" text-anchor="middle" fill="#818cf8" font-size="10" font-family="JetBrains Mono, monospace">req.url.pathname</text>
+
+          <!-- Arrow to Match -->
+          <line x1="540" y1="180" x2="600" y2="180" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-2)"/>
+
+          <!-- Match: YES -->
+          <rect x="605" y="100" width="100" height="45" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="655" y="120" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600" font-family="Inter, sans-serif">Handler</text>
+          <text x="655" y="136" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono, monospace">updateTodo()</text>
+
+          <!-- Match: NO / 404 -->
+          <rect x="605" y="215" width="100" height="45" rx="8" fill="#3a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="655" y="236" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="600" font-family="Inter, sans-serif">404</text>
+          <text x="655" y="252" text-anchor="middle" fill="#f87171" font-size="10" font-family="Inter, sans-serif">Not Found</text>
+
+          <!-- Lines from path check to match/404 -->
+          <line x1="655" y1="180" x2="655" y2="145" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-2)"/>
+          <text x="668" y="165" fill="#22c55e" font-size="10" font-family="Inter, sans-serif">match</text>
+
+          <line x1="655" y1="180" x2="655" y2="215" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-2)"/>
+          <text x="668" y="205" fill="#ef4444" font-size="10" font-family="Inter, sans-serif">no match</text>
+
+          <!-- Vertical connector at path check output -->
+          <circle cx="655" cy="180" r="4" fill="#64748b"/>
+
+          <!-- Route examples at bottom -->
+          <text x="36" y="295" fill="#4ade80" font-size="11" font-family="JetBrains Mono, monospace">GET    /todos      → listTodos()</text>
+          <text x="36" y="315" fill="#4ade80" font-size="11" font-family="JetBrains Mono, monospace">POST   /todos      → createTodo()</text>
+          <text x="36" y="335" fill="#4ade80" font-size="11" font-family="JetBrains Mono, monospace">PUT    /todos/:id  → updateTodo()</text>
+          <text x="36" y="355" fill="#4ade80" font-size="11" font-family="JetBrains Mono, monospace">DELETE /todos/:id  → deleteTodo()</text>
+        </svg>
+      </div>
+
+      <h3>Todo REST API — Ví dụ đầy đủ (không dùng package ngoài)</h3>
+
+      <p>
+        Hãy xây dựng một Todo API hoàn chỉnh với GET / POST / PUT / DELETE,
+        lưu dữ liệu trong <code>Map</code> (in-memory, mất khi restart server):
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">todo-server.js</span><button class="copy-btn">Copy</button></div><code>'use strict';
+const http = require('http');
+const { URL } = require('url');
+
+// ── In-memory store ─────────────────────────────────────────────
+const todos = new Map();
+let nextId = 1;
+
+// ── Utilities ───────────────────────────────────────────────────
+function sendJSON(res, status, data) {
+  const body = JSON.stringify(data);
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Length': Buffer.byteLength(body),
+    'Access-Control-Allow-Origin': '*',  // Cho phép CORS
+  });
+  res.end(body);
+}
+
+function sendError(res, status, message) {
+  sendJSON(res, status, { error: message });
+}
+
+function readJSONBody(req) {
+  return new Promise((resolve, reject) => {
+    let raw = '';
+    req.on('data', chunk => { raw += chunk; });
+    req.on('end', () => {
+      try { resolve(raw ? JSON.parse(raw) : {}); }
+      catch { reject(new Error('Invalid JSON')); }
+    });
+    req.on('error', reject);
+  });
+}
+
+// ── Parse route params từ URL ────────────────────────────────────
+// matchRoute('/todos/:id', '/todos/5') → { id: '5' } hoặc null
+function matchRoute(pattern, pathname) {
+  const patternParts = pattern.split('/');
+  const pathParts = pathname.split('/');
+  if (patternParts.length !== pathParts.length) return null;
+
+  const params = {};
+  for (let i = 0; i < patternParts.length; i++) {
+    if (patternParts[i].startsWith(':')) {
+      // Segment là param (:id, :slug...)
+      params[patternParts[i].slice(1)] = decodeURIComponent(pathParts[i]);
+    } else if (patternParts[i] !== pathParts[i]) {
+      return null; // Không khớp
+    }
+  }
+  return params;
+}
+
+// ── Route Handlers ───────────────────────────────────────────────
+
+// GET /todos — Trả về danh sách tất cả todos
+function listTodos(req, res) {
+  const url = new URL(req.url, `http://localhost`);
+  const done = url.searchParams.get('done'); // filter: ?done=true
+
+  let list = Array.from(todos.values());
+  if (done === 'true') list = list.filter(t => t.done);
+  if (done === 'false') list = list.filter(t => !t.done);
+
+  sendJSON(res, 200, { data: list, total: list.length });
+}
+
+// GET /todos/:id — Trả về 1 todo theo id
+function getTodo(req, res, params) {
+  const id = parseInt(params.id, 10);
+  if (!todos.has(id)) {
+    return sendError(res, 404, `Todo #${id} không tồn tại`);
+  }
+  sendJSON(res, 200, todos.get(id));
+}
+
+// POST /todos — Tạo todo mới
+async function createTodo(req, res) {
+  let body;
+  try {
+    body = await readJSONBody(req);
+  } catch {
+    return sendError(res, 400, 'Request body phải là JSON hợp lệ');
+  }
+
+  const text = (body.text || '').trim();
+  if (!text) {
+    return sendError(res, 422, 'Trường "text" là bắt buộc và không được rỗng');
+  }
+  if (text.length > 200) {
+    return sendError(res, 422, 'Trường "text" không được quá 200 ký tự');
+  }
+
+  const todo = {
+    id: nextId++,
+    text,
+    done: false,
+    createdAt: new Date().toISOString(),
+  };
+  todos.set(todo.id, todo);
+  sendJSON(res, 201, todo);
+}
+
+// PUT /todos/:id — Cập nhật todo
+async function updateTodo(req, res, params) {
+  const id = parseInt(params.id, 10);
+  if (!todos.has(id)) {
+    return sendError(res, 404, `Todo #${id} không tồn tại`);
+  }
+
+  let body;
+  try {
+    body = await readJSONBody(req);
+  } catch {
+    return sendError(res, 400, 'Request body phải là JSON hợp lệ');
+  }
+
+  const existing = todos.get(id);
+  const updated = {
+    ...existing,
+    text: (body.text !== undefined) ? String(body.text).trim() : existing.text,
+    done: (body.done !== undefined) ? Boolean(body.done) : existing.done,
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (!updated.text) {
+    return sendError(res, 422, 'Trường "text" không được rỗng');
+  }
+
+  todos.set(id, updated);
+  sendJSON(res, 200, updated);
+}
+
+// DELETE /todos/:id — Xóa todo
+function deleteTodo(req, res, params) {
+  const id = parseInt(params.id, 10);
+  if (!todos.has(id)) {
+    return sendError(res, 404, `Todo #${id} không tồn tại`);
+  }
+  todos.delete(id);
+  res.writeHead(204); // No Content
+  res.end();
+}
+
+// ── Router ───────────────────────────────────────────────────────
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url, `http://localhost`);
+  const pathname = url.pathname;
+  const method = req.method;
+
+  // Hỗ trợ CORS preflight
+  if (method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    });
+    return res.end();
+  }
+
+  try {
+    // GET /todos
+    if (method === 'GET' && pathname === '/todos') {
+      return listTodos(req, res);
+    }
+
+    // POST /todos
+    if (method === 'POST' && pathname === '/todos') {
+      return createTodo(req, res);
+    }
+
+    // GET /todos/:id
+    let params = matchRoute('/todos/:id', pathname);
+    if (params) {
+      if (method === 'GET')    return getTodo(req, res, params);
+      if (method === 'PUT')    return updateTodo(req, res, params);
+      if (method === 'DELETE') return deleteTodo(req, res, params);
+    }
+
+    // GET /health — health check endpoint
+    if (method === 'GET' && pathname === '/health') {
+      return sendJSON(res, 200, {
+        status: 'ok',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        todoCount: todos.size,
+      });
+    }
+
+    // Không khớp route nào → 404
+    sendError(res, 404, `Route ${method} ${pathname} không tồn tại`);
+
+  } catch (err) {
+    console.error('Lỗi server không mong muốn:', err);
+    sendError(res, 500, 'Lỗi server nội bộ');
+  }
+});
+
+server.listen(3000, () => {
+  console.log('Todo API đang chạy tại http://localhost:3000');
+  console.log('Endpoints:');
+  console.log('  GET    /todos       - Danh sách todos');
+  console.log('  POST   /todos       - Tạo todo mới');
+  console.log('  GET    /todos/:id   - Lấy todo theo id');
+  console.log('  PUT    /todos/:id   - Cập nhật todo');
+  console.log('  DELETE /todos/:id   - Xóa todo');
+  console.log('  GET    /health      - Health check');
+});</code></pre>
+
+      <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Test API với curl</span><button class="copy-btn">Copy</button></div><code># Tạo todo mới
+curl -X POST http://localhost:3000/todos \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Học NodeJS HTTP module"}'
+# {"id":1,"text":"Học NodeJS HTTP module","done":false,"createdAt":"..."}
+
+# Tạo thêm vài todo
+curl -X POST http://localhost:3000/todos \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Đọc tài liệu EventEmitter"}'
+
+# Lấy danh sách
+curl http://localhost:3000/todos
+# {"data":[...],"total":2}
+
+# Lấy todo #1
+curl http://localhost:3000/todos/1
+
+# Cập nhật: đánh dấu done=true
+curl -X PUT http://localhost:3000/todos/1 \
+  -H "Content-Type: application/json" \
+  -d '{"done":true}'
+
+# Filter: chỉ lấy todos chưa xong
+curl "http://localhost:3000/todos?done=false"
+
+# Xóa todo #1
+curl -X DELETE http://localhost:3000/todos/1
+# (204 No Content)
+
+# Health check
+curl http://localhost:3000/health</code></pre>
+
+      <!-- ============================================================ -->
+      <h2>6.5 Phục Vụ Static Files</h2>
+
+      <p>
+        Một use case quan trọng của HTTP server là phục vụ file tĩnh (HTML, CSS, JS, images).
+        Cách làm: map URL path sang filesystem path, đọc file, trả về với Content-Type đúng.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">static-server.js</span><button class="copy-btn">Copy</button></div><code>'use strict';
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { URL } = require('url');
+
+// Thư mục chứa static files
+const PUBLIC_DIR = path.join(__dirname, 'public');
+
+// Map extension → MIME type
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.pdf': 'application/pdf',
+};
+
+function getMimeType(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  return MIME_TYPES[ext] || 'application/octet-stream';
+}
+
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url, 'http://localhost');
+  let pathname = url.pathname;
+
+  // Bảo mật: chặn path traversal attack (../../etc/passwd)
+  // path.normalize loại bỏ '../', path.resolve tính absolute path
+  const safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+  let filePath = path.join(PUBLIC_DIR, safePath);
+
+  // Nếu path là thư mục → tìm index.html
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+    filePath = path.join(filePath, 'index.html');
+  }
+
+  // Kiểm tra file có tồn tại và nằm trong PUBLIC_DIR không
+  if (!filePath.startsWith(PUBLIC_DIR)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    return res.end('403 Forbidden');
+  }
+
+  fs.stat(filePath, (statErr, stats) => {
+    if (statErr || !stats.isFile()) {
+      res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(`
+        <h1>404 - Không tìm thấy</h1>
+        <p>File <code>${pathname}</code> không tồn tại.</p>
+        <a href="/">← Về trang chủ</a>
+      `);
+    }
+
+    const mimeType = getMimeType(filePath);
+    const fileSize = stats.size;
+
+    res.writeHead(200, {
+      'Content-Type': mimeType,
+      'Content-Length': fileSize,
+      'Last-Modified': stats.mtime.toUTCString(),
+      // Cache 1 giờ cho assets, không cache HTML
+      'Cache-Control': mimeType.startsWith('text/html') ? 'no-cache' : 'max-age=3600',
+    });
+
+    // Đọc và gửi file bằng stream (hiệu quả cho file lớn)
+    fs.createReadStream(filePath).pipe(res);
+  });
+});
+
+server.listen(3000, () => {
+  console.log(`Static server: http://localhost:3000`);
+  console.log(`Serving files from: ${PUBLIC_DIR}`);
+});</code></pre>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Bảo mật Path Traversal</div>
+        <p>
+          Nếu không kiểm tra, kẻ tấn công có thể gửi request với path như
+          <code>GET /../../../etc/passwd</code> để đọc file hệ thống.
+          Luôn dùng <code>path.normalize()</code> và kiểm tra file path có bắt đầu bằng PUBLIC_DIR không.
+        </p>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>6.6 HTTP Server với Streams</h2>
+
+      <p>
+        Đối với file lớn (video, PDF...), việc đọc toàn bộ vào RAM rồi gửi là không hiệu quả.
+        Stream cho phép gửi dữ liệu <strong>từng phần</strong> — client nhận được dữ liệu ngay
+        trong khi file vẫn đang được đọc từ disk.
+      </p>
+
+      <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">stream-server.js</span><button class="copy-btn">Copy</button></div><code>'use strict';
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+const server = http.createServer((req, res) => {
+  const filePath = path.join(__dirname, 'assets', 'video.mp4');
+
+  fs.stat(filePath, (err, stats) => {
+    if (err) {
+      res.writeHead(404);
+      return res.end('File không tồn tại');
+    }
+
+    const fileSize = stats.size;
+
+    // ── Hỗ trợ Range Request (cho video streaming, resume download) ──
+    const rangeHeader = req.headers['range'];
+
+    if (rangeHeader) {
+      // Ví dụ: "bytes=0-999999"
+      const [, rangeStr] = rangeHeader.match(/bytes=(\d*)-(\d*)/) || [];
+      const parts = rangeHeader.replace('bytes=', '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunkSize = end - start + 1;
+
+      res.writeHead(206, { // 206 Partial Content
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type': 'video/mp4',
+      });
+
+      // Stream chỉ phần được yêu cầu
+      fs.createReadStream(filePath, { start, end }).pipe(res);
+    } else {
+      // Stream toàn bộ file
+      res.writeHead(200, {
+        'Content-Length': fileSize,
+        'Content-Type': 'video/mp4',
+        'Accept-Ranges': 'bytes',
+      });
+      fs.createReadStream(filePath).pipe(res);
+    }
+  });
+});
+
+// ── So sánh: WITHOUT stream (xấu cho file lớn) ──────────────────
+// fs.readFile(filePath, (err, data) => {
+//   res.writeHead(200, { 'Content-Length': data.length });
+//   res.end(data);  // ← Đọc hết vào RAM trước khi gửi!
+// });
+
+// ── WITH stream (tốt) ────────────────────────────────────────────
+// fs.createReadStream(filePath).pipe(res);
+// → Đọc từng chunk 64KB → gửi ngay → đọc chunk tiếp theo
+// → RAM sử dụng: ~64KB thay vì toàn bộ file
+
+server.listen(3000, () => console.log('Stream server: http://localhost:3000'));</code></pre>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 .pipe() hoạt động như thế nào?</div>
+        <p>
+          <code>readStream.pipe(res)</code> tự động xử lý backpressure — nếu client nhận chậm,
+          readStream sẽ tạm dừng đọc. Điều này ngăn RAM bị tràn khi server phục vụ file lớn
+          cho nhiều client đồng thời. Khi stream đọc kết thúc, <code>pipe()</code> tự gọi <code>res.end()</code>.
+        </p>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>6.7 Vì Sao Cần Framework (Express)?</h2>
+
+      <p>
+        Qua các ví dụ trên, bạn đã thấy server thuần hoàn toàn có thể dùng được.
+        Nhưng khi project lớn hơn, các vấn đề này xuất hiện:
+      </p>
+
+      <table>
+        <tr>
+          <th>Tính năng</th>
+          <th>HTTP thuần</th>
+          <th>Express.js</th>
+        </tr>
+        <tr>
+          <td>Routing</td>
+          <td>Tự viết if/else, matchRoute()</td>
+          <td><code>app.get('/todos/:id', handler)</code></td>
+        </tr>
+        <tr>
+          <td>Body parsing</td>
+          <td>Tự viết readJSONBody(), 20+ dòng</td>
+          <td><code>express.json()</code> — 1 dòng</td>
+        </tr>
+        <tr>
+          <td>Static files</td>
+          <td>Tự viết static server, xử lý MIME, security</td>
+          <td><code>express.static('public')</code></td>
+        </tr>
+        <tr>
+          <td>Middleware</td>
+          <td>Không có — phải gọi thủ công trong mỗi handler</td>
+          <td><code>app.use(middleware)</code></td>
+        </tr>
+        <tr>
+          <td>Error handling</td>
+          <td>Try/catch trong mỗi handler</td>
+          <td>Error middleware tập trung</td>
+        </tr>
+        <tr>
+          <td>Route grouping</td>
+          <td>Không có</td>
+          <td><code>express.Router()</code></td>
+        </tr>
+        <tr>
+          <td>Số dòng code cho Todo API</td>
+          <td>~130 dòng</td>
+          <td>~40 dòng</td>
+        </tr>
+        <tr>
+          <td>Học được gì?</td>
+          <td>Hiểu sâu HTTP, streams, protocols</td>
+          <td>Productive nhanh, code sạch hơn</td>
+        </tr>
+      </table>
+
+      <div class="callout callout-note">
+        <div class="callout-title">📌 Vẫn có lúc dùng http thuần</div>
+        <p>
+          Có những trường hợp dùng <code>http</code> module trực tiếp vẫn tốt hơn:
+          microservice siêu nhỏ cần binary nhỏ, proxy server, WebSocket server,
+          hoặc khi muốn toàn quyền kiểm soát. Frameworks như Express, Fastify đều
+          build trên top của <code>http</code> module — nên hiểu nền tảng sẽ giúp bạn debug dễ hơn nhiều.
+        </p>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="summary">
+        <div class="summary-title">📚 Tóm tắt chương 6</div>
+        <ul>
+          <li><strong>http.createServer(callback)</strong> tạo server, callback nhận <code>(req, res)</code></li>
+          <li><strong>req</strong> (IncomingMessage) là Readable Stream — đọc <code>req.method</code>, <code>req.url</code>, <code>req.headers</code>, body qua events <code>data</code> + <code>end</code></li>
+          <li><strong>res</strong> (ServerResponse) là Writable Stream — dùng <code>writeHead()</code>, <code>write()</code>, <code>end()</code></li>
+          <li>Routing thủ công = so sánh <code>method + pathname</code>, có thể extract params từ URL</li>
+          <li>Static file server cần: map URL → filesystem path, xử lý MIME type, bảo vệ path traversal</li>
+          <li><code>fs.createReadStream().pipe(res)</code> hiệu quả hơn <code>fs.readFile()</code> cho file lớn</li>
+          <li>Framework như Express giải quyết boilerplate code, nhưng biết nền tảng giúp debug sâu hơn</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">🏋️ Bài tập thực hành</div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>6.1 Health Check Endpoint</h4>
+            <p>
+              Thêm route <code>GET /health</code> vào Todo server trả về JSON:
+              <code>{ status: "ok", uptime: ..., timestamp: ..., memory: process.memoryUsage() }</code>.
+              Test bằng curl và kiểm tra response headers có <code>Content-Type: application/json</code> không.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-medium">Trung bình</span>
+          <div class="exercise-content">
+            <h4>6.2 Mini Router Class</h4>
+            <p>
+              Viết class <code>Router</code> có các method <code>.get(path, handler)</code>,
+              <code>.post(path, handler)</code>, <code>.put(path, handler)</code>, <code>.delete(path, handler)</code>
+              và <code>.handle(req, res)</code> để dispatch request. Method <code>handle</code> nên
+              support route params (<code>/users/:id</code>) và trả <code>req.params</code> trong handler.
+              Refactor Todo server để dùng Router này.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-hard">Khó</span>
+          <div class="exercise-content">
+            <h4>6.3 Static Server với ETag và Conditional Request</h4>
+            <p>
+              Nâng cấp static file server để hỗ trợ: (1) Tính <strong>ETag</strong> dựa trên
+              <code>mtime + size</code> của file. (2) Đọc header <code>If-None-Match</code> trong request —
+              nếu ETag khớp → trả <strong>304 Not Modified</strong> và không gửi body. (3) Thêm header
+              <code>Cache-Control: max-age=0, must-revalidate</code> cho HTML files. Test với curl dùng flag
+              <code>-v</code> để thấy headers, sau đó test lần 2 với <code>-H "If-None-Match: &lt;etag&gt;"</code>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chapter-nav">
+        <a href="chapter05.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Chương trước</span>
+          <span class="chapter-nav-title">Async Programming — Callback, Promise, async/await</span>
+        </a>
+        <a href="chapter07.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp theo →</span>
+          <span class="chapter-nav-title">npm Ecosystem — Quản lý Packages và Dependencies</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>

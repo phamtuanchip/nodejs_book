@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 17: Deploy và DevOps Cơ Bản | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<div class="layout">
+
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">NodeJS Book</div>
+      <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-part-label">Phần 1 — Nền tảng</div>
+      <a href="../part1/chapter01.html" class="nav-link"><span class="chapter-num">01</span> Internet & Web</a>
+      <a href="../part1/chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+      <a href="../part1/chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS & Môi trường</a>
+      <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+      <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+      <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+      <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+      <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+      <div class="nav-part-label">Phần 3 — Express</div>
+      <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+      <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+      <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth & Session</a>
+      <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating & SSR</a>
+      <div class="nav-part-label">Phần 4 — Database</div>
+      <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB & Mongoose</a>
+      <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL & Prisma</a>
+      <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching & Redis</a>
+      <div class="nav-part-label">Phần 5 — Nâng cao</div>
+      <a href="chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+      <a href="chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+      <a href="chapter17.html" class="nav-link active"><span class="chapter-num">17</span> Deploy & DevOps</a>
+      <a href="chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless & Cloud</a>
+    </div>
+  </nav>
+
+  <div class="topbar">
+    <div class="breadcrumb">
+      <a href="../../index.html">Trang chủ</a>
+      <span>›</span><span>Phần 5</span><span>›</span><span>Chương 17</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon theme-toggle">🌙 Tối</button>
+    </div>
+  </div>
+
+  <main class="main">
+
+    <div class="chapter-header">
+      <div class="part-badge">Phần 5 — Nâng Cao và Cloud</div>
+      <h1>Chương 17: Deploy và DevOps Cơ Bản</h1>
+      <p class="lead">
+        Code chạy trên máy local chưa phải sản phẩm. Chương này đưa ứng dụng lên internet —
+        từ cấu hình môi trường, Docker, Nginx, SSL đến CI/CD pipeline tự động deploy mỗi khi bạn push code.
+      </p>
+    </div>
+
+    <div class="objectives">
+      <div class="objectives-title">🎯 Sau chương này bạn sẽ</div>
+      <ul>
+        <li>Quản lý environment variables đúng cách cho production</li>
+        <li>Dùng PM2 giữ cho Node process luôn chạy</li>
+        <li>Đóng gói ứng dụng bằng Docker và docker-compose</li>
+        <li>Deploy lên VPS với Nginx làm reverse proxy</li>
+        <li>Cài SSL miễn phí với Let's Encrypt</li>
+        <li>Tự động deploy với GitHub Actions CI/CD</li>
+      </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>17.1 Environment Variables — Cấu Hình Production</h2>
+
+    <p>
+      Hardcode URL database, API key, hay secret vào source code là lỗi phổ biến nhất của developer mới.
+      Nếu commit lên GitHub, bất kỳ ai cũng đọc được. <strong>Environment variables</strong> giải quyết vấn đề này.
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">.env</span><button class="copy-btn">Copy</button></div><code># .env — KHÔNG commit file này!
+NODE_ENV=development
+PORT=3000
+MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/mydb
+JWT_SECRET=super-secret-key-ít-nhất-32-ký-tự
+REDIS_URL=redis://localhost:6379
+CORS_ORIGIN=http://localhost:5173</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">.env.example</span><button class="copy-btn">Copy</button></div><code># .env.example — COMMIT file này, làm template cho team
+NODE_ENV=development
+PORT=3000
+MONGODB_URI=mongodb+srv://USER:PASS@cluster.mongodb.net/DBNAME
+JWT_SECRET=your-secret-here-min-32-chars
+REDIS_URL=redis://localhost:6379
+CORS_ORIGIN=http://localhost:5173</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">src/config/env.js</span><button class="copy-btn">Copy</button></div><code>require('dotenv').config();
+
+const requiredVars = [
+  'MONGODB_URI',
+  'JWT_SECRET',
+];
+
+// Fail fast: kiểm tra ngay khi khởi động
+for (const key of requiredVars) {
+  if (!process.env[key]) {
+    console.error(`❌ Missing required env var: ${key}`);
+    process.exit(1);
+  }
+}
+
+module.exports = {
+  nodeEnv:     process.env.NODE_ENV || 'development',
+  port:        parseInt(process.env.PORT) || 3000,
+  mongoUri:    process.env.MONGODB_URI,
+  jwtSecret:   process.env.JWT_SECRET,
+  redisUrl:    process.env.REDIS_URL || 'redis://localhost:6379',
+  corsOrigin:  process.env.CORS_ORIGIN || '*',
+  isDev:       process.env.NODE_ENV !== 'production',
+};</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Text</span><span class="code-filename">.gitignore</span><button class="copy-btn">Copy</button></div><code>node_modules/
+.env
+.env.local
+.env.*.local
+dist/
+coverage/
+*.log</code></pre>
+
+    <!-- ============================================================ -->
+    <h2>17.2 PM2 — Process Manager</h2>
+
+    <p>
+      Khi chạy <code>node app.js</code> thẳng, nếu server crash thì… chết. PM2 tự động restart khi crash,
+      quản lý logs, và tận dụng nhiều CPU core qua cluster mode.
+    </p>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Terminal</span><button class="copy-btn">Copy</button></div><code># Cài global
+npm install -g pm2
+
+# Chạy app
+pm2 start src/index.js --name my-api
+
+# Cluster mode — dùng hết CPU cores
+pm2 start src/index.js --name my-api -i max
+
+# Xem status
+pm2 status
+pm2 monit        # Dashboard real-time
+
+# Logs
+pm2 logs my-api
+pm2 logs my-api --lines 100
+
+# Restart / reload (zero-downtime)
+pm2 restart my-api
+pm2 reload my-api    # graceful — không drop connections
+
+# Tự start lại khi server reboot
+pm2 startup          # follow hướng dẫn in ra
+pm2 save             # lưu danh sách process hiện tại</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">JavaScript</span><span class="code-filename">ecosystem.config.js</span><button class="copy-btn">Copy</button></div><code>module.exports = {
+  apps: [{
+    name: 'my-api',
+    script: 'src/index.js',
+    instances: 'max',        // dùng tất cả CPU cores
+    exec_mode: 'cluster',
+    watch: false,            // tắt trong production
+    max_memory_restart: '500M',
+    env: {
+      NODE_ENV: 'development',
+      PORT: 3000,
+    },
+    env_production: {
+      NODE_ENV: 'production',
+      PORT: 3000,
+    },
+    log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    error_file: 'logs/error.log',
+    out_file: 'logs/out.log',
+    merge_logs: true,
+  }],
+};
+
+// Chạy với: pm2 start ecosystem.config.js --env production</code></pre>
+
+    <!-- ============================================================ -->
+    <h2>17.3 Docker — Đóng Gói Ứng Dụng</h2>
+
+    <p>
+      "Chạy được trên máy tôi mà" — câu nói kinh điển của developer.
+      Docker giải quyết bằng cách đóng gói cả code, runtime, và dependencies vào một <strong>container</strong>
+      chạy được ở mọi nơi giống hệt nhau.
+    </p>
+
+    <div class="svg-diagram">
+    <svg viewBox="0 0 680 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+      <defs>
+        <marker id="arr-d1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+        </marker>
+      </defs>
+      <rect width="680" height="160" fill="#0d1117" rx="10"/>
+      <!-- Source code -->
+      <rect x="15" y="50" width="130" height="60" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="80" y="75" text-anchor="middle" fill="#c7d2fe" font-size="12" font-weight="600" font-family="Inter,sans-serif">Source Code</text>
+      <text x="80" y="93" text-anchor="middle" fill="#a5b4fc" font-size="11" font-family="Inter,sans-serif">+ package.json</text>
+      <!-- Arrow -->
+      <line x1="145" y1="80" x2="175" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d1)"/>
+      <text x="160" y="72" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">build</text>
+      <!-- Dockerfile -->
+      <rect x="176" y="50" width="130" height="60" rx="8" fill="#1a2a3a" stroke="#2496ed" stroke-width="1.5"/>
+      <text x="241" y="75" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Dockerfile</text>
+      <text x="241" y="93" text-anchor="middle" fill="#7dd3fc" font-size="11" font-family="Inter,sans-serif">Build instructions</text>
+      <!-- Arrow -->
+      <line x1="306" y1="80" x2="336" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d1)"/>
+      <text x="321" y="72" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">push</text>
+      <!-- Docker Image -->
+      <rect x="337" y="50" width="130" height="60" rx="8" fill="#1a2a3a" stroke="#2496ed" stroke-width="1.5"/>
+      <text x="402" y="75" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Docker Image</text>
+      <text x="402" y="93" text-anchor="middle" fill="#7dd3fc" font-size="11" font-family="Inter,sans-serif">Registry / Hub</text>
+      <!-- Arrow -->
+      <line x1="467" y1="80" x2="497" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d1)"/>
+      <text x="482" y="72" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">run</text>
+      <!-- Container -->
+      <rect x="498" y="50" width="160" height="60" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="578" y="75" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Container</text>
+      <text x="578" y="93" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">Chạy trên VPS</text>
+      <!-- Labels -->
+      <text x="80" y="130" text-anchor="middle" fill="#475569" font-size="10" font-family="Inter,sans-serif">Dev</text>
+      <text x="402" y="130" text-anchor="middle" fill="#475569" font-size="10" font-family="Inter,sans-serif">CI/CD</text>
+      <text x="578" y="130" text-anchor="middle" fill="#475569" font-size="10" font-family="Inter,sans-serif">Production</text>
+    </svg>
+    </div>
+
+    <pre><div class="code-header"><span class="code-lang">Dockerfile</span><span class="code-filename">Dockerfile</span><button class="copy-btn">Copy</button></div><code># ---- Build stage ----
+FROM node:20-alpine AS builder
+WORKDIR /app
+# Copy package files trước để cache layer khi code thay đổi
+COPY package*.json ./
+RUN npm ci --only=production
+
+# ---- Production stage ----
+FROM node:20-alpine
+WORKDIR /app
+# Copy chỉ node_modules và source, không copy devDependencies
+COPY --from=builder /app/node_modules ./node_modules
+COPY . .
+# Không chạy với root user
+USER node
+EXPOSE 3000
+CMD ["node", "src/index.js"]</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Text</span><span class="code-filename">.dockerignore</span><button class="copy-btn">Copy</button></div><code>node_modules
+.env
+.git
+*.log
+coverage
+.nyc_output
+README.md</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Build và chạy</span><button class="copy-btn">Copy</button></div><code># Build image
+docker build -t my-api:latest .
+
+# Chạy container
+docker run -d \
+  --name my-api \
+  -p 3000:3000 \
+  --env-file .env \
+  my-api:latest
+
+# Xem logs
+docker logs -f my-api
+
+# Vào trong container để debug
+docker exec -it my-api sh</code></pre>
+
+    <h3>docker-compose — Chạy nhiều service cùng nhau</h3>
+
+    <pre><div class="code-header"><span class="code-lang">YAML</span><span class="code-filename">docker-compose.yml</span><button class="copy-btn">Copy</button></div><code>version: '3.9'
+
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/mydb
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  redis_data:</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Dùng docker-compose</span><button class="copy-btn">Copy</button></div><code># Khởi động tất cả services
+docker-compose up -d
+
+# Xem logs của từng service
+docker-compose logs -f api
+docker-compose logs mongo
+
+# Dừng và xóa containers
+docker-compose down
+
+# Rebuild image khi code thay đổi
+docker-compose up -d --build api</code></pre>
+
+    <!-- ============================================================ -->
+    <h2>17.4 Deploy lên VPS</h2>
+
+    <p>Hướng dẫn từng bước với DigitalOcean Droplet (Ubuntu 22.04, ~$6/tháng) — tương tự mọi VPS khác.</p>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Trên server — Lần đầu setup</span><button class="copy-btn">Copy</button></div><code># 1. SSH vào server
+ssh root@YOUR_SERVER_IP
+
+# 2. Update hệ thống
+apt update && apt upgrade -y
+
+# 3. Cài NodeJS với nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install --lts
+nvm use --lts
+
+# 4. Cài PM2, Git
+npm install -g pm2
+apt install -y git
+
+# 5. Clone project
+git clone https://github.com/your-user/your-repo.git /app
+cd /app
+
+# 6. Cài dependencies
+npm install --production
+
+# 7. Tạo file .env
+cp .env.example .env
+nano .env          # điền các giá trị thực
+
+# 8. Start với PM2
+pm2 start ecosystem.config.js --env production
+pm2 save
+pm2 startup        # copy paste lệnh in ra
+
+# 9. Firewall
+ufw allow 22        # SSH
+ufw allow 80        # HTTP
+ufw allow 443       # HTTPS
+ufw enable</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Deploy code mới sau này</span><button class="copy-btn">Copy</button></div><code>cd /app
+git pull origin main
+npm install --production
+pm2 reload my-api    # zero-downtime restart</code></pre>
+
+    <!-- ============================================================ -->
+    <h2>17.5 Nginx — Reverse Proxy</h2>
+
+    <p>
+      Không nên expose NodeJS thẳng ra internet. Nginx đứng trước làm reverse proxy:
+      xử lý SSL, static files, load balancing, và bảo vệ server.
+    </p>
+
+    <div class="svg-diagram">
+    <svg viewBox="0 0 700 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+      <defs>
+        <marker id="arr-d2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+        </marker>
+        <marker id="arr-d2r" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+          <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+        </marker>
+      </defs>
+      <rect width="700" height="140" fill="#0d1117" rx="10"/>
+      <!-- Internet -->
+      <rect x="10" y="45" width="110" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="65" y="67" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Internet</text>
+      <text x="65" y="83" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Port 80/443</text>
+      <!-- Arrow -->
+      <line x1="120" y1="65" x2="170" y2="65" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d2)"/>
+      <line x1="170" y1="80" x2="120" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d2r)"/>
+      <!-- Nginx -->
+      <rect x="171" y="35" width="170" height="70" rx="8" fill="#1e3a1e" stroke="#4ade80" stroke-width="1.5"/>
+      <text x="256" y="60" text-anchor="middle" fill="#86efac" font-size="13" font-weight="700" font-family="Inter,sans-serif">Nginx</text>
+      <text x="256" y="78" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">SSL termination</text>
+      <text x="256" y="93" text-anchor="middle" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">Reverse proxy</text>
+      <!-- Arrow -->
+      <line x1="341" y1="65" x2="391" y2="65" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d2)"/>
+      <line x1="391" y1="80" x2="341" y2="80" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d2r)"/>
+      <text x="366" y="58" text-anchor="middle" fill="#475569" font-size="10" font-family="Inter,sans-serif">:3000</text>
+      <!-- NodeJS -->
+      <rect x="392" y="45" width="140" height="50" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="462" y="67" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">NodeJS / PM2</text>
+      <text x="462" y="84" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">Express App</text>
+      <!-- Arrow -->
+      <line x1="532" y1="70" x2="562" y2="70" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d2)"/>
+      <!-- DB -->
+      <rect x="563" y="45" width="120" height="50" rx="8" fill="#3a2a14" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="623" y="67" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="600" font-family="Inter,sans-serif">MongoDB</text>
+      <text x="623" y="84" text-anchor="middle" fill="#fb923c" font-size="11" font-family="Inter,sans-serif">+ Redis</text>
+      <!-- Labels -->
+      <text x="256" y="125" text-anchor="middle" fill="#475569" font-size="10" font-family="Inter,sans-serif">yourdomain.com</text>
+      <text x="462" y="125" text-anchor="middle" fill="#475569" font-size="10" font-family="Inter,sans-serif">localhost:3000</text>
+    </svg>
+    </div>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Cài và cấu hình Nginx</span><button class="copy-btn">Copy</button></div><code># Cài Nginx
+apt install -y nginx
+
+# Tạo config site
+nano /etc/nginx/sites-available/my-api</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Nginx</span><span class="code-filename">/etc/nginx/sites-available/my-api</span><button class="copy-btn">Copy</button></div><code>server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    # Giới hạn body size (upload)
+    client_max_body_size 10M;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+
+        # WebSocket support
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+
+        # Forward thông tin thực của client
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Timeout
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Serve static files trực tiếp, không qua NodeJS
+    location /uploads {
+        alias /app/uploads;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}</code></pre>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Kích hoạt site</span><button class="copy-btn">Copy</button></div><code># Tạo symlink để enable site
+ln -s /etc/nginx/sites-available/my-api /etc/nginx/sites-enabled/
+
+# Test config hợp lệ
+nginx -t
+
+# Reload Nginx
+systemctl reload nginx</code></pre>
+
+    <!-- ============================================================ -->
+    <h2>17.6 SSL với Let's Encrypt</h2>
+
+    <p>HTTPS là bắt buộc cho mọi site production. Certbot tự động cài SSL miễn phí từ Let's Encrypt.</p>
+
+    <pre><div class="code-header"><span class="code-lang">Shell</span><span class="code-filename">Cài SSL</span><button class="copy-btn">Copy</button></div><code># Cài Certbot
+snap install --classic certbot
+
+# Cài SSL và tự cấu hình Nginx
+certbot --nginx -d yourdomain.com -d www.yourdomain.com
+
+# Certbot sẽ:
+# 1. Xác thực domain ownership
+# 2. Lấy certificate từ Let's Encrypt
+# 3. Cấu hình Nginx tự động (thêm HTTPS, redirect HTTP → HTTPS)
+# 4. Cài cron job tự renew (cert có hiệu lực 90 ngày)
+
+# Test tự động renew
+certbot renew --dry-run</code></pre>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Domain phải trỏ về server trước</div>
+      Certbot cần verify bạn sở hữu domain. Trỏ DNS A record của domain về IP của VPS ít nhất 5-10 phút trước khi chạy certbot.
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>17.7 GitHub Actions — CI/CD Pipeline</h2>
+
+    <p>
+      Thay vì SSH vào server bằng tay mỗi lần deploy, GitHub Actions tự động chạy test
+      và deploy mỗi khi push code lên branch main.
+    </p>
+
+    <div class="svg-diagram">
+    <svg viewBox="0 0 700 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+      <defs>
+        <marker id="arr-d3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+        </marker>
+      </defs>
+      <rect width="700" height="130" fill="#0d1117" rx="10"/>
+      <!-- Push code -->
+      <rect x="10" y="40" width="115" height="50" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="67" y="62" text-anchor="middle" fill="#c7d2fe" font-size="12" font-weight="600" font-family="Inter,sans-serif">git push</text>
+      <text x="67" y="79" text-anchor="middle" fill="#a5b4fc" font-size="11" font-family="Inter,sans-serif">main branch</text>
+      <!-- Arrow -->
+      <line x1="125" y1="65" x2="153" y2="65" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d3)"/>
+      <!-- GitHub Actions -->
+      <rect x="154" y="30" width="140" height="70" rx="8" fill="#1a2a3a" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="224" y="57" text-anchor="middle" fill="#7dd3fc" font-size="12" font-weight="600" font-family="Inter,sans-serif">GitHub Actions</text>
+      <text x="224" y="74" text-anchor="middle" fill="#38bdf8" font-size="11" font-family="Inter,sans-serif">npm test</text>
+      <text x="224" y="89" text-anchor="middle" fill="#38bdf8" font-size="10" font-family="Inter,sans-serif">npm run lint</text>
+      <!-- Arrow -->
+      <line x1="294" y1="65" x2="322" y2="65" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d3)"/>
+      <text x="308" y="57" text-anchor="middle" fill="#22c55e" font-size="10" font-family="Inter,sans-serif">✓ pass</text>
+      <!-- SSH Deploy -->
+      <rect x="323" y="30" width="140" height="70" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+      <text x="393" y="57" text-anchor="middle" fill="#c7d2fe" font-size="12" font-weight="600" font-family="Inter,sans-serif">SSH Deploy</text>
+      <text x="393" y="74" text-anchor="middle" fill="#a5b4fc" font-size="11" font-family="Inter,sans-serif">git pull</text>
+      <text x="393" y="89" text-anchor="middle" fill="#a5b4fc" font-size="10" font-family="Inter,sans-serif">pm2 reload</text>
+      <!-- Arrow -->
+      <line x1="463" y1="65" x2="491" y2="65" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-d3)"/>
+      <!-- Server -->
+      <rect x="492" y="40" width="190" height="50" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="587" y="62" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">VPS / Production</text>
+      <text x="587" y="79" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">API đã updated ✅</text>
+    </svg>
+    </div>
+
+    <pre><div class="code-header"><span class="code-lang">YAML</span><span class="code-filename">.github/workflows/deploy.yml</span><button class="copy-btn">Copy</button></div><code>name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Job 1: Chạy tests
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+        env:
+          NODE_ENV: test
+          MONGODB_URI: ${{ secrets.TEST_MONGODB_URI }}
+          JWT_SECRET: test-secret
+
+  # Job 2: Deploy (chỉ chạy khi push main, sau khi test pass)
+  deploy:
+    needs: test          # chờ test pass mới chạy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /app
+            git pull origin main
+            npm install --production
+            pm2 reload ecosystem.config.js --env production
+            echo "✅ Deploy thành công!"</code></pre>
+
+    <h3>Cấu hình GitHub Secrets</h3>
+    <p>Vào GitHub repo → Settings → Secrets and variables → Actions → New repository secret:</p>
+    <ul>
+      <li><code>SERVER_IP</code> — IP address của VPS</li>
+      <li><code>SERVER_USER</code> — username SSH (thường là <code>root</code> hoặc <code>ubuntu</code>)</li>
+      <li><code>SSH_PRIVATE_KEY</code> — nội dung file <code>~/.ssh/id_rsa</code> trên máy local</li>
+      <li><code>TEST_MONGODB_URI</code> — MongoDB URI cho test environment</li>
+    </ul>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠️ Bảo mật SSH key</div>
+      Chạy <code>ssh-keygen -t ed25519 -C "github-actions"</code> tạo key riêng cho CI/CD.
+      Copy public key vào <code>~/.ssh/authorized_keys</code> trên server.
+      Copy private key vào GitHub Secret. KHÔNG dùng key của bản thân.
+    </div>
+
+    <!-- ============================================================ -->
+    <div class="summary">
+      <div class="summary-title">📚 Tóm tắt chương 17</div>
+      <ul>
+        <li><strong>Environment variables</strong>: dùng <code>.env</code> + <code>dotenv</code>, validate required vars lúc startup, commit <code>.env.example</code></li>
+        <li><strong>PM2</strong>: giữ Node process luôn chạy, cluster mode tận dụng CPU, <code>pm2 startup</code> để auto-start</li>
+        <li><strong>Docker</strong>: đóng gói app + dependencies, multi-stage build để image nhỏ, docker-compose cho local dev</li>
+        <li><strong>VPS setup</strong>: NodeJS qua nvm, clone code, PM2, firewall cơ bản</li>
+        <li><strong>Nginx</strong>: reverse proxy trước NodeJS, xử lý SSL, serve static files hiệu quả hơn</li>
+        <li><strong>Let's Encrypt</strong>: SSL miễn phí, tự renew, Certbot cấu hình Nginx tự động</li>
+        <li><strong>GitHub Actions</strong>: CI/CD pipeline — test → deploy khi push main, không cần SSH tay</li>
+      </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <div class="exercises">
+      <div class="exercises-title">🏋️ Bài tập thực hành</div>
+
+      <div class="exercise-item">
+        <span class="exercise-badge badge-easy">Dễ</span>
+        <div class="exercise-content">
+          <h4>17.1 Dockerize Express App</h4>
+          <p>
+            Tạo <code>Dockerfile</code> multi-stage cho project Express API đã làm ở chương 8.
+            Build image: <code>docker build -t my-api .</code>
+            Chạy với env file: <code>docker run --env-file .env -p 3000:3000 my-api</code>
+            Verify API hoạt động bình thường. Kiểm tra image size trước và sau multi-stage build.
+          </p>
+        </div>
+      </div>
+
+      <div class="exercise-item">
+        <span class="exercise-badge badge-medium">Trung bình</span>
+        <div class="exercise-content">
+          <h4>17.2 docker-compose Full Stack</h4>
+          <p>
+            Viết <code>docker-compose.yml</code> chạy 3 services: API (NodeJS), MongoDB, Redis.
+            API phải kết nối MongoDB và Redis qua service names (không phải localhost).
+            Thêm <code>healthcheck</code> cho MongoDB. Thêm volume để data không mất khi restart.
+            Chạy <code>docker-compose up -d</code> và test toàn bộ flow login → cache → logout.
+          </p>
+        </div>
+      </div>
+
+      <div class="exercise-item">
+        <span class="exercise-badge badge-hard">Khó</span>
+        <div class="exercise-content">
+          <h4>17.3 CI/CD Pipeline hoàn chỉnh</h4>
+          <p>
+            Setup GitHub Actions CI/CD thực tế: (1) Job test chạy Jest + coverage report,
+            fail nếu coverage &lt; 70%. (2) Job build Docker image và push lên Docker Hub.
+            (3) Job deploy SSH vào server, pull image mới, restart container.
+            Dùng Oracle Cloud Free Tier hoặc Fly.io làm server miễn phí.
+            Bonus: thêm Slack notification khi deploy thành công/thất bại.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="chapter-nav">
+      <a href="chapter16.html" class="chapter-nav-btn">
+        <span class="chapter-nav-direction">← Chương trước</span>
+        <span class="chapter-nav-title">Testing và Code Quality</span>
+      </a>
+      <a href="chapter18.html" class="chapter-nav-btn next">
+        <span class="chapter-nav-direction">Chương tiếp theo →</span>
+        <span class="chapter-nav-title">Serverless và Cloud Functions</span>
+      </a>
+    </div>
+
+  </main>
+</div>
+
+<button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

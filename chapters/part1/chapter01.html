@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chương 1: Internet và Web Hoạt Động Như Thế Nào? | NodeJS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">NodeJS Book</div>
+        <div class="sidebar-title">Lập Trình NodeJS Từ Cơ Bản Đến Nâng Cao</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-part-label">Phần 1 — Nền tảng</div>
+        <a href="chapter01.html" class="nav-link active"><span class="chapter-num">01</span> Internet & Web</a>
+        <a href="chapter02.html" class="nav-link"><span class="chapter-num">02</span> Stateful vs Stateless</a>
+        <a href="chapter03.html" class="nav-link"><span class="chapter-num">03</span> NodeJS & Môi trường</a>
+
+        <div class="nav-part-label">Phần 2 — NodeJS cơ bản</div>
+        <a href="../part2/chapter04.html" class="nav-link"><span class="chapter-num">04</span> Core Modules</a>
+        <a href="../part2/chapter05.html" class="nav-link"><span class="chapter-num">05</span> Async Programming</a>
+        <a href="../part2/chapter06.html" class="nav-link"><span class="chapter-num">06</span> HTTP Server thuần</a>
+        <a href="../part2/chapter07.html" class="nav-link"><span class="chapter-num">07</span> npm Ecosystem</a>
+
+        <div class="nav-part-label">Phần 3 — Express</div>
+        <a href="../part3/chapter08.html" class="nav-link"><span class="chapter-num">08</span> Express.js cơ bản</a>
+        <a href="../part3/chapter09.html" class="nav-link"><span class="chapter-num">09</span> Middleware</a>
+        <a href="../part3/chapter10.html" class="nav-link"><span class="chapter-num">10</span> Auth & Session</a>
+        <a href="../part3/chapter11.html" class="nav-link"><span class="chapter-num">11</span> Templating & SSR</a>
+
+        <div class="nav-part-label">Phần 4 — Database</div>
+        <a href="../part4/chapter12.html" class="nav-link"><span class="chapter-num">12</span> MongoDB & Mongoose</a>
+        <a href="../part4/chapter13.html" class="nav-link"><span class="chapter-num">13</span> PostgreSQL & Prisma</a>
+        <a href="../part4/chapter14.html" class="nav-link"><span class="chapter-num">14</span> Caching & Redis</a>
+
+        <div class="nav-part-label">Phần 5 — Nâng cao</div>
+        <a href="../part5/chapter15.html" class="nav-link"><span class="chapter-num">15</span> REST API Best Practices</a>
+        <a href="../part5/chapter16.html" class="nav-link"><span class="chapter-num">16</span> Testing</a>
+        <a href="../part5/chapter17.html" class="nav-link"><span class="chapter-num">17</span> Deploy & DevOps</a>
+        <a href="../part5/chapter18.html" class="nav-link"><span class="chapter-num">18</span> Serverless & Cloud</a>
+      </div>
+    </nav>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Trang chủ</a>
+        <span>›</span>
+        <span>Phần 1</span>
+        <span>›</span>
+        <span>Chương 1</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle">🌙 Tối</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="chapter-header">
+        <div class="part-badge">Phần 1 — Nền tảng</div>
+        <h1>Chương 1: Internet và Web Hoạt Động Như Thế Nào?</h1>
+        <p class="lead">
+          Trước khi viết một dòng NodeJS nào, bạn cần hiểu sân chơi của mình.
+          Chương này giải thích cách dữ liệu di chuyển từ trình duyệt của bạn đến một server ở
+          góc khuất nào đó trên thế giới — và quay trở lại.
+        </p>
+      </div>
+
+      <div class="objectives">
+        <div class="objectives-title">🎯 Sau chương này bạn sẽ hiểu được</div>
+        <ul>
+          <li>Internet là gì, và Web khác Internet ở chỗ nào</li>
+          <li>Client và Server là ai, nói chuyện với nhau như thế nào</li>
+          <li>HTTP request và response trông như thế nào bên trong</li>
+          <li>URL, IP Address, Domain, DNS hoạt động ra sao</li>
+          <li>Frontend và Backend khác nhau ở đâu</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>1.1 Internet là gì?</h2>
+
+      <p>
+        Hãy tưởng tượng Internet như một mạng lưới đường cao tốc khổng lồ nối các máy tính lại với nhau.
+        Khi bạn xem YouTube, máy tính của bạn gửi một "gói dữ liệu" đi qua nhiều trạm trung chuyển,
+        qua cáp quang dưới đáy biển, để đến máy chủ của Google ở đâu đó ở Mỹ — và video quay trở lại
+        chỉ trong vài trăm mili-giây.
+      </p>
+
+      <p>
+        <strong>Internet</strong> là hạ tầng vật lý và giao thức (quy ước) để các máy tính giao tiếp với nhau toàn cầu.
+        <strong>Web (World Wide Web)</strong> chỉ là một trong những dịch vụ chạy trên Internet — cùng với Email, FTP, SSH, v.v.
+      </p>
+
+      <!-- Diagram 1: Internet connection chain -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 700 120" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr-1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <!-- Background -->
+          <rect width="700" height="120" fill="#0d1117" rx="10"/>
+          <!-- Box 1: Thiết bị bạn (CLIENT) -->
+          <rect x="10" y="28" width="120" height="55" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="70" y="51" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter,sans-serif">Thiết bị bạn</text>
+          <text x="70" y="68" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Phone / PC</text>
+          <!-- Arrow 1 -->
+          <line x1="130" y1="55" x2="152" y2="55" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-1)"/>
+          <text x="141" y="48" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">WiFi/4G</text>
+          <!-- Box 2: Router/WiFi (GENERIC) -->
+          <rect x="153" y="28" width="120" height="55" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="213" y="51" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">Router/WiFi</text>
+          <text x="213" y="68" text-anchor="middle" fill="#a5b4fc" font-size="11" font-family="Inter,sans-serif">Cổng kết nối</text>
+          <!-- Arrow 2 -->
+          <line x1="273" y1="55" x2="295" y2="55" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-1)"/>
+          <text x="284" y="48" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Cáp quang</text>
+          <!-- Box 3: ISP (GENERIC) -->
+          <rect x="296" y="28" width="120" height="55" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="356" y="51" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">ISP</text>
+          <text x="356" y="68" text-anchor="middle" fill="#a5b4fc" font-size="11" font-family="Inter,sans-serif">Nhà mạng</text>
+          <!-- Arrow 3 -->
+          <line x1="416" y1="55" x2="438" y2="55" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-1)"/>
+          <text x="427" y="48" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Backbone</text>
+          <!-- Box 4: Internet Backbone (GENERIC) -->
+          <rect x="439" y="28" width="120" height="55" rx="8" fill="#1e1e3a" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="499" y="51" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">Internet</text>
+          <text x="499" y="68" text-anchor="middle" fill="#a5b4fc" font-size="11" font-family="Inter,sans-serif">Backbone</text>
+          <!-- Arrow 4 -->
+          <line x1="559" y1="55" x2="581" y2="55" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-1)"/>
+          <!-- Box 5: Server YouTube (SERVER) -->
+          <rect x="582" y="28" width="108" height="55" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="636" y="51" text-anchor="middle" fill="#86efac" font-size="13" font-weight="600" font-family="Inter,sans-serif">Server</text>
+          <text x="636" y="68" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">YouTube (USA)</text>
+        </svg>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>1.2 Client và Server</h2>
+
+      <p>
+        Trong thế giới web, mọi cuộc trò chuyện đều có hai vai:
+      </p>
+
+      <ul>
+        <li><strong>Client</strong> — người hỏi. Thường là trình duyệt web (Chrome, Firefox), app di động, hoặc bất kỳ chương trình nào <em>yêu cầu</em> dữ liệu.</li>
+        <li><strong>Server</strong> — người trả lời. Là máy tính (thường rất mạnh) chạy 24/7, <em>lắng nghe</em> và <em>phản hồi</em> các yêu cầu.</li>
+      </ul>
+
+      <!-- Diagram 2: Client-Server request/response -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 580 160" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr-2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-2r" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="580" height="160" fill="#0d1117" rx="10"/>
+          <!-- CLIENT box -->
+          <rect x="20" y="48" width="150" height="65" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="95" y="75" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter,sans-serif">Client</text>
+          <text x="95" y="93" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Chrome Browser</text>
+          <!-- SERVER box -->
+          <rect x="410" y="48" width="150" height="65" rx="8" fill="#1a3a24" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="485" y="75" text-anchor="middle" fill="#86efac" font-size="13" font-weight="600" font-family="Inter,sans-serif">Server</text>
+          <text x="485" y="93" text-anchor="middle" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">NodeJS</text>
+          <!-- Request arrow (left to right) -->
+          <line x1="170" y1="72" x2="408" y2="72" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-2)"/>
+          <text x="289" y="64" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">GET /api/users</text>
+          <!-- Response arrow (right to left) -->
+          <line x1="410" y1="92" x2="172" y2="92" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-2r)"/>
+          <text x="289" y="108" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter,sans-serif">200 OK + JSON</text>
+        </svg>
+      </div>
+
+      <div class="callout callout-note">
+        <div class="callout-title">📌 Quan trọng</div>
+        Server luôn là người <strong>bị động</strong> — nó không tự dưng gửi dữ liệu đến client.
+        Nó chỉ phản hồi khi được hỏi. (Trừ khi dùng WebSocket — nhưng đó là câu chuyện của chương sau.)
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>1.3 HTTP — Ngôn ngữ của Web</h2>
+
+      <p>
+        HTTP (HyperText Transfer Protocol) là "ngôn ngữ" mà client và server dùng để nói chuyện.
+        Mỗi cuộc trò chuyện gồm hai phần: <strong>Request</strong> (yêu cầu) và <strong>Response</strong> (phản hồi).
+      </p>
+
+      <h3>HTTP Request trông như thế này</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">HTTP</span>
+          <span class="code-filename">Ví dụ HTTP Request</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>GET /api/products?category=phone HTTP/1.1
+Host: shop.example.com
+Accept: application/json
+Authorization: Bearer eyJhbGci...
+User-Agent: Mozilla/5.0 (Windows NT 10.0)</code>
+      </pre>
+
+      <p>Giải thích từng dòng:</p>
+      <ul>
+        <li><code>GET</code> — phương thức HTTP (hành động muốn làm gì)</li>
+        <li><code>/api/products?category=phone</code> — đường dẫn + query string</li>
+        <li><code>HTTP/1.1</code> — phiên bản giao thức</li>
+        <li><code>Host</code> — tên miền đang gửi đến</li>
+        <li><code>Authorization</code> — token xác thực (nếu có)</li>
+      </ul>
+
+      <h3>HTTP Response trông như thế này</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">HTTP</span>
+          <span class="code-filename">Ví dụ HTTP Response</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 248
+Cache-Control: max-age=60
+
+{
+  "products": [
+    { "id": 1, "name": "iPhone 15", "price": 25000000 },
+    { "id": 2, "name": "Samsung S24", "price": 22000000 }
+  ]
+}</code>
+      </pre>
+
+      <p>Giải thích:</p>
+      <ul>
+        <li><code>200 OK</code> — status code, nghĩa là thành công</li>
+        <li><code>Content-Type: application/json</code> — dữ liệu trả về là JSON</li>
+        <li>Dòng trống — phân cách header và body</li>
+        <li>Phần JSON bên dưới — body, dữ liệu thực sự</li>
+      </ul>
+
+      <h3>Các HTTP Methods phổ biến</h3>
+
+      <table>
+        <tr>
+          <th>Method</th>
+          <th>Ý nghĩa</th>
+          <th>Ví dụ thực tế</th>
+        </tr>
+        <tr>
+          <td><code>GET</code></td>
+          <td>Lấy dữ liệu</td>
+          <td>Xem danh sách sản phẩm</td>
+        </tr>
+        <tr>
+          <td><code>POST</code></td>
+          <td>Tạo mới</td>
+          <td>Đặt hàng, đăng ký tài khoản</td>
+        </tr>
+        <tr>
+          <td><code>PUT</code></td>
+          <td>Cập nhật toàn bộ</td>
+          <td>Sửa thông tin hồ sơ</td>
+        </tr>
+        <tr>
+          <td><code>PATCH</code></td>
+          <td>Cập nhật một phần</td>
+          <td>Đổi chỉ avatar</td>
+        </tr>
+        <tr>
+          <td><code>DELETE</code></td>
+          <td>Xóa</td>
+          <td>Xóa bài viết</td>
+        </tr>
+      </table>
+
+      <h3>HTTP Status Codes</h3>
+
+      <table>
+        <tr>
+          <th>Nhóm</th>
+          <th>Ý nghĩa</th>
+          <th>Ví dụ hay gặp</th>
+        </tr>
+        <tr>
+          <td><code>2xx</code></td>
+          <td>Thành công ✅</td>
+          <td>200 OK, 201 Created, 204 No Content</td>
+        </tr>
+        <tr>
+          <td><code>3xx</code></td>
+          <td>Chuyển hướng 🔀</td>
+          <td>301 Moved, 302 Found</td>
+        </tr>
+        <tr>
+          <td><code>4xx</code></td>
+          <td>Lỗi từ client ❌</td>
+          <td>400 Bad Request, 401 Unauthorized, 404 Not Found</td>
+        </tr>
+        <tr>
+          <td><code>5xx</code></td>
+          <td>Lỗi từ server 💥</td>
+          <td>500 Internal Server Error, 503 Service Unavailable</td>
+        </tr>
+      </table>
+
+      <!-- ============================================================ -->
+      <h2>1.4 URL, Domain, IP và DNS</h2>
+
+      <p>Khi bạn gõ <code>https://facebook.com/profile/123</code> vào trình duyệt, URL đó có cấu trúc:</p>
+
+      <!-- Diagram 3: DNS Resolution Flow -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 680 120" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr-3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-3r" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="680" height="120" fill="#0d1117" rx="10"/>
+          <!-- Trình duyệt box (CLIENT) -->
+          <rect x="15" y="28" width="140" height="55" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="85" y="51" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="Inter,sans-serif">Trình duyệt</text>
+          <text x="85" y="68" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">google.com</text>
+          <!-- Arrow to DNS Resolver -->
+          <line x1="155" y1="55" x2="222" y2="55" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-3)"/>
+          <text x="188" y="46" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Hỏi IP</text>
+          <!-- DNS Resolver box (DNS/NETWORK) -->
+          <rect x="223" y="28" width="150" height="55" rx="8" fill="#2a1a3a" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="298" y="51" text-anchor="middle" fill="#d8b4fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">DNS Resolver</text>
+          <text x="298" y="68" text-anchor="middle" fill="#c084fc" font-size="11" font-family="Inter,sans-serif">ISP / 8.8.8.8</text>
+          <!-- Arrow to DNS Server -->
+          <line x1="373" y1="55" x2="440" y2="55" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-3)"/>
+          <text x="406" y="46" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">Tra cứu</text>
+          <!-- DNS Server box (DNS/NETWORK) -->
+          <rect x="441" y="28" width="150" height="55" rx="8" fill="#2a1a3a" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="516" y="51" text-anchor="middle" fill="#d8b4fe" font-size="13" font-weight="600" font-family="Inter,sans-serif">DNS Server</text>
+          <text x="516" y="68" text-anchor="middle" fill="#c084fc" font-size="11" font-family="Inter,sans-serif">Root / TLD</text>
+          <!-- Result label -->
+          <text x="340" y="100" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600" font-family="Inter,sans-serif">Kết quả: IP 142.250.x.x — trình duyệt kết nối trực tiếp đến server</text>
+          <!-- Arrow back from DNS Server -->
+          <line x1="441" y1="75" x2="374" y2="75" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-3r)"/>
+          <!-- Arrow back from DNS Resolver to Browser -->
+          <line x1="223" y1="75" x2="156" y2="75" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-3r)"/>
+        </svg>
+      </div>
+
+      <h3>IP Address là gì?</h3>
+      <p>
+        Mỗi máy tính trên Internet có một địa chỉ IP (như số nhà). Ví dụ: <code>142.250.185.14</code> là một IP của Google.
+        Nhưng nhớ số IP rất khó, nên chúng ta dùng <strong>domain name</strong> thay thế (như <code>google.com</code>).
+      </p>
+
+      <h3>DNS hoạt động như thế nào?</h3>
+      <p>DNS (Domain Name System) như danh bạ điện thoại của Internet — nó dịch tên miền sang IP.</p>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Thử ngay</div>
+        Mở Terminal/Command Prompt và gõ: <code>nslookup google.com</code>
+        Bạn sẽ thấy IP address thực của Google.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>1.5 HTTPS và SSL/TLS</h2>
+
+      <p>
+        HTTP truyền dữ liệu dưới dạng văn bản thuần — bất kỳ ai nghe giữa đường cũng đọc được.
+        <strong>HTTPS</strong> thêm lớp mã hóa SSL/TLS: dữ liệu được mã hóa trước khi gửi đi,
+        chỉ client và server mới đọc được.
+      </p>
+
+      <table>
+        <tr>
+          <th></th>
+          <th>HTTP</th>
+          <th>HTTPS</th>
+        </tr>
+        <tr>
+          <td>Port mặc định</td>
+          <td>80</td>
+          <td>443</td>
+        </tr>
+        <tr>
+          <td>Mã hóa</td>
+          <td>Không</td>
+          <td>SSL/TLS</td>
+        </tr>
+        <tr>
+          <td>Dùng cho</td>
+          <td>Dev local</td>
+          <td>Mọi website thực tế</td>
+        </tr>
+      </table>
+
+      <!-- ============================================================ -->
+      <h2>1.6 Frontend vs Backend</h2>
+
+      <p>Khi bạn mở một trang web, có hai thế giới làm việc song song:</p>
+
+      <table>
+        <tr>
+          <th></th>
+          <th>Frontend</th>
+          <th>Backend</th>
+        </tr>
+        <tr>
+          <td>Chạy ở đâu</td>
+          <td>Trình duyệt của người dùng</td>
+          <td>Server</td>
+        </tr>
+        <tr>
+          <td>Ngôn ngữ</td>
+          <td>HTML, CSS, JavaScript</td>
+          <td>NodeJS, Python, Java, PHP…</td>
+        </tr>
+        <tr>
+          <td>Người dùng thấy</td>
+          <td>Có (giao diện)</td>
+          <td>Không (logic ẩn)</td>
+        </tr>
+        <tr>
+          <td>Làm gì</td>
+          <td>Hiển thị, tương tác</td>
+          <td>Xử lý, lưu dữ liệu, bảo mật</td>
+        </tr>
+        <tr>
+          <td>Ví dụ</td>
+          <td>React, Vue, Angular</td>
+          <td>Express, Django, Spring</td>
+        </tr>
+      </table>
+
+      <div class="callout callout-note">
+        <div class="callout-title">📌 NodeJS là gì trong bức tranh này?</div>
+        NodeJS cho phép bạn chạy JavaScript ở phía <strong>server</strong>.
+        Trước khi có NodeJS, JavaScript chỉ chạy được trong trình duyệt.
+        NodeJS "giải phóng" JavaScript ra khỏi trình duyệt — bạn dùng cùng một ngôn ngữ để viết cả frontend lẫn backend.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>1.7 Code mẫu — Xem HTTP Request trong thực tế</h2>
+
+      <h3>Ví dụ 1: Dùng DevTools xem request</h3>
+      <p>Mở Chrome, nhấn <code>F12</code> → tab <strong>Network</strong> → tải trang bất kỳ. Bạn sẽ thấy hàng chục request hiện ra.</p>
+
+      <h3>Ví dụ 2: Gửi HTTP request bằng JavaScript (fetch API)</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">fetch-example.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// Gửi GET request đến một API công khai
+fetch('https://jsonplaceholder.typicode.com/posts/1')
+  .then(response => {
+    console.log('Status:', response.status);  // 200
+    console.log('OK?', response.ok);           // true
+    return response.json();
+  })
+  .then(data => {
+    console.log('Dữ liệu nhận được:', data);
+  })
+  .catch(error => {
+    console.error('Lỗi:', error);
+  });</code>
+      </pre>
+
+      <p>Kết quả khi chạy (trong DevTools Console hoặc NodeJS):</p>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Output</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>Status: 200
+OK? true
+Dữ liệu nhận được: {
+  id: 1,
+  title: 'sunt aut facere repellat...',
+  body: 'quia et suscipit...',
+  userId: 1
+}</code>
+      </pre>
+
+      <h3>Ví dụ 3: Gửi POST request với dữ liệu</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <span class="code-filename">post-example.js</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code>// Gửi POST request (tạo dữ liệu mới)
+fetch('https://jsonplaceholder.typicode.com/posts', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',  // Báo server biết ta gửi JSON
+  },
+  body: JSON.stringify({                  // Chuyển object JS thành chuỗi JSON
+    title: 'Bài viết mới',
+    body: 'Nội dung bài viết...',
+    userId: 1,
+  }),
+})
+  .then(response => response.json())
+  .then(data => {
+    console.log('Tạo thành công:', data);
+    // { id: 101, title: 'Bài viết mới', ... }
+  });</code>
+      </pre>
+
+      <h3>Ví dụ 4: Xem raw HTTP bằng curl (Terminal)</h3>
+
+      <pre>
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <span class="code-filename">Chạy trong Terminal</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <code># Xem toàn bộ HTTP request và response headers
+curl -v https://jsonplaceholder.typicode.com/posts/1
+
+# Kết quả sẽ hiện:
+# > GET /posts/1 HTTP/2
+# > Host: jsonplaceholder.typicode.com
+# < HTTP/2 200
+# < content-type: application/json; charset=utf-8
+# { "userId": 1, "id": 1, ... }</code>
+      </pre>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Lưu ý</div>
+        <code>curl</code> có sẵn trên macOS và Linux. Trên Windows 10+, bạn cũng có thể dùng curl trong PowerShell hoặc Command Prompt.
+        Nếu không có, cài <a href="https://curl.se" style="color:var(--accent)">curl.se</a> hoặc dùng Postman.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>1.8 Tóm tắt cơ chế hoạt động đầy đủ</h2>
+
+      <p>Khi bạn gõ <code>https://facebook.com</code> và nhấn Enter, đây là điều xảy ra:</p>
+
+      <!-- Diagram 4: Full request flow (8 steps) -->
+      <div class="svg-diagram">
+        <svg viewBox="0 0 700 300" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr-4" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+            </marker>
+            <marker id="arr-4r" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+            </marker>
+          </defs>
+          <rect width="700" height="300" fill="#0d1117" rx="10"/>
+
+          <!-- Column headers -->
+          <rect x="20" y="12" width="160" height="30" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="100" y="32" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600" font-family="Inter,sans-serif">Browser (Client)</text>
+          <rect x="520" y="12" width="160" height="30" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="600" y="32" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600" font-family="Inter,sans-serif">Server</text>
+
+          <!-- Step 1: DNS -->
+          <rect x="20" y="55" width="300" height="32" rx="6" fill="#2a1a3a" stroke="#a855f7" stroke-width="1"/>
+          <text x="30" y="74" fill="#d8b4fe" font-size="11" font-family="Inter,sans-serif" font-weight="600">1</text>
+          <text x="48" y="74" fill="#c084fc" font-size="11" font-family="Inter,sans-serif">Browser hỏi DNS: "facebook.com là IP nào?"</text>
+          <text x="350" y="74" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">→ DNS trả lời: 157.240.221.35</text>
+
+          <!-- Step 2: TCP connect -->
+          <rect x="20" y="98" width="300" height="32" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="30" y="117" fill="#93c5fd" font-size="11" font-family="Inter,sans-serif" font-weight="600">2</text>
+          <text x="48" y="117" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Browser kết nối TCP đến :443</text>
+          <line x1="320" y1="114" x2="518" y2="114" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-4)"/>
+
+          <!-- Step 3: SSL -->
+          <rect x="20" y="141" width="300" height="32" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="30" y="160" fill="#93c5fd" font-size="11" font-family="Inter,sans-serif" font-weight="600">3</text>
+          <text x="48" y="160" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">SSL Handshake — trao đổi khóa mã hóa</text>
+          <line x1="320" y1="157" x2="518" y2="157" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-4)"/>
+          <line x1="520" y1="167" x2="322" y2="167" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-4r)"/>
+
+          <!-- Step 4: HTTP Request -->
+          <rect x="20" y="184" width="300" height="32" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="30" y="203" fill="#93c5fd" font-size="11" font-family="Inter,sans-serif" font-weight="600">4</text>
+          <text x="48" y="203" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Gửi HTTP Request: GET / HTTP/2</text>
+          <line x1="320" y1="200" x2="518" y2="200" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-4)"/>
+
+          <!-- Steps 5-6 on server side -->
+          <rect x="520" y="184" width="160" height="32" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="530" y="197" fill="#86efac" font-size="10" font-family="Inter,sans-serif" font-weight="600">5</text>
+          <text x="544" y="197" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">Server xử lý,</text>
+          <text x="530" y="210" fill="#4ade80" font-size="10" font-family="Inter,sans-serif">query database...</text>
+
+          <!-- Step 6: HTTP Response -->
+          <rect x="380" y="227" width="300" height="32" rx="6" fill="#1a3a24" stroke="#22c55e" stroke-width="1"/>
+          <text x="390" y="246" fill="#86efac" font-size="11" font-family="Inter,sans-serif" font-weight="600">6</text>
+          <text x="408" y="246" fill="#4ade80" font-size="11" font-family="Inter,sans-serif">HTTP Response: 200 OK + HTML</text>
+          <line x1="380" y1="243" x2="182" y2="243" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-4r)"/>
+
+          <!-- Steps 7-8 on browser -->
+          <rect x="20" y="227" width="300" height="52" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+          <text x="30" y="248" fill="#93c5fd" font-size="11" font-family="Inter,sans-serif" font-weight="600">7</text>
+          <text x="48" y="248" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">Browser đọc HTML, tải CSS/JS/ảnh</text>
+          <text x="30" y="267" fill="#93c5fd" font-size="11" font-family="Inter,sans-serif" font-weight="600">8</text>
+          <text x="48" y="267" fill="#60a5fa" font-size="11" font-family="Inter,sans-serif">JavaScript chạy, trang hiển thị hoàn chỉnh</text>
+        </svg>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="summary">
+        <div class="summary-title">📚 Tóm tắt chương 1</div>
+        <ul>
+          <li><strong>Internet</strong> là hạ tầng mạng toàn cầu; <strong>Web</strong> là một dịch vụ chạy trên Internet</li>
+          <li><strong>Client</strong> gửi request, <strong>Server</strong> trả response — đây là mô hình cơ bản của web</li>
+          <li><strong>HTTP</strong> là giao thức giao tiếp: gồm method (GET/POST...), URL, headers, body và status code</li>
+          <li><strong>DNS</strong> dịch tên miền thành IP address để máy tính có thể kết nối</li>
+          <li><strong>HTTPS</strong> = HTTP + mã hóa SSL/TLS, luôn dùng cho production</li>
+          <li><strong>Frontend</strong> chạy trong trình duyệt; <strong>Backend</strong> chạy trên server — NodeJS thuộc backend</li>
+        </ul>
+      </div>
+
+      <!-- ============================================================ -->
+      <div class="exercises">
+        <div class="exercises-title">🏋️ Bài tập thực hành</div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>1.1 Khám phá DevTools</h4>
+            <p>
+              Mở Chrome, vào <strong>trang bất kỳ</strong> (vd: vnexpress.net), nhấn <code>F12</code> → tab Network.
+              Reload trang và quan sát: Có bao nhiêu request được gửi đi? Request nào mất nhiều thời gian nhất?
+              Click vào một request và xem Headers tab — ghi chép lại Status Code và Content-Type.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-easy">Dễ</span>
+          <div class="exercise-content">
+            <h4>1.2 Dùng fetch trong Console</h4>
+            <p>
+              Mở DevTools Console (F12 → Console). Copy và chạy ví dụ fetch ở mục 1.7.
+              Thử thay đổi URL thành <code>/posts/5</code> và xem kết quả thay đổi như thế nào.
+              Thử gọi <code>/posts/999</code> — status code là bao nhiêu?
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-medium">Trung bình</span>
+          <div class="exercise-content">
+            <h4>1.3 Xây dựng hàm fetchData có error handling</h4>
+            <p>
+              Viết một hàm <code>fetchData(url)</code> nhận URL và trả về data.
+              Hàm phải xử lý cả trường hợp lỗi mạng (<code>catch</code>) lẫn HTTP error (status code 4xx/5xx).
+              Hint: <code>response.ok</code> là <code>false</code> khi status code >= 400.
+            </p>
+          </div>
+        </div>
+
+        <div class="exercise-item">
+          <span class="exercise-badge badge-hard">Khó</span>
+          <div class="exercise-content">
+            <h4>1.4 Mini HTTP Inspector</h4>
+            <p>
+              Viết một trang HTML đơn giản có một ô input để nhập URL và một button "Gửi Request".
+              Khi click, trang gửi GET request đến URL đó và hiển thị: status code, content-type header,
+              và 500 ký tự đầu của response body. Thêm loading indicator khi đang chờ.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER NAV -->
+      <div class="chapter-nav">
+        <a href="../../index.html" class="chapter-nav-btn">
+          <span class="chapter-nav-direction">← Quay lại</span>
+          <span class="chapter-nav-title">Trang chủ / Mục lục</span>
+        </a>
+        <a href="chapter02.html" class="chapter-nav-btn next">
+          <span class="chapter-nav-direction">Chương tiếp theo →</span>
+          <span class="chapter-nav-title">Stateful vs Stateless — Cookie, Session, Browser Storage</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+  <script src="../../assets/js/main.js"></script>
+</body>
+</html>
