@@ -1,4 +1,5 @@
 # Sách: Lập Trình NodeJS - Từ Cơ Bản Đến Nâng Cao
+**Đọc online (GitHub Pages): https://phamtuanchip.github.io/nodejs_book/**
 
 ## Mục tiêu dự án
 Viết một quyển sách tiếng Việt hướng dẫn lập trình NodeJS cho người mới bắt đầu, chỉ có kiến thức JavaScript cơ bản. Sách sẽ dẫn dắt học viên từ các khái niệm nền tảng về server, web application đến các kỹ thuật nâng cao và cloud/serverless.
